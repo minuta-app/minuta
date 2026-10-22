@@ -336,3 +336,8 @@
 .pn-act { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; padding: 10px 12px; margin-bottom: 10px; border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--acento) 50%, var(--linea)); background: color-mix(in srgb, var(--acento) 12%, var(--panel)); color: var(--texto); cursor: pointer; }
 .pn-act small { display: block; color: var(--suave); }
+
+/* Votos de la comunidad en la galería */
+.u-votos { margin-left: 8px; font: 700 11px system-ui, sans-serif; padding: 1px 7px; border-radius: 99px; background: rgba(0,0,0,.4); color: #fff; white-space: nowrap; }
+.up-votos { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-size: 13px; color: var(--u-suave); }
+.up-votos span { margin-right: 4px; } .up-cab .up-votos .boton-mini { margin-left: 0; width: auto; padding: 3px 10px; color: var(--u-texto); border: 1px solid color-mix(in srgb, var(--u-texto) 25%, transparent); background: transparent; }

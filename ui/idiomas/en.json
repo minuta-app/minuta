@@ -661,7 +661,10 @@
   "Termina la grabación y espera a que se generen las notas antes de actualizar.": "Finish recording and wait for the notes to be generated before updating.",
   "Actualizando… Minuta se va a cerrar y abrir sola.": "Updating… Minuta will close and reopen on its own.",
   "Usar esta carpeta": "Use this folder",
-  "Elige la carpeta donde están (o donde quieres guardar) tus notas": "Choose the folder where your notes are (or where you want to save them)"
+  "Elige la carpeta donde están (o donde quieres guardar) tus notas": "Choose the folder where your notes are (or where you want to save them)",
+  "Votos de la comunidad": "Community votes",
+  "¿Te gusta? Vota en GitHub:": "Like it? Vote on GitHub:",
+  "Abre GitHub para votar": "Opens GitHub to vote"
  },
  "palabras": {
   "lunes": "Monday",

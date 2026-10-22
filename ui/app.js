@@ -933,11 +933,33 @@
     } else host.enviar("descargarUniverso", { id, usar: !!usar });
   }
 
+  /** Votos de la comunidad: cada universo tiene un issue en el catálogo y los votos son sus reacciones 👍/👎 en GitHub. */
+  const VOTOS_API = "https://api.github.com/repos/soydavidcornejo/minuta-catalogo/issues?labels=votos&state=open&per_page=100";
+  E.votosU = null;
+  function pedirVotos() {
+    if (E.votosU) return;
+    E.votosU = {};
+    fetch(VOTOS_API).then((r) => (r.ok ? r.json() : [])).then((lista) => {
+      for (const i of Array.isArray(lista) ? lista : []) {
+        const m = /\[([a-z0-9_-]+)\]\s*$/.exec(i.title || "");
+        if (m && /^https:\/\/github\.com\//.test(i.html_url || "")) E.votosU[m[1]] = { si: +(i.reactions?.["+1"] || 0), no: +(i.reactions?.["-1"] || 0), url: i.html_url };
+      }
+      if (E.galeria) render({ mantenerScroll: true });
+    }).catch(() => {});
+  }
+  const puntajeVotos = (id) => { const v = E.votosU?.[id]; return v ? v.si - v.no : 0; };
+  const chipVotos = (id) => { const v = E.votosU?.[id]; return v && (v.si || v.no) ? `<span class="u-votos" title="Votos de la comunidad">👍 ${v.si}</span>` : ""; };
+  function abrirVoto(id) {
+    const url = E.votosU?.[id]?.url; if (!url) return;
+    if (E.plataforma === "web") window.open(url, "_blank"); else host.enviar("abrirURL", { url });
+  }
+
   function galeria() {
     if (!E.galeria) return "";
     if (!E.catU.estado) setTimeout(() => pedirCatalogo("universos"), 0);
+    if (!E.votosU) setTimeout(pedirVotos, 0);
     const instalados = new Set(E.temas.map((t) => t.id));
-    const porBajar = E.catU.lista.filter((u) => !instalados.has(u.id));
+    const porBajar = E.catU.lista.filter((u) => !instalados.has(u.id)).sort((a, b) => puntajeVotos(b.id) - puntajeVotos(a.id));
     const prev = E.previa && E.catU.lista.find((u) => u.id === E.previa);
     return `<div class="galeria" data-accion="cerrar-galeria"><div class="galeria-caja" role="dialog" aria-label="Elige tu universo">
       <div class="galeria-cab"><div><h2>Elige tu universo</h2><p>Cambia colores, formas, personajes, rangos y logros.</p></div><button class="boton" data-accion="cerrar-galeria" title="Cerrar (Esc)">✕</button></div>
@@ -946,13 +968,13 @@
       <div class="galeria-grid">${E.temas.map((t) => {
         const borrable = !t.incluido && t.id !== "cine";
         return `<div class="u-celda"><button class="universo${t.id === E.temaId ? " elegido" : ""}" data-tema="${t.id}" style="${varsUniverso(t.estilo)}">
-          <span class="u-emoji">${t.emoji}</span><span class="u-nombre">${esc(t.nombre)}</span><span class="u-xp">XP: ${esc(t.xp)}</span>
+          <span class="u-emoji">${t.emoji}</span><span class="u-nombre">${esc(t.nombre)}</span><span class="u-xp">XP: ${esc(t.xp)}${t.creado ? "" : chipVotos(t.id)}</span>
           <span class="u-iconos">${(t.iconos_rangos || []).slice(0, 7).join(" ")}</span>${t.id === E.temaId ? '<span class="u-check">✓</span>' : ""}${t.creado ? '<span class="u-creado">⚒️ creado</span>' : t.incluido ? "" : '<span class="u-creado">⬇ descargado</span>'}</button>
           ${borrable ? `<button class="boton-mini u-quitar" data-forja="borrar-u" data-id="${esc(t.id)}" title="Quitar este universo">🗑</button>` : ""}</div>`;
       }).join("")}<button class="universo u-nuevo" data-forja="abrir"><span class="u-emoji">＋</span><span class="u-nombre">Crear universo</span><span class="u-xp">Con Claude, en ~5 min</span></button></div>
       <div class="u-sub">Más universos para descargar ${E.catU.estado === "cargando" ? `<small>cargando…</small>` : E.catU.error && !E.catU.lista.length ? `<small>sin conexión al catálogo</small>` : `<small>${porBajar.length} disponibles · gratis</small>`}</div>
       ${porBajar.length ? `<div class="galeria-grid">${porBajar.map((u) => `<div class="u-celda"><button class="universo u-catalogo" data-previa="${esc(u.id)}" style="${varsUniverso(u.estilo)}" title="Ver cómo es">
-          <span class="u-emoji">${u.emoji}</span><span class="u-nombre">${esc(u.nombre)}</span><span class="u-xp">XP: ${esc(u.xp)}</span>
+          <span class="u-emoji">${u.emoji}</span><span class="u-nombre">${esc(u.nombre)}</span><span class="u-xp">XP: ${esc(u.xp)}${chipVotos(u.id)}</span>
           <span class="u-iconos">${(u.muestra?.iconos_rangos || []).slice(0, 7).join(" ")}</span><span class="u-creado">👁 ver</span></button>
           <button class="boton-mini u-bajar" data-bajar-u="${esc(u.id)}" title="Descargar">${E.catU.bajando === u.id ? "…" : "⬇"}</button></div>`).join("")}</div>`
         : E.catU.estado === "listo" ? `<p class="cat-ayuda">Ya tienes todos los universos del catálogo. 🎉</p>` : ""}
@@ -963,7 +985,7 @@
   function previaUniverso(u) {
     const m = u.muestra || {};
     return `<div class="u-previa" style="${varsUniverso(u.estilo)}" role="dialog" aria-label="Vista previa de ${esc(u.nombre)}">
-      <div class="up-cab"><span class="up-emoji">${u.emoji}</span><div><h3>${esc(u.nombre)}</h3><p>${esc(u.descripcion || "")}</p></div><button class="boton-mini" data-previa-cerrar title="Cerrar">✕</button></div>
+      <div class="up-cab"><span class="up-emoji">${u.emoji}</span><div><h3>${esc(u.nombre)}</h3><p>${esc(u.descripcion || "")}</p>${E.votosU?.[u.id] ? `<div class="up-votos"><span>¿Te gusta? Vota en GitHub:</span><button class="boton-mini" data-votar-u="${esc(u.id)}" title="Abre GitHub para votar">👍 ${E.votosU[u.id].si}</button><button class="boton-mini" data-votar-u="${esc(u.id)}" title="Abre GitHub para votar">👎 ${E.votosU[u.id].no}</button></div>` : ""}</div><button class="boton-mini" data-previa-cerrar title="Cerrar">✕</button></div>
       ${m.elogio ? `<blockquote class="up-elogio">“${esc(m.elogio)}”</blockquote>` : ""}
       <div class="up-cols">
         <div><div class="up-eti">Rangos</div><ol class="up-rangos">${(m.rangos || []).map((r, i) => `<li><span>${esc(m.iconos_rangos?.[i] || "")}</span>${esc(r)}</li>`).join("")}</ol></div>
@@ -2602,6 +2624,8 @@
       if (a === "abrir") setTimeout(() => $("#forja-nombre")?.focus(), 30);
       return;
     }
+    const vu = ev.target.closest("[data-votar-u]");
+    if (vu) { abrirVoto(vu.dataset.votarU); return; }
     const uPrev = ev.target.closest("[data-previa],[data-previa-cerrar],[data-bajar-u]");
     if (uPrev) {
       if (uPrev.dataset.bajarU) { descargarUniverso(uPrev.dataset.bajarU, !!uPrev.dataset.usar); E.previa = null; return; }
