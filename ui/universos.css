@@ -1,0 +1,278 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Dirección de arte por universo. Cada bloque redefine la geometría y
+   los materiales de los mismos componentes. Sin logos ni personajes:
+   solo el lenguaje visual de cada mundo.
+   Grupo "panel": .card .metrica .apartado .logro .kpi .comp .tipo-card .turnos .feedback li.top
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Base común para universos de ángulos rectos */
+:root[data-u="starwars"], :root[data-u="senoranillos"], :root[data-u="marvel"], :root[data-u="rapidoyfurioso"],
+:root[data-u="dragonball"], :root[data-u="gameofthrones"], :root[data-u="cine"] { --radio: 0px; --radio-c: 0px; }
+:root[data-u="starwars"] .chips span, :root[data-u="marvel"] .chips span, :root[data-u="rapidoyfurioso"] .chips span,
+:root[data-u="dragonball"] .chips span, :root[data-u="gameofthrones"] .chips span, :root[data-u="cine"] .chips span,
+:root[data-u="senoranillos"] .chips span { border-radius: 0; }
+
+/* ─────────────────────────── STAR WARS ───────────────────────────
+   Computadora de a bordo: paneles rectos con esquinas de mira, líneas de escáner, lectura monoespaciada. */
+:root[data-u="starwars"] {
+  --mira: linear-gradient(var(--acento), var(--acento)) top left / 14px 2px no-repeat,
+          linear-gradient(var(--acento), var(--acento)) top left / 2px 14px no-repeat,
+          linear-gradient(var(--acento), var(--acento)) top right / 14px 2px no-repeat,
+          linear-gradient(var(--acento), var(--acento)) top right / 2px 14px no-repeat,
+          linear-gradient(var(--acento), var(--acento)) bottom left / 14px 2px no-repeat,
+          linear-gradient(var(--acento), var(--acento)) bottom left / 2px 14px no-repeat,
+          linear-gradient(var(--acento), var(--acento)) bottom right / 14px 2px no-repeat,
+          linear-gradient(var(--acento), var(--acento)) bottom right / 2px 14px no-repeat;
+}
+:root[data-u="starwars"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos) {
+  position: relative; border-color: rgba(255,232,31,.14); box-shadow: inset 0 0 40px rgba(79,195,247,.04); }
+:root[data-u="starwars"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos)::after {
+  content: ""; position: absolute; inset: -1px; pointer-events: none; background: var(--mira); opacity: .75; }
+:root[data-u="starwars"] .hud { border-radius: 0; border-color: rgba(255,232,31,.4);
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px), linear-gradient(140deg, #141a2e, #070a14); }
+:root[data-u="starwars"] .hud::before { content: ""; position: absolute; inset: 0; background: var(--mira); pointer-events: none; }
+:root[data-u="starwars"] .hud-avatar { border-radius: 0; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+:root[data-u="starwars"] :is(.valor, .kpi b, .puntos, .hud-xp, .hora, .delta, .comp-vals b, .hud-logros b) { font-family: "SF Mono", ui-monospace, Menlo, monospace; letter-spacing: -.02em; }
+:root[data-u="starwars"] :is(h1, .migas, .card h3, .card h2, .card-tit, .hud-nombre, .nombre-rango) { letter-spacing: .1em; }
+:root[data-u="starwars"] h1 { color: var(--acento); text-shadow: 0 0 24px rgba(255,232,31,.25); }
+:root[data-u="starwars"] .pestana.activa, :root[data-u="starwars"] .seccion.activa {
+  background: var(--acento); clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); box-shadow: none; }
+:root[data-u="starwars"] .pestanas, :root[data-u="starwars"] .secciones, :root[data-u="starwars"] .buscador, :root[data-u="starwars"] .boton { border-color: rgba(255,232,31,.22); }
+:root[data-u="starwars"] .barra div, :root[data-u="starwars"] .hud-barra div { background: repeating-linear-gradient(90deg, var(--acento) 0 6px, transparent 6px 8px); box-shadow: 0 0 10px rgba(255,232,31,.6); }
+:root[data-u="starwars"] .hud-barra, :root[data-u="starwars"] .barra { border-radius: 0; }
+:root[data-u="starwars"] .segmentos i { border-radius: 0; }
+:root[data-u="starwars"] .card h3::before, :root[data-u="starwars"] .card h2::before { width: 8px; height: 8px; border-radius: 0; transform: rotate(45deg); background: var(--acento); }
+
+/* ─────────────────────────── HARRY POTTER ───────────────────────────
+   Terciopelo burdeo, doble filete de pan de oro, luz de vela y tipografía de libro antiguo. */
+:root[data-u="harrypotter"] body { font-family: "Iowan Old Style", "Palatino", "Book Antiqua", Georgia, serif; font-size: 15px; }
+:root[data-u="harrypotter"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos) {
+  border: 1px solid rgba(212,175,55,.55); outline: 1px solid rgba(212,175,55,.22); outline-offset: 3px;
+  box-shadow: 0 0 40px -10px rgba(255,170,60,.12), var(--sombra); }
+:root[data-u="harrypotter"] .card h3::before, :root[data-u="harrypotter"] .card h2::before {
+  content: "✦"; width: auto; height: auto; background: none; box-shadow: none; color: var(--acento); font-size: 14px; }
+:root[data-u="harrypotter"] .card h3::after, :root[data-u="harrypotter"] .card h2::after { content: ""; flex: 1; height: 1px; margin-left: 6px;
+  background: linear-gradient(90deg, rgba(212,175,55,.6), transparent); }
+:root[data-u="harrypotter"] h1 { background: linear-gradient(180deg, #f6dd8f, #b8862b); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 0 rgba(0,0,0,.45)); }
+:root[data-u="harrypotter"] .hud { border: 1px solid rgba(212,175,55,.7); outline: 1px solid rgba(212,175,55,.3); outline-offset: 3px; border-radius: 2px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,190,90,.22), transparent 65%), linear-gradient(160deg, #3a1414, #1a0a0a); }
+:root[data-u="harrypotter"] .pestana.activa, :root[data-u="harrypotter"] .seccion.activa {
+  background: linear-gradient(180deg, #f0d27a, #b58a2c); color: #2a0f0f; text-shadow: 0 1px 0 rgba(255,255,255,.4); }
+:root[data-u="harrypotter"] .personaje::before { content: "⚡"; }
+:root[data-u="harrypotter"] .hud-barra div, :root[data-u="harrypotter"] .barra div { background: linear-gradient(90deg, #7f0909, #d4af37); }
+
+/* ─────────────────────────── EL SEÑOR DE LOS ANILLOS ───────────────────────────
+   Mapa de Tolkien: pergamino, tinta café y roja, filetes dobles y viñetas de rumbo. */
+:root[data-u="senoranillos"] body { font-family: "Iowan Old Style", "Palatino", Georgia, serif; font-size: 15px; }
+:root[data-u="senoranillos"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos) {
+  background: rgba(255,250,232,.42); border: 1px solid rgba(51,36,15,.55); box-shadow: inset 0 0 0 3px rgba(236,224,191,.9), inset 0 0 0 4px rgba(51,36,15,.35), 0 10px 24px -18px rgba(70,40,10,.6);
+  backdrop-filter: none; }
+:root[data-u="senoranillos"] .card h3::before, :root[data-u="senoranillos"] .card h2::before { content: "✦"; width: auto; height: auto; background: none; box-shadow: none; color: var(--acento); }
+:root[data-u="senoranillos"] h1 { color: #3b2a14; letter-spacing: .03em; }
+:root[data-u="senoranillos"] h1::after { content: ""; display: block; width: 220px; height: 8px; margin-top: 10px;
+  background: linear-gradient(var(--acento), var(--acento)) center / 100% 1px no-repeat, radial-gradient(circle, var(--acento) 3px, transparent 3.5px) center / 12px 8px no-repeat; }
+:root[data-u="senoranillos"] .hud { border-radius: 0; background: linear-gradient(160deg, #f4ead0, #ddc795); border: 1px solid #3b2a14;
+  box-shadow: inset 0 0 0 3px #f4ead0, inset 0 0 0 4px rgba(59,42,20,.5), 0 14px 30px -20px rgba(60,35,10,.8); }
+:root[data-u="senoranillos"] .hud-avatar { border-radius: 50%; background: radial-gradient(circle, #f9f1dc, #d8bf86); box-shadow: inset 0 0 0 2px #8a2416; }
+:root[data-u="senoranillos"] .pestana.activa, :root[data-u="senoranillos"] .seccion.activa { background: #8a2416; color: #f6ecd2; box-shadow: none; }
+:root[data-u="senoranillos"] .lateral, :root[data-u="senoranillos"] .superior { background: rgba(232,218,180,.75); }
+:root[data-u="senoranillos"] .superior { border-bottom: 1px solid rgba(51,36,15,.45); box-shadow: 0 3px 0 -2px rgba(51,36,15,.25); }
+
+/* ─────────────────────────── MARVEL ───────────────────────────
+   Página de cómic: viñetas de papel, tinta negra gruesa, sombra dura y recuadros de narración. */
+:root[data-u="marvel"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos) {
+  --texto: #121212; --suave: #4b4b4b; --linea: rgba(0,0,0,.18); --acento-t: #d0161c;
+  color: var(--texto); background: #fffaf0; border: 3px solid #0b0b0b; box-shadow: 6px 6px 0 #0b0b0b; backdrop-filter: none; }
+:root[data-u="marvel"] :is(.card, .apartado, .metrica, .kpi, .comp):hover { transform: translate(-2px, -2px) rotate(-.4deg); box-shadow: 8px 8px 0 #0b0b0b; }
+:root[data-u="marvel"] .personaje { background: #ffe600; }
+:root[data-u="marvel"] .personaje::before { content: "¡POW!"; font: 900 46px Impact, sans-serif; color: #d0161c; opacity: .18; right: 10px; bottom: -6px; transform: rotate(-10deg); }
+:root[data-u="marvel"] .etiqueta, :root[data-u="marvel"] .subtitulo, :root[data-u="marvel"] .grupo {
+  display: inline-block; background: #ffe600; color: #111; border: 2px solid #0b0b0b; padding: 2px 8px; letter-spacing: .05em; }
+:root[data-u="marvel"] .subtitulo { box-shadow: 3px 3px 0 #0b0b0b; }
+:root[data-u="marvel"] h1 { font-family: Impact, "Arial Black", sans-serif; font-weight: 400; letter-spacing: .02em; color: #fff;
+  -webkit-text-stroke: 1.5px #0b0b0b; text-shadow: 4px 4px 0 #d0161c; font-style: italic; }
+:root[data-u="marvel"] .hud { border-radius: 0; background: #d0161c; border: 3px solid #0b0b0b; box-shadow: 6px 6px 0 #0b0b0b; }
+:root[data-u="marvel"] .hud::after { background: radial-gradient(rgba(0,0,0,.25) 1px, transparent 1.6px) 0 0 / 7px 7px; animation: none; }
+:root[data-u="marvel"] .hud-nombre { color: #fff; -webkit-text-stroke: .6px #000; }
+:root[data-u="marvel"] .hud-rango, :root[data-u="marvel"] .hud-xp { color: #ffe9e9; }
+:root[data-u="marvel"] .hud-avatar { border-radius: 0; background: #ffe600; border: 3px solid #0b0b0b; }
+:root[data-u="marvel"] :is(.pestanas, .secciones, .buscador, .boton) { border: 2px solid #0b0b0b; box-shadow: 3px 3px 0 #0b0b0b; background: #fffaf0; color: #111; }
+:root[data-u="marvel"] .buscador input { color: #111; }
+:root[data-u="marvel"] .pestana, :root[data-u="marvel"] .seccion { color: #111; }
+:root[data-u="marvel"] .pestana.activa, :root[data-u="marvel"] .seccion.activa { background: #d0161c; color: #fff; box-shadow: none; }
+:root[data-u="marvel"] .fila.elegida { background: #ffe600; color: #111; border: 2px solid #0b0b0b; box-shadow: 3px 3px 0 #0b0b0b; }
+:root[data-u="marvel"] .fila.elegida .fila-det { color: #333; }
+:root[data-u="marvel"] .card h3::before, :root[data-u="marvel"] .card h2::before { border-radius: 0; background: #d0161c; box-shadow: none; }
+:root[data-u="marvel"] :is(.barra, .hud-barra) { border-radius: 0; border: 2px solid #0b0b0b; background: #fff; }
+:root[data-u="marvel"] :is(.barra div, .hud-barra div) { border-radius: 0; background: repeating-linear-gradient(-45deg, #d0161c 0 6px, #ff3b40 6px 12px); box-shadow: none; }
+
+/* ─────────────────────────── RÁPIDO Y FURIOSO ───────────────────────────
+   Calle de noche: todo inclinado hacia adelante, fibra de carbono, neón por debajo y franjas de carrera. */
+:root[data-u="rapidoyfurioso"] {
+  --carbono: repeating-linear-gradient(45deg, rgba(255,255,255,.03) 0 2px, transparent 2px 4px), repeating-linear-gradient(-45deg, rgba(0,0,0,.35) 0 2px, transparent 2px 4px); }
+:root[data-u="rapidoyfurioso"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos) {
+  background: var(--carbono), linear-gradient(180deg, #17171a, #0d0d0f); border: 1px solid #2a2a2e;
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+  box-shadow: inset 0 -2px 0 var(--acento); }
+:root[data-u="rapidoyfurioso"] .card h3::before, :root[data-u="rapidoyfurioso"] .card h2::before { width: 18px; height: 10px; border-radius: 0;
+  background: linear-gradient(90deg, var(--acento) 0 6px, transparent 6px 9px, var(--acento) 9px 15px, transparent 15px); transform: skewX(-20deg); box-shadow: none; }
+:root[data-u="rapidoyfurioso"] .pestanas, :root[data-u="rapidoyfurioso"] .secciones { background: transparent; border: 0; box-shadow: none; gap: 6px; }
+:root[data-u="rapidoyfurioso"] .pestana, :root[data-u="rapidoyfurioso"] .seccion { transform: skewX(-14deg); border: 1px solid #333; background: #141416; }
+:root[data-u="rapidoyfurioso"] .pestana > *, :root[data-u="rapidoyfurioso"] .seccion > * { display: inline-block; transform: skewX(14deg); }
+:root[data-u="rapidoyfurioso"] .pestana.activa, :root[data-u="rapidoyfurioso"] .seccion.activa {
+  background: var(--acento); color: #000; box-shadow: 0 8px 22px -6px var(--acento), 0 2px 18px -4px rgba(0,229,255,.6); border-color: var(--acento); }
+:root[data-u="rapidoyfurioso"] .boton, :root[data-u="rapidoyfurioso"] .buscador { transform: skewX(-10deg); background: #141416; }
+:root[data-u="rapidoyfurioso"] .buscador > *, :root[data-u="rapidoyfurioso"] .boton { }
+:root[data-u="rapidoyfurioso"] .hud { border-radius: 0; background: var(--carbono), linear-gradient(140deg, #1a1a1d, #0a0a0b); border: 1px solid #333;
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%); box-shadow: inset 0 -3px 0 var(--acento2); }
+:root[data-u="rapidoyfurioso"] .hud::before { content: ""; position: absolute; top: 0; bottom: 0; right: 34px; width: 14px;
+  background: linear-gradient(90deg, var(--acento) 0 5px, transparent 5px 9px, var(--acento) 9px); opacity: .85; transform: skewX(-14deg); }
+:root[data-u="rapidoyfurioso"] .hud-avatar { border-radius: 50%; background: radial-gradient(circle at 50% 60%, #222 55%, var(--acento) 56% 60%, #111 61%); }
+:root[data-u="rapidoyfurioso"] :is(.hud-barra, .barra) { border-radius: 0; transform: skewX(-20deg); }
+:root[data-u="rapidoyfurioso"] :is(.hud-barra div, .barra div) { border-radius: 0; background: linear-gradient(90deg, #00e5ff, #ff6a00); box-shadow: 0 0 14px #ff6a00; }
+:root[data-u="rapidoyfurioso"] .segmentos { gap: 3px; transform: skewX(-20deg); }
+:root[data-u="rapidoyfurioso"] .segmentos i { border-radius: 0; }
+:root[data-u="rapidoyfurioso"] h1 { text-shadow: 3px 0 0 rgba(0,229,255,.6), -3px 0 0 rgba(255,106,0,.6); }
+:root[data-u="rapidoyfurioso"] .fila.elegida { background: linear-gradient(90deg, rgba(255,106,0,.28), transparent); border-color: transparent; border-left: 3px solid var(--acento); box-shadow: none; }
+
+/* ─────────────────────────── DRAGON BALL ───────────────────────────
+   Página de manga: tinta negra, paneles en ángulo, líneas de acción y títulos con trazo. */
+:root[data-u="dragonball"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos) {
+  background: #fffdf8; border: 2.5px solid #1a1206; box-shadow: 4px 4px 0 #1a1206; backdrop-filter: none; }
+:root[data-u="dragonball"] .card:nth-child(odd), :root[data-u="dragonball"] .apartado:nth-child(odd), :root[data-u="dragonball"] .logro:nth-child(4n+1) {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 calc(100% - 10px)); }
+:root[data-u="dragonball"] .card:nth-child(even), :root[data-u="dragonball"] .apartado:nth-child(even), :root[data-u="dragonball"] .logro:nth-child(4n+3) {
+  clip-path: polygon(0 10px, 100% 0, 100% 100%, 0 100%); }
+:root[data-u="dragonball"] h1 { color: #ffb300; -webkit-text-stroke: 2px #1a1206; paint-order: stroke fill; text-shadow: 4px 4px 0 #d9480f; letter-spacing: .02em; }
+:root[data-u="dragonball"] .card h3::before, :root[data-u="dragonball"] .card h2::before { content: "★"; width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 11px; color: #c1121f; background: radial-gradient(circle at 35% 30%, #fff3c4, #f7a21b 60%, #d9480f); box-shadow: none; }
+:root[data-u="dragonball"] .personaje { background: #fff3d6; }
+:root[data-u="dragonball"] .personaje::before { content: "¡¡"; font: 900 80px Futura, sans-serif; color: #f85b1a; opacity: .15; }
+:root[data-u="dragonball"] .hud { border-radius: 0; background: #fffdf8; border: 3px solid #1a1206; box-shadow: 5px 5px 0 #1a1206; }
+:root[data-u="dragonball"] .hud::after { background: repeating-conic-gradient(from 0deg at 15% 50%, rgba(248,91,26,.10) 0 4deg, transparent 4deg 10deg); animation: none; }
+:root[data-u="dragonball"] .hud-avatar { border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3c4, #f7a21b 60%, #d9480f); border: 2.5px solid #1a1206;
+  box-shadow: 0 0 0 4px rgba(255,200,40,.35), 0 0 20px 6px rgba(255,170,0,.45); animation: aura 1.6s ease-in-out infinite; }
+@keyframes aura { 50% { box-shadow: 0 0 0 7px rgba(255,200,40,.25), 0 0 30px 10px rgba(255,170,0,.55); } }
+:root[data-u="dragonball"] :is(.pestanas, .secciones, .buscador, .boton) { border: 2px solid #1a1206; background: #fffdf8; box-shadow: 3px 3px 0 #1a1206; }
+:root[data-u="dragonball"] .pestana.activa, :root[data-u="dragonball"] .seccion.activa { background: #f85b1a; color: #fff; box-shadow: none;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+:root[data-u="dragonball"] .fila.elegida { background: #ffe0b8; border: 2px solid #1a1206; box-shadow: 3px 3px 0 #1a1206; }
+:root[data-u="dragonball"] :is(.barra, .hud-barra) { border-radius: 0; border: 2px solid #1a1206; background: #fff; }
+:root[data-u="dragonball"] :is(.barra div, .hud-barra div) { border-radius: 0; background: linear-gradient(90deg, #ffd23f, #f85b1a); box-shadow: none; }
+
+/* ─────────────────────────── LOS SIMPSON ───────────────────────────
+   Caricatura: colores planos, contorno negro grueso, formas redondas y gorditas, sin degradados. */
+:root[data-u="simpsons"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos) {
+  background: #fff; border: 3px solid #1d1d1d; border-radius: 22px; box-shadow: 0 5px 0 #1d1d1d; backdrop-filter: none; }
+:root[data-u="simpsons"] .personaje, :root[data-u="simpsons"] .nuevos { background: #fed90f; }
+:root[data-u="simpsons"] .personaje::before { content: "🍩"; opacity: .2; }
+:root[data-u="simpsons"] h1 { color: #fed90f; -webkit-text-stroke: 2px #1d1d1d; paint-order: stroke fill; text-shadow: 0 4px 0 #1d1d1d; letter-spacing: .01em; }
+:root[data-u="simpsons"] .hud { background: #fed90f; border: 3px solid #1d1d1d; border-radius: 24px; box-shadow: 0 6px 0 #1d1d1d; }
+:root[data-u="simpsons"] .hud::after { display: none; }
+:root[data-u="simpsons"] .hud-avatar { border-radius: 50%; background: #70d1fe; border: 3px solid #1d1d1d; box-shadow: none; }
+:root[data-u="simpsons"] :is(.pestanas, .secciones, .buscador, .boton) { background: #fff; border: 3px solid #1d1d1d; border-radius: 999px; box-shadow: 0 4px 0 #1d1d1d; }
+:root[data-u="simpsons"] .secciones { border-radius: 22px; }
+:root[data-u="simpsons"] .boton { border-radius: 50%; }
+:root[data-u="simpsons"] .pestana, :root[data-u="simpsons"] .seccion { border-radius: 999px; }
+:root[data-u="simpsons"] .seccion { border-radius: 16px; }
+:root[data-u="simpsons"] .pestana.activa, :root[data-u="simpsons"] .seccion.activa { background: #fed90f; color: #1d1d1d; box-shadow: inset 0 0 0 2.5px #1d1d1d; }
+:root[data-u="simpsons"] .fila { border-radius: 16px; }
+:root[data-u="simpsons"] .fila.elegida { background: #fed90f; border: 2.5px solid #1d1d1d; box-shadow: 0 3px 0 #1d1d1d; }
+:root[data-u="simpsons"] .card h3::before, :root[data-u="simpsons"] .card h2::before { width: 14px; height: 14px; border-radius: 50%; background: #f04e98; border: 2.5px solid #1d1d1d; box-shadow: none; }
+:root[data-u="simpsons"] :is(.barra, .hud-barra) { border: 2.5px solid #1d1d1d; background: #fff; height: 14px; }
+:root[data-u="simpsons"] :is(.barra div, .hud-barra div) { background: #f04e98; box-shadow: none; }
+:root[data-u="simpsons"] .segmentos i { border-radius: 99px; }
+:root[data-u="simpsons"] .segmentos i.on { background: #f04e98; box-shadow: none; }
+
+/* ─────────────────────────── GAME OF THRONES ───────────────────────────
+   Piedra, hierro y escarcha: paneles biselados, mayúsculas grabadas y separadores heráldicos. */
+:root[data-u="gameofthrones"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos) {
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.25)), repeating-linear-gradient(115deg, rgba(255,255,255,.012) 0 2px, transparent 2px 7px), #141a20;
+  border: 1px solid #3a4652; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 -1px 0 rgba(0,0,0,.6), 0 0 0 1px #07090b, var(--sombra); }
+:root[data-u="gameofthrones"] :is(h1, .migas, .card h3, .card h2, .card-tit, .hud-nombre, .nombre-rango, .pestana, .seccion) { letter-spacing: .14em; }
+:root[data-u="gameofthrones"] h1 { color: #dfe7ee; text-shadow: 0 1px 0 #000, 0 0 30px rgba(159,201,230,.25); }
+:root[data-u="gameofthrones"] h1::after { content: "— ⚔ —"; display: block; font-size: 14px; color: var(--acento2); margin-top: 6px; letter-spacing: .3em; }
+:root[data-u="gameofthrones"] .card h3::before, :root[data-u="gameofthrones"] .card h2::before { width: 9px; height: 9px; border-radius: 0; transform: rotate(45deg); background: var(--acento2); box-shadow: none; }
+:root[data-u="gameofthrones"] .hud { border-radius: 0; background: linear-gradient(180deg, #1f2833, #0c1015); border: 1px solid #4a5866;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), inset 0 0 0 4px #0c1015, inset 0 0 0 5px rgba(184,134,11,.5); }
+:root[data-u="gameofthrones"] .hud-avatar { border-radius: 0; clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%); background: linear-gradient(180deg, #b8860b, #6e5208); }
+:root[data-u="gameofthrones"] .pestana.activa, :root[data-u="gameofthrones"] .seccion.activa { background: linear-gradient(180deg, #c7dceb, #8fb3cc); color: #0b0e11;
+  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 0 rgba(0,0,0,.25); }
+:root[data-u="gameofthrones"] :is(.barra div, .hud-barra div) { background: linear-gradient(90deg, #6e8ea6, #e6f2fa); box-shadow: 0 0 10px rgba(159,201,230,.5); }
+:root[data-u="gameofthrones"] :is(.barra, .hud-barra, .segmentos i) { border-radius: 0; }
+
+/* ─────────────────────────── SHREK ───────────────────────────
+   Libro de cuentos del pantano: bordes dibujados a mano, letreros de madera, nada perfecto. */
+:root[data-u="shrek"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos) {
+  background: #fbf8ec; border: 2.5px solid #3d2b14; border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px; box-shadow: 3px 4px 0 rgba(61,43,20,.55); backdrop-filter: none; }
+:root[data-u="shrek"] .card:nth-child(odd), :root[data-u="shrek"] .apartado:nth-child(odd) { transform: rotate(-.35deg); }
+:root[data-u="shrek"] .card:nth-child(even), :root[data-u="shrek"] .apartado:nth-child(even) { transform: rotate(.3deg); }
+:root[data-u="shrek"] h1 { color: #4e7a12; text-shadow: 2px 2px 0 #f1e3a6; }
+:root[data-u="shrek"] .card h3::before, :root[data-u="shrek"] .card h2::before { content: "🧅"; width: auto; height: auto; background: none; box-shadow: none; font-size: 14px; }
+:root[data-u="shrek"] .madera, :root[data-u="shrek"] :is(.pestanas, .secciones) {
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 2px, transparent 2px 9px), linear-gradient(180deg, #a06a35, #7a4d22); border: 2px solid #3d2b14;
+  border-radius: 6px 14px 8px 12px; box-shadow: 0 4px 0 #3d2b14; }
+:root[data-u="shrek"] :is(.pestana, .seccion) { color: #fbefd5; }
+:root[data-u="shrek"] .pestana.activa, :root[data-u="shrek"] .seccion.activa { background: #7bb32e; color: #1e2a12; box-shadow: inset 0 0 0 2px #3d2b14; border-radius: 10px 4px 12px 6px; }
+:root[data-u="shrek"] .hud { background: #fbf8ec; border: 2.5px solid #3d2b14; border-radius: 30px 8px 26px 10px / 10px 26px 8px 30px; box-shadow: 4px 5px 0 rgba(61,43,20,.6); }
+:root[data-u="shrek"] .hud::after { display: none; }
+:root[data-u="shrek"] .hud-avatar { border-radius: 46% 54% 50% 50% / 55% 45% 55% 45%; background: #7bb32e; border: 2.5px solid #3d2b14; }
+:root[data-u="shrek"] .buscador, :root[data-u="shrek"] .boton { background: #fbf8ec; border: 2px solid #3d2b14; border-radius: 12px 6px 14px 8px; }
+:root[data-u="shrek"] .fila.elegida { background: #dbeab4; border: 2px solid #3d2b14; border-radius: 14px 6px 12px 8px; box-shadow: 2px 3px 0 rgba(61,43,20,.5); }
+:root[data-u="shrek"] :is(.barra div, .hud-barra div) { background: repeating-linear-gradient(-45deg, #7bb32e 0 7px, #6aa021 7px 14px); box-shadow: none; }
+
+/* ─────────────────────────── PIRATAS DEL CARIBE ───────────────────────────
+   Mapa del tesoro: pergamino envejecido sobre mar oscuro, bordes de cuerda y rumbos punteados. */
+:root[data-u="piratas"] body { font-family: "Iowan Old Style", "Palatino", Georgia, serif; font-size: 15px; }
+:root[data-u="piratas"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos) {
+  --texto: #2e1f0e; --suave: #6b5536; --linea: rgba(46,31,14,.25); --acento-t: #8b3a12;
+  color: var(--texto); background: radial-gradient(ellipse at 50% 40%, #f3e2b8 40%, #dcc08a 100%); border: 1px solid #6b4a22;
+  box-shadow: inset 0 0 30px rgba(110,70,20,.35), 0 12px 26px -16px rgba(0,0,0,.9); backdrop-filter: none; }
+:root[data-u="piratas"] .card h3::before, :root[data-u="piratas"] .card h2::before { content: "✕"; width: auto; height: auto; background: none; box-shadow: none; color: #a4161a; font-weight: 900; }
+:root[data-u="piratas"] .card h3::after, :root[data-u="piratas"] .card h2::after { content: ""; flex: 1; margin-left: 8px; border-top: 2px dashed rgba(139,58,18,.45); }
+:root[data-u="piratas"] .hud { border-radius: 2px; background: radial-gradient(ellipse at 50% 40%, #f3e2b8 40%, #d7b878 100%); border: 0;
+  box-shadow: 0 0 0 4px #8a6a3d, 0 0 0 6px #4a3216, 0 14px 30px -14px #000; color: #2e1f0e; margin: 6px; width: calc(100% - 12px); }
+:root[data-u="piratas"] .hud-nombre { color: #2e1f0e; } :root[data-u="piratas"] :is(.hud-rango, .hud-xp) { color: #6b5536; } :root[data-u="piratas"] .hud-xp b { color: #2e1f0e; }
+:root[data-u="piratas"] .hud-avatar { border-radius: 50%; background: radial-gradient(circle, #f6e7c1, #c79a52); box-shadow: inset 0 0 0 2px #6b4a22; }
+:root[data-u="piratas"] :is(.pestanas, .secciones) { background: rgba(10,18,20,.6); border: 2px solid transparent;
+  border-image: repeating-linear-gradient(45deg, #c8a15a 0 4px, #7d5f30 4px 8px) 2; }
+:root[data-u="piratas"] .pestana.activa, :root[data-u="piratas"] .seccion.activa { background: #c8a15a; color: #1e140a; box-shadow: none; }
+:root[data-u="piratas"] h1 { color: #e8cf98; text-shadow: 0 2px 0 #000; }
+
+/* ─────────────────────────── TOY STORY ───────────────────────────
+   Plástico de juguete: colores primarios, brillo superior, botones gorditos y bloques de colores. */
+:root[data-u="toystory"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos) {
+  background: #fff; border: 2px solid #1a2433; border-radius: 20px; box-shadow: 0 6px 0 #1a2433, inset 0 -4px 0 rgba(0,0,0,.05); backdrop-filter: none; }
+:root[data-u="toystory"] .card.card { border-top: 10px solid; }
+:root[data-u="toystory"] .card.card:nth-child(3n+1) { border-top-color: #d62828; } :root[data-u="toystory"] .card.card:nth-child(3n+2) { border-top-color: #f2b705; }
+:root[data-u="toystory"] .card.card:nth-child(3n) { border-top-color: #3a86ff; }
+:root[data-u="toystory"] .card h3::before, :root[data-u="toystory"] .card h2::before { content: "★"; width: auto; height: auto; background: none; box-shadow: none; color: #f2b705; -webkit-text-stroke: 1px #1a2433; }
+:root[data-u="toystory"] h1 { color: #d62828; -webkit-text-stroke: 1.5px #1a2433; paint-order: stroke fill; text-shadow: 0 4px 0 #f2b705; }
+:root[data-u="toystory"] .hud { border-radius: 22px; background: linear-gradient(180deg, rgba(255,255,255,.55), transparent 45%), #8ac926; border: 2.5px solid #1a2433; box-shadow: 0 6px 0 #1a2433; }
+:root[data-u="toystory"] .hud::after { display: none; }
+:root[data-u="toystory"] .hud-avatar { border-radius: 16px; background: linear-gradient(180deg, rgba(255,255,255,.6), transparent 50%), #7b2cbf; border: 2.5px solid #1a2433; }
+:root[data-u="toystory"] :is(.boton, .buscador, .pestanas, .secciones) { background: #fff; border: 2px solid #1a2433; border-radius: 16px; box-shadow: 0 4px 0 #1a2433; }
+:root[data-u="toystory"] .pestana, :root[data-u="toystory"] .seccion { border-radius: 12px; }
+:root[data-u="toystory"] .pestana.activa, :root[data-u="toystory"] .seccion.activa {
+  background: linear-gradient(180deg, rgba(255,255,255,.45), transparent 50%), #d62828; color: #fff; box-shadow: inset 0 -3px 0 rgba(0,0,0,.25); }
+:root[data-u="toystory"] .fila.elegida { background: #fff5cc; border: 2px solid #1a2433; box-shadow: 0 3px 0 #1a2433; border-radius: 14px; }
+:root[data-u="toystory"] :is(.barra div, .hud-barra div) { background: linear-gradient(180deg, rgba(255,255,255,.5), transparent 55%), #3a86ff; box-shadow: none; }
+:root[data-u="toystory"] .segmentos i.on { background: #d62828; box-shadow: none; border-radius: 4px; }
+
+/* ─────────────────────────── CINE VARIADO ───────────────────────────
+   Hollywood dorado Art Déco: esquinas escalonadas, filetes dorados y marquesina de ampolletas. */
+:root[data-u="cine"] :is(.card, .metrica, .apartado, .logro, .kpi, .comp, .tipo-card, .turnos, .feedback li.top, .personaje, .nuevos) {
+  background: linear-gradient(180deg, #19150f, #110e0a); border: 1px solid rgba(245,183,0,.35);
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+  box-shadow: inset 0 0 0 4px #110e0a, inset 0 0 0 5px rgba(245,183,0,.18); }
+:root[data-u="cine"] .card h3::before, :root[data-u="cine"] .card h2::before { width: 10px; height: 10px; border-radius: 0; transform: rotate(45deg); background: var(--acento); box-shadow: none; }
+:root[data-u="cine"] h1 { font-family: Didot, "Bodoni 72", serif; letter-spacing: .02em; color: #f7e7b4; }
+:root[data-u="cine"] .hud { border-radius: 0; background: #1a140c; border: 0; padding: 18px;
+  box-shadow: inset 0 0 0 2px #f5b700, inset 0 0 0 6px #1a140c, inset 0 0 0 7px rgba(245,183,0,.4); }
+:root[data-u="cine"] .hud::after { background: radial-gradient(circle, #ffe9a8 1.6px, rgba(245,183,0,.5) 2.4px, transparent 3px) 0 0 / 12px 12px;
+  -webkit-mask: linear-gradient(#000 0 0) top / 100% 7px no-repeat, linear-gradient(#000 0 0) bottom / 100% 7px no-repeat;
+  mask: linear-gradient(#000 0 0) top / 100% 7px no-repeat, linear-gradient(#000 0 0) bottom / 100% 7px no-repeat; animation: titilar 1.2s steps(2) infinite; }
+@keyframes titilar { 50% { opacity: .55; } }
+:root[data-u="cine"] .hud-avatar { border-radius: 0; background: linear-gradient(135deg, #f5b700, #a87400); }
+:root[data-u="cine"] .pestana.activa, :root[data-u="cine"] .seccion.activa { background: linear-gradient(180deg, #ffd34d, #c99400); color: #1a140c; box-shadow: none; }

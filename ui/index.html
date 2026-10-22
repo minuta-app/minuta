@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minuta</title>
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="universos.css">
+  <link rel="stylesheet" href="ventana.css">
+  <link rel="stylesheet" href="panel.css">
+  <link rel="stylesheet" href="extras.css">
+  <link rel="stylesheet" href="coach.css">
+  <link rel="stylesheet" href="agenda.css">
+</head>
+<body>
+  <div id="ventana">
+    <div id="sombra" aria-hidden="true"><i></i></div>
+    <div id="marco" aria-hidden="true"></div>
+    <div id="lienzo">
+      <canvas id="particulas" aria-hidden="true"></canvas>
+      <header id="barra">
+        <div id="controles" role="group" aria-label="Ventana">
+          <button class="ctl c-cerrar" data-ventana="cerrar" aria-label="Cerrar" title="Cerrar · ⌘W"><b>×</b></button>
+          <button class="ctl c-min" data-ventana="minimizar" aria-label="Minimizar" title="Minimizar · ⌘M"><b>–</b></button>
+          <button class="ctl c-max" data-ventana="pantalla" aria-label="Pantalla completa" title="Pantalla completa · ⌃⌘F"><b>+</b></button>
+        </div>
+        <div class="barra-titulo"><span class="bt-app">Minuta</span><span class="bt-sep" aria-hidden="true"></span><span class="bt-u"></span></div>
+        <div class="barra-der" aria-hidden="true"><span class="bt-der"></span></div>
+      </header>
+      <div id="app"></div>
+      <div id="toast" role="status" aria-live="polite"></div>
+    </div>
+    <div id="adornos" aria-hidden="true"><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i></div>
+    <div id="bordes" aria-hidden="true"><i data-lado="n"></i><i data-lado="s"></i><i data-lado="e"></i><i data-lado="w"></i><i data-lado="nw"></i><i data-lado="ne"></i><i data-lado="sw"></i><i data-lado="se"></i></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

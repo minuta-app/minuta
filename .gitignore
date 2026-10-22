@@ -1,0 +1,24 @@
+# Solo el código y los universos van al repo. Grabaciones, notas, modelos y datos personales se quedan en el Mac.
+/*
+!/.gitignore
+!/README.md
+!/build.sh
+!/perfil.ejemplo.json
+!/CLAUDE.md
+!/.claude/
+!/herramientas/
+!/instalar.sh
+!/LICENSE
+!/docs/
+!/.github/
+!/app/
+!/bin/
+!/ui/
+!/universos/
+app/.build/
+bin/minuta-diarizar
+bin/minuta-diarizar.*
+**/__pycache__/
+*.log
+.DS_Store
+dist/

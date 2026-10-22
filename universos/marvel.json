@@ -1,0 +1,436 @@
+{
+ "id": "marvel",
+ "nombre": "Marvel (Vengadores)",
+ "emoji": "🛡️",
+ "xp": "energía del reactor Arc",
+ "personaje_por_defecto": "Solo personajes canónicos del Universo Cinematográfico de Marvel ligados a los Vengadores.",
+ "elogios": [
+  "¡Nivel Vengador, con Mjolnir y todo!",
+  "Buen trabajo, agente de S.H.I.E.L.D.",
+  "Vas bien, pero aún no eres digno.",
+  "Nos chasquearon la reunión, compadre."
+ ],
+ "apartados": {
+  "claridad": [
+   {
+    "nombre": "Groot",
+    "referencia": "Avengers: Infinity War (2018)",
+    "frase": "Dijiste mucho, pero todos escucharon \"Yo soy Groot\". Nadie captó nada."
+   },
+   {
+    "nombre": "Hulk",
+    "referencia": "Los Vengadores (2012)",
+    "frase": "Frases de tres palabras y harto ruido. Hulk explicar, equipo no entender."
+   },
+   {
+    "nombre": "Peter Parker",
+    "referencia": "Spider-Man: De regreso a casa (2017)",
+    "frase": "Entusiasmo nivel 100, orden nivel 2. Te fuiste en mil tangentes, como Peter."
+   },
+   {
+    "nombre": "Scott Lang",
+    "referencia": "Capitán América: Civil War (2016)",
+    "frase": "Explicaste como Scott el Reino Cuántico: buena onda, pero en círculos."
+   },
+   {
+    "nombre": "Thor",
+    "referencia": "Thor: Ragnarok (2017)",
+    "frase": "Épico y con estilo, aunque a ratos la idea se perdió en el drama asgardiano."
+   },
+   {
+    "nombre": "Clint Barton",
+    "referencia": "Avengers: Era de Ultrón (2015)",
+    "frase": "Directo y sin adornos, como Ojo de Halcón. Le faltó un poquito de puntería."
+   },
+   {
+    "nombre": "Natasha Romanoff",
+    "referencia": "Capitán América y el Soldado del Invierno (2014)",
+    "frase": "Precisa y sin rodeos. Dijiste lo justo, como buena Viuda Negra."
+   },
+   {
+    "nombre": "Tony Stark",
+    "referencia": "Iron Man (2008)",
+    "frase": "Presentación con carisma de Stark: clara, entretenida y con remate."
+   },
+   {
+    "nombre": "Steve Rogers",
+    "referencia": "Avengers: Endgame (2019)",
+    "frase": "Hablaste como el Capi antes de la batalla: claro, ordenado y todos te siguieron."
+   },
+   {
+    "nombre": "Nick Fury",
+    "referencia": "Los Vengadores (2012)",
+    "frase": "Pocas palabras, cero relleno y todos entendieron la misión. Puro Nick Fury."
+   }
+  ],
+  "escucha": [
+   {
+    "nombre": "Tony Stark",
+    "referencia": "Iron Man 2 (2010)",
+    "frase": "Interrumpiste más que Tony en una reunión de S.H.I.E.L.D. Genio, sí; oído, no."
+   },
+   {
+    "nombre": "Peter Quill",
+    "referencia": "Avengers: Infinity War (2018)",
+    "frase": "Como Star-Lord en Titán: no escuchaste el plan y casi se cae todo."
+   },
+   {
+    "nombre": "Thor",
+    "referencia": "Avengers: Endgame (2019)",
+    "frase": "Asentías, pero tu mente estaba en otra cosa. Thor jugando Fortnite total."
+   },
+   {
+    "nombre": "Peter Parker",
+    "referencia": "Spider-Man: De regreso a casa (2017)",
+    "frase": "Escuchaste a medias: el sentido arácnido estaba pendiente del celular."
+   },
+   {
+    "nombre": "Scott Lang",
+    "referencia": "Ant-Man (2015)",
+    "frase": "Pusiste atención, pero a ratos te quedaste pegado en tu propia historia."
+   },
+   {
+    "nombre": "Bruce Banner",
+    "referencia": "Los Vengadores (2012)",
+    "frase": "Escuchaste con calma de científico. Ni un rastro de Hulk interrumpiendo."
+   },
+   {
+    "nombre": "Steve Rogers",
+    "referencia": "Capitán América: Civil War (2016)",
+    "frase": "Escuchaste a todo el equipo antes de opinar. Liderazgo de Capitán."
+   },
+   {
+    "nombre": "Visión",
+    "referencia": "Avengers: Era de Ultrón (2015)",
+    "frase": "Atento, sereno y procesando cada palabra. Tu Gema de la Mente está al día."
+   },
+   {
+    "nombre": "Wanda Maximoff",
+    "referencia": "Avengers: Era de Ultrón (2015)",
+    "frase": "Captaste hasta lo que les preocupaba. Casi como leer mentes, Wanda."
+   },
+   {
+    "nombre": "Natasha Romanoff",
+    "referencia": "Los Vengadores (2012)",
+    "frase": "Escuchaste tanto que entendiste lo no dicho. Así le sacó el plan a Loki."
+   }
+  ],
+  "preguntas": [
+   {
+    "nombre": "Thor",
+    "referencia": "Avengers: Endgame (2019)",
+    "frase": "Cero preguntas, puro impulso. Como Thor en la cabaña: primero el hacha, después nada."
+   },
+   {
+    "nombre": "Hulk",
+    "referencia": "Los Vengadores (2012)",
+    "frase": "Tu pregunta fue básicamente \"¿Aplastar?\". Hay que pulir eso."
+   },
+   {
+    "nombre": "Peter Quill",
+    "referencia": "Guardianes de la Galaxia (2014)",
+    "frase": "Preguntaste si alguien conocía tu música. Simpático, pero no aportó."
+   },
+   {
+    "nombre": "Scott Lang",
+    "referencia": "Avengers: Endgame (2019)",
+    "frase": "Preguntas buena onda pero medio perdidas, como Scott volviendo del Reino Cuántico."
+   },
+   {
+    "nombre": "Peter Parker",
+    "referencia": "Capitán América: Civil War (2016)",
+    "frase": "Mil preguntas por minuto, curiosas pero al voleo. Falta enfocar, Spidey."
+   },
+   {
+    "nombre": "Clint Barton",
+    "referencia": "Avengers: Era de Ultrón (2015)",
+    "frase": "Pocas preguntas, pero prácticas. Le diste al blanco en un par."
+   },
+   {
+    "nombre": "Steve Rogers",
+    "referencia": "Capitán América y el Soldado del Invierno (2014)",
+    "frase": "Preguntaste lo correcto para saber en quién confiar. Bien, Capi."
+   },
+   {
+    "nombre": "Bruce Banner",
+    "referencia": "Avengers: Endgame (2019)",
+    "frase": "Preguntas de científico que ordenaron el problema. Banner aprueba."
+   },
+   {
+    "nombre": "Tony Stark",
+    "referencia": "Avengers: Endgame (2019)",
+    "frase": "Preguntaste hasta encontrar la solución, como Tony con el viaje en el tiempo."
+   },
+   {
+    "nombre": "Doctor Strange",
+    "referencia": "Avengers: Infinity War (2018)",
+    "frase": "Revisaste 14.000.605 escenarios con tus preguntas y encontraste el que gana."
+   }
+  ],
+  "cierre": [
+   {
+    "nombre": "Loki",
+    "referencia": "Thor: Ragnarok (2017)",
+    "frase": "Nadie sabe qué se acordó ni si el acuerdo era real. Muy Loki de tu parte."
+   },
+   {
+    "nombre": "Peter Quill",
+    "referencia": "Avengers: Infinity War (2018)",
+    "frase": "Teníamos el plan casi listo y se desarmó al final. Star-Lord, ¿eres tú?"
+   },
+   {
+    "nombre": "Hulk",
+    "referencia": "Avengers: Era de Ultrón (2015)",
+    "frase": "El cierre fue puro ruido y escombros. Hulk no hacer minutas."
+   },
+   {
+    "nombre": "Thor",
+    "referencia": "Thor: Un mundo oscuro (2013)",
+    "frase": "Cerraste con un discurso épico, pero sin decir quién hace qué."
+   },
+   {
+    "nombre": "Scott Lang",
+    "referencia": "Ant-Man y la Avispa (2018)",
+    "frase": "Hubo acuerdos, pero chiquititos como Ant-Man. Faltó agrandarlos."
+   },
+   {
+    "nombre": "Peter Parker",
+    "referencia": "Spider-Man: Lejos de casa (2019)",
+    "frase": "Cerraste con ganas, pero faltaron fechas. El señor Stark pediría más."
+   },
+   {
+    "nombre": "Clint Barton",
+    "referencia": "Avengers: Endgame (2019)",
+    "frase": "Cierre práctico: cada uno con su flecha. Faltó un poquito de detalle."
+   },
+   {
+    "nombre": "Tony Stark",
+    "referencia": "Los Vengadores (2012)",
+    "frase": "Repartiste tareas con estilo Stark y hasta propusiste shawarma al final."
+   },
+   {
+    "nombre": "Nick Fury",
+    "referencia": "Los Vengadores (2012)",
+    "frase": "Armaste la Iniciativa Vengadores: cada héroe sabe su misión y su plazo."
+   },
+   {
+    "nombre": "Steve Rogers",
+    "referencia": "Avengers: Endgame (2019)",
+    "frase": "Quién, qué y cuándo, impecable. \"Vengadores, unidos\" y todos a la acción."
+   }
+  ]
+ },
+ "rangos": [
+  {
+   "nombre": "Civil en Nueva York",
+   "frase": "Miras la batalla desde la vereda. Todo héroe partió así."
+  },
+  {
+   "nombre": "Pasante de Industrias Stark",
+   "frase": "Ya te dejan tocar el café de Tony. Algo es algo."
+  },
+  {
+   "nombre": "Recluta de S.H.I.E.L.D.",
+   "frase": "Fury todavía no se aprende tu nombre, pero vas."
+  },
+  {
+   "nombre": "Agente de S.H.I.E.L.D.",
+   "frase": "Placa, traje y misiones de verdad. Nivel agente."
+  },
+  {
+   "nombre": "Vengador a prueba",
+   "frase": "Te invitaron a la torre. Ahora a demostrarlo."
+  },
+  {
+   "nombre": "Vengador oficial",
+   "frase": "Ya sales en la foto del equipo. Bien ahí."
+  },
+  {
+   "nombre": "Residente del Complejo",
+   "frase": "Tienes pieza propia en el Complejo Vengadores."
+  },
+  {
+   "nombre": "Portador de una Gema",
+   "frase": "Tienes una Gema del Infinito. Úsala con cabeza."
+  },
+  {
+   "nombre": "Líder de los Vengadores",
+   "frase": "El equipo espera tu señal para salir a la cancha."
+  },
+  {
+   "nombre": "Leyenda de los Vengadores",
+   "frase": "Eres digno del Mjolnir. Thor está celoso."
+  }
+ ],
+ "logros": {
+  "primera_reunion": {
+   "nombre": "Iniciativa Vengadores",
+   "descripcion": "Tuviste tu primera reunión."
+  },
+  "reuniones_10": {
+   "nombre": "Equipo reunido",
+   "descripcion": "Llegaste a 10 reuniones."
+  },
+  "reuniones_50": {
+   "nombre": "Héroe de Sokovia",
+   "descripcion": "Llegaste a 50 reuniones."
+  },
+  "preguntas_10_en_una": {
+   "nombre": "Interrogatorio de Natasha",
+   "descripcion": "Hiciste 10 o más preguntas en una sola reunión."
+  },
+  "escucha_activa": {
+   "nombre": "Modo Viuda Negra",
+   "descripcion": "Hablaste 35% o menos en una reunión de 15+ minutos."
+  },
+  "cero_interrupciones_5": {
+   "nombre": "Paciencia de Bruce Banner",
+   "descripcion": "5 reuniones seguidas sin interrumpir a nadie."
+  },
+  "puntaje_perfecto": {
+   "nombre": "Gema del Infinito",
+   "descripcion": "Sacaste un 10 en algún apartado."
+  },
+  "reunion_9": {
+   "nombre": "Digno del Mjolnir",
+   "descripcion": "Promedio de 9 o más en una reunión."
+  },
+  "express": {
+   "nombre": "Chasquido de dedos",
+   "descripcion": "Reunión de 15 minutos o menos con cierre de 8 o más."
+  },
+  "sin_muletillas": {
+   "nombre": "Escudo de vibranium",
+   "descripcion": "Reunión de 15+ minutos sin ninguna muletilla."
+  },
+  "mejora_cierre": {
+   "nombre": "Regreso en Endgame",
+   "descripcion": "Tu cierre promedio subió 2+ puntos vs. tus 5 reuniones anteriores."
+  },
+  "habito_1": {
+   "nombre": "Primer paso de Scott Lang",
+   "descripcion": "Cumpliste por primera vez el hábito que te dejó Minuta."
+  },
+  "habito_racha_3": {
+   "nombre": "Tres golpes de Mjolnir",
+   "descripcion": "Cumpliste tu hábito en 3 reuniones seguidas."
+  },
+  "habito_10": {
+   "nombre": "Disciplina de Capitán América",
+   "descripcion": "Cumpliste 10 hábitos en total."
+  },
+  "cierre_racha_3": {
+   "nombre": "Aterrizaje de Iron Man",
+   "descripcion": "Cerraste 3 reuniones seguidas con un cierre de 8 o más."
+  },
+  "muletillas_racha_3": {
+   "nombre": "Silencio, Rocket",
+   "descripcion": "3 reuniones seguidas con menos de 3 muletillas cada 10 minutos."
+  },
+  "habla_racha_5": {
+   "nombre": "Equilibrio de Wakanda",
+   "descripcion": "5 reuniones seguidas con tu tiempo de habla dentro del rango."
+  },
+  "monologo_racha_5": {
+   "nombre": "Freno al discurso de Thanos",
+   "descripcion": "5 reuniones seguidas sin hablar más de 60 segundos de corrido."
+  },
+  "preguntas_racha_3": {
+   "nombre": "Curiosidad de Spider-Man",
+   "descripcion": "3 reuniones seguidas con al menos 1 pregunta cada 10 minutos."
+  },
+  "todo_verde": {
+   "nombre": "Visión de Heimdall",
+   "descripcion": "Una reunión con todas tus métricas de cómo hablaste en rango."
+  },
+  "equilibrio": {
+   "nombre": "Las cuatro Gemas",
+   "descripcion": "Los 4 apartados en 8 o más en una misma reunión."
+  },
+  "remontada": {
+   "nombre": "Regreso del Blip",
+   "descripcion": "Después de una reunión bajo 6, la siguiente sobre 8."
+  },
+  "mejora_debil": {
+   "nombre": "Suero del Súper Soldado",
+   "descripcion": "Tu apartado más débil subió 2+ puntos en promedio en las siguientes 5 reuniones."
+  },
+  "semana_8": {
+   "nombre": "Semana nivel Vengador",
+   "descripcion": "Una semana con 3+ reuniones y promedio de 8 o más."
+  }
+ },
+ "iconos_logros": {
+  "primera_reunion": "🦸",
+  "reuniones_10": "🤝",
+  "reuniones_50": "🏙️",
+  "preguntas_10_en_una": "🕵️",
+  "escucha_activa": "🕸️",
+  "cero_interrupciones_5": "💚",
+  "puntaje_perfecto": "💎",
+  "reunion_9": "🔨",
+  "express": "🧤",
+  "sin_muletillas": "🛡️",
+  "mejora_cierre": "⏳",
+  "habito_1": "🐜",
+  "habito_racha_3": "🔨",
+  "habito_10": "🛡️",
+  "cierre_racha_3": "🚀",
+  "muletillas_racha_3": "🦝",
+  "habla_racha_5": "🐾",
+  "monologo_racha_5": "🧤",
+  "preguntas_racha_3": "🕸️",
+  "todo_verde": "👁️",
+  "equilibrio": "💎",
+  "remontada": "⏳",
+  "mejora_debil": "💉",
+  "semana_8": "⭐"
+ },
+ "iconos_apartados": {
+  "claridad": "⚡",
+  "escucha": "🕷️",
+  "preguntas": "🕵️",
+  "cierre": "🧤"
+ },
+ "iconos_rangos": [
+  "🗽",
+  "🔧",
+  "🪖",
+  "🕶️",
+  "🎯",
+  "🦸",
+  "🏢",
+  "💎",
+  "🛡️",
+  "⭐"
+ ],
+ "estilo": {
+  "modo": "oscuro",
+  "fondo": "#0c0c0f",
+  "fondo2": "#1d0a0c",
+  "panel": "rgba(255,255,255,0.05)",
+  "texto": "#f5f5f7",
+  "suave": "#a0a0a8",
+  "linea": "rgba(230,36,41,0.25)",
+  "acento": "#E62429",
+  "acento_texto": "#FF4B50",
+  "acento2": "#F0B323",
+  "fuente": "Impact",
+  "peso": 400,
+  "mayusculas": true,
+  "cursiva": false,
+  "patron": "comic",
+  "radio": 0,
+  "textos": {
+   "reuniones": "Misiones",
+   "ico_reuniones": "🗂️",
+   "progreso": "Evolución",
+   "ico_progreso": "⚡",
+   "logros": "Insignias",
+   "ico_logros": "🛡️",
+   "titulo_progreso": "Tu evolución heroica",
+   "buscar": "Buscar en los archivos"
+  }
+ },
+ "idioma": "es"
+}

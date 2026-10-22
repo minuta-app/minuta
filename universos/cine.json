@@ -1,0 +1,436 @@
+{
+ "id": "cine",
+ "nombre": "Cine variado",
+ "emoji": "🎬",
+ "xp": "XP",
+ "personaje_por_defecto": "cualquier personaje de película conocida",
+ "elogios": [
+  "¡Óscar a la mejor reunión!",
+  "Taquillazo, buen trabajo.",
+  "Película de domingo: cumple.",
+  "Directo a video… otra toma."
+ ],
+ "apartados": {
+  "claridad": [
+   {
+    "nombre": "Groot",
+    "referencia": "Guardianes de la Galaxia",
+    "frase": "Una sola frase, y nadie supo qué significaba."
+   },
+   {
+    "nombre": "Chewbacca",
+    "referencia": "Star Wars",
+    "frase": "Se entendió el tono, no las palabras."
+   },
+   {
+    "nombre": "Dory",
+    "referencia": "Buscando a Nemo",
+    "frase": "Partiste con todo… y en algún momento olvidaste a dónde ibas."
+   },
+   {
+    "nombre": "Yoda",
+    "referencia": "Star Wars",
+    "frase": "Sabio fuiste. En desorden lo dijiste."
+   },
+   {
+    "nombre": "Jack Sparrow",
+    "referencia": "Piratas del Caribe",
+    "frase": "Mucho carisma, rumbo dudoso."
+   },
+   {
+    "nombre": "Forrest Gump",
+    "referencia": "Forrest Gump",
+    "frase": "Simple y honesto, con algún desvío por el camino."
+   },
+   {
+    "nombre": "Hermione Granger",
+    "referencia": "Harry Potter",
+    "frase": "Todo correcto. Quizás un párrafo de más."
+   },
+   {
+    "nombre": "Sherlock Holmes",
+    "referencia": "Sherlock Holmes",
+    "frase": "Deducción impecable, paso a paso."
+   },
+   {
+    "nombre": "Mufasa",
+    "referencia": "El Rey León",
+    "frase": "Cada frase con peso. Todos te escucharon de pie."
+   },
+   {
+    "nombre": "Don Corleone",
+    "referencia": "El Padrino",
+    "frase": "Pocas palabras. Nadie tuvo dudas."
+   }
+  ],
+  "escucha": [
+   {
+    "nombre": "Burro",
+    "referencia": "Shrek",
+    "frase": "¿Ya llegamos? ¿Ya llegamos? ¿Ya llegamos?"
+   },
+   {
+    "nombre": "Buzz Lightyear",
+    "referencia": "Toy Story",
+    "frase": "Convencido de tu propia misión; los demás eran juguetes."
+   },
+   {
+    "nombre": "Mr. Bean",
+    "referencia": "Mr. Bean",
+    "frase": "Estabas, pero en otra."
+   },
+   {
+    "nombre": "Homero Simpson",
+    "referencia": "Los Simpson: la película",
+    "frase": "Escuchaste la mitad… la mitad con donas."
+   },
+   {
+    "nombre": "Shrek",
+    "referencia": "Shrek",
+    "frase": "Escuchas, pero gruñendo un poco."
+   },
+   {
+    "nombre": "Paddington",
+    "referencia": "Paddington",
+    "frase": "Atento, amable y con un sándwich de mermelada listo."
+   },
+   {
+    "nombre": "Baymax",
+    "referencia": "Grandes Héroes",
+    "frase": "Escuchaste y preguntaste cómo estaban todos."
+   },
+   {
+    "nombre": "Samwise Gamgee",
+    "referencia": "El Señor de los Anillos",
+    "frase": "Leal y atento a cada palabra del equipo."
+   },
+   {
+    "nombre": "Sean Maguire",
+    "referencia": "En busca del destino",
+    "frase": "Escucha profunda: entendiste lo que no se dijo."
+   },
+   {
+    "nombre": "Sr. Miyagi",
+    "referencia": "Karate Kid",
+    "frase": "Tus silencios enseñaron más que tus palabras."
+   }
+  ],
+  "preguntas": [
+   {
+    "nombre": "Hulk",
+    "referencia": "Los Vengadores",
+    "frase": "Hulk no pregunta. Hulk aplasta."
+   },
+   {
+    "nombre": "Rayo McQueen",
+    "referencia": "Cars",
+    "frase": "¿Preguntas? Solo velocidad. Cuchau."
+   },
+   {
+    "nombre": "Olaf",
+    "referencia": "Frozen",
+    "frase": "Cero preguntas, puro entusiasmo por el verano."
+   },
+   {
+    "nombre": "Simba cachorro",
+    "referencia": "El Rey León",
+    "frase": "Preguntaste, pero todavía no las correctas."
+   },
+   {
+    "nombre": "Marty McFly",
+    "referencia": "Volver al futuro",
+    "frase": "Preguntas reactivas: \"¿Qué? ¿Cómo? ¿Cuándo?\""
+   },
+   {
+    "nombre": "Indiana Jones",
+    "referencia": "Indiana Jones",
+    "frase": "Preguntas buenas, hechas mientras corrías."
+   },
+   {
+    "nombre": "Clarice Starling",
+    "referencia": "El silencio de los inocentes",
+    "frase": "Preguntas precisas, sin miedo a la respuesta."
+   },
+   {
+    "nombre": "Hércules Poirot",
+    "referencia": "Asesinato en el Orient Express",
+    "frase": "Cada pregunta, una pieza del rompecabezas."
+   },
+   {
+    "nombre": "Morfeo",
+    "referencia": "Matrix",
+    "frase": "Tus preguntas les cambiaron la realidad."
+   },
+   {
+    "nombre": "Benoit Blanc",
+    "referencia": "Entre navajas",
+    "frase": "Preguntas que desarmaron el caso entero."
+   }
+  ],
+  "cierre": [
+   {
+    "nombre": "Dom Cobb",
+    "referencia": "El origen",
+    "frase": "La peonza sigue girando: nadie sabe si la reunión terminó."
+   },
+   {
+    "nombre": "Pinocho",
+    "referencia": "Pinocho",
+    "frase": "Prometiste cosas… y la nariz creció."
+   },
+   {
+    "nombre": "Gollum",
+    "referencia": "El Señor de los Anillos",
+    "frase": "¿Tareas? ¿Qué tareas, mi tesoro?"
+   },
+   {
+    "nombre": "Woody",
+    "referencia": "Toy Story",
+    "frase": "Había un plan. Nadie sabía cuál."
+   },
+   {
+    "nombre": "Ron Weasley",
+    "referencia": "Harry Potter",
+    "frase": "Acuerdos a medias, pero con buena voluntad."
+   },
+   {
+    "nombre": "Ethan Hunt",
+    "referencia": "Misión imposible",
+    "frase": "Misión clara, sin fecha de autodestrucción."
+   },
+   {
+    "nombre": "Mary Poppins",
+    "referencia": "Mary Poppins",
+    "frase": "Ordenaste todo con una cucharada de azúcar."
+   },
+   {
+    "nombre": "Danny Ocean",
+    "referencia": "La gran estafa",
+    "frase": "Cada uno salió sabiendo exactamente su rol."
+   },
+   {
+    "nombre": "Terminator",
+    "referencia": "Terminator",
+    "frase": "Dijiste cuándo volvías. Y vas a volver."
+   },
+   {
+    "nombre": "Winston Wolf",
+    "referencia": "Pulp Fiction",
+    "frase": "Quién, qué y cuándo, resuelto en nueve minutos."
+   }
+  ]
+ },
+ "rangos": [
+  {
+   "nombre": "Padawan (Star Wars)",
+   "frase": "Recién tomaste el sable. Cuidado con cortarte."
+  },
+  {
+   "nombre": "Hobbit de la Comarca (El Señor de los Anillos)",
+   "frase": "Saliste de casa. La aventura empezó."
+  },
+  {
+   "nombre": "Karate Kid (Karate Kid)",
+   "frase": "Dar cera, pulir cera… y reuniones."
+  },
+  {
+   "nombre": "Rocky (Rocky)",
+   "frase": "Ya subes las escaleras corriendo."
+  },
+  {
+   "nombre": "Capitán América (Los Vengadores)",
+   "frase": "\"Puedo hacer esto todo el día.\""
+  },
+  {
+   "nombre": "Tony Stark (Iron Man)",
+   "frase": "Genio, líder y facilitador. Más o menos en ese orden."
+  },
+  {
+   "nombre": "Maverick (Top Gun)",
+   "frase": "Sientes la necesidad… la necesidad de cerrar acuerdos."
+  },
+  {
+   "nombre": "Gandalf el Gris (El Señor de los Anillos)",
+   "frase": "Llegas justo cuando la reunión te necesita."
+  },
+  {
+   "nombre": "Gandalf el Blanco (El Señor de los Anillos)",
+   "frase": "Volviste mejor de cada batalla."
+  },
+  {
+   "nombre": "Maestro Jedi (Star Wars)",
+   "frase": "Que la fuerza de la buena reunión te acompañe."
+  }
+ ],
+ "logros": {
+  "primera_reunion": {
+   "nombre": "¡Luces, cámara, acción!",
+   "descripcion": "Analizaste tu primera reunión."
+  },
+  "reuniones_10": {
+   "nombre": "Saga de 10 entregas",
+   "descripcion": "Llegaste a 10 reuniones analizadas."
+  },
+  "reuniones_50": {
+   "nombre": "Filmografía de culto",
+   "descripcion": "Llegaste a 50 reuniones analizadas."
+  },
+  "preguntas_10_en_una": {
+   "nombre": "Interrogatorio de Poirot",
+   "descripcion": "Hiciste 10 o más preguntas en una sola reunión."
+  },
+  "escucha_activa": {
+   "nombre": "Señor Miyagi aprueba",
+   "descripcion": "Hablaste 35% o menos en una reunión de 15+ minutos."
+  },
+  "cero_interrupciones_5": {
+   "nombre": "Un lugar en silencio",
+   "descripcion": "5 reuniones seguidas sin interrumpir a nadie."
+  },
+  "puntaje_perfecto": {
+   "nombre": "Óscar en la categoría",
+   "descripcion": "Sacaste un 10 en algún apartado."
+  },
+  "reunion_9": {
+   "nombre": "Ovación de pie en Cannes",
+   "descripcion": "Promedio de 9 o más en una reunión."
+  },
+  "express": {
+   "nombre": "Cortometraje premiado",
+   "descripcion": "Reunión de 15 min o menos con cierre 8 o más."
+  },
+  "sin_muletillas": {
+   "nombre": "Guion sin cortes",
+   "descripcion": "Reunión de 15+ minutos sin muletillas."
+  },
+  "mejora_cierre": {
+   "nombre": "Final del director",
+   "descripcion": "Tu cierre promedio subió 2+ puntos vs. tus 5 reuniones anteriores."
+  },
+  "habito_1": {
+   "nombre": "Dar cera, pulir cera",
+   "descripcion": "Cumpliste por primera vez el hábito que te dejó Minuta. Mr. Miyagi aprueba: todo empieza con un gesto repetido."
+  },
+  "habito_racha_3": {
+   "nombre": "El día de la marmota",
+   "descripcion": "Cumpliste tu hábito 3 reuniones seguidas. Como Phil Connors, repetiste hasta que te salió bien."
+  },
+  "habito_10": {
+   "nombre": "Ocean's Diez Hábitos",
+   "descripcion": "Cumpliste 10 hábitos en total. Un golpe perfecto, ejecutado en diez movimientos."
+  },
+  "cierre_racha_3": {
+   "nombre": "Siempre cerrando",
+   "descripcion": "3 reuniones seguidas con cierre de 8 o más. Glengarry Glen Ross estaría orgulloso: siempre cerrando."
+  },
+  "muletillas_racha_3": {
+   "nombre": "El discurso del Rey",
+   "descripcion": "3 reuniones seguidas con menos de 3 muletillas cada 10 minutos. Se acabaron los titubeos frente al micrófono."
+  },
+  "habla_racha_5": {
+   "nombre": "Doce hombres sin piedad",
+   "descripcion": "5 reuniones seguidas con tu tiempo de habla en rango. En la sala del jurado todos hablan, nadie acapara."
+  },
+  "monologo_racha_5": {
+   "nombre": "Villano sin monólogo final",
+   "descripcion": "5 reuniones seguidas sin hablar más de 60 segundos de corrido. Ningún villano Bond explicando su plan entero."
+  },
+  "preguntas_racha_3": {
+   "nombre": "¿Quién es Keyser Söze?",
+   "descripcion": "3 reuniones seguidas con al menos 1 pregunta cada 10 minutos. Interrogas como en Sospechosos Habituales."
+  },
+  "todo_verde": {
+   "nombre": "Todo verde en Matrix",
+   "descripcion": "Una reunión con todas tus métricas de cómo hablaste en rango. Ves caer el código y todo está en su lugar."
+  },
+  "equilibrio": {
+   "nombre": "Perfectamente equilibrado",
+   "descripcion": "Los 4 apartados en 8 o más en una misma reunión. Como todas las cosas deberían ser, diría Thanos."
+  },
+  "remontada": {
+   "nombre": "Rocky vuelve al ring",
+   "descripcion": "Después de una reunión bajo 6, la siguiente sobre 8. Caíste en el asalto anterior y te levantaste."
+  },
+  "mejora_debil": {
+   "nombre": "Efecto Whiplash",
+   "descripcion": "Tu apartado más débil subió 2+ puntos en promedio en las siguientes 5 reuniones. Ensayo tras ensayo, hasta encontrar el tempo."
+  },
+  "semana_8": {
+   "nombre": "Taquillera toda la semana",
+   "descripcion": "Una semana con 3+ reuniones y promedio de 8 o más. Siete días en cartelera y sin una mala función."
+  }
+ },
+ "iconos_logros": {
+  "primera_reunion": "🎬",
+  "reuniones_10": "📼",
+  "reuniones_50": "🎞️",
+  "preguntas_10_en_una": "🔍",
+  "escucha_activa": "🥋",
+  "cero_interrupciones_5": "🤫",
+  "puntaje_perfecto": "🏆",
+  "reunion_9": "👏",
+  "express": "✂️",
+  "sin_muletillas": "📝",
+  "mejora_cierre": "🎥",
+  "habito_1": "🧽",
+  "habito_racha_3": "🔁",
+  "habito_10": "🎩",
+  "cierre_racha_3": "🤝",
+  "muletillas_racha_3": "👑",
+  "habla_racha_5": "🗣️",
+  "monologo_racha_5": "🦹",
+  "preguntas_racha_3": "🔍",
+  "todo_verde": "🟢",
+  "equilibrio": "⚖️",
+  "remontada": "🥊",
+  "mejora_debil": "🥁",
+  "semana_8": "🍿"
+ },
+ "iconos_apartados": {
+  "claridad": "🎙️",
+  "escucha": "🎧",
+  "preguntas": "🔍",
+  "cierre": "🎬"
+ },
+ "iconos_rangos": [
+  "🌱",
+  "🏡",
+  "🥋",
+  "🥊",
+  "🛡️",
+  "🦾",
+  "✈️",
+  "🧙",
+  "🤍",
+  "✨"
+ ],
+ "estilo": {
+  "modo": "oscuro",
+  "fondo": "#101010",
+  "fondo2": "#1d1812",
+  "panel": "rgba(255,255,255,0.045)",
+  "texto": "#f2efe9",
+  "suave": "#a39e95",
+  "linea": "rgba(245,183,0,0.18)",
+  "acento": "#F5B700",
+  "acento_texto": "#F5B700",
+  "acento2": "#B91C1C",
+  "fuente": "Didot",
+  "peso": 700,
+  "mayusculas": false,
+  "cursiva": false,
+  "patron": "film",
+  "radio": 0,
+  "textos": {
+   "reuniones": "Funciones",
+   "ico_reuniones": "🎞️",
+   "progreso": "Taquilla",
+   "ico_progreso": "📈",
+   "logros": "Premios",
+   "ico_logros": "🏆",
+   "titulo_progreso": "Tu taquilla",
+   "buscar": "Buscar en la cartelera…"
+  }
+ },
+ "idioma": "es"
+}

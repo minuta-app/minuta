@@ -1,0 +1,28 @@
+# Publica una versión de Minuta: al subir una etiqueta v* (ej. v0.2.0) compila en un Mac de GitHub,
+# arma Minuta-macOS.zip con su huella SHA-256 y crea el Release. La app y el instalador lo descargan de ahí.
+name: Publicar versión
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Versión de la etiqueta en Info.plist
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" app/Info.plist
+      - name: Empaquetar
+        run: bash herramientas/empaquetar.sh
+      - name: Crear el Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/Minuta-macOS.zip dist/Minuta-macOS.zip.sha256 \
+            --title "Minuta $GITHUB_REF_NAME" --generate-notes

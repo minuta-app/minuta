@@ -1,0 +1,436 @@
+{
+ "id": "starwars",
+ "nombre": "Star Wars",
+ "emoji": "🌌",
+ "xp": "midiclorianos",
+ "personaje_por_defecto": "Solo personajes canónicos de las películas de Star Wars (Episodios I al IX).",
+ "elogios": [
+  "Fuerte es la Fuerza en ti, joven padawan.",
+  "Vas por buen camino, Padawan.",
+  "Tengo un mal presentimiento de esto…",
+  "Ayúdate, Obi-Wan. Eres tu única esperanza."
+ ],
+ "apartados": {
+  "claridad": [
+   {
+    "nombre": "Chewbacca",
+    "referencia": "Episodio IV: Una nueva esperanza",
+    "frase": "Rugiste con pasión, pero solo Han Solo entendió algo."
+   },
+   {
+    "nombre": "Jawa",
+    "referencia": "Episodio IV: Una nueva esperanza",
+    "frase": "¡Utini! Mucho entusiasmo, cero traducción disponible."
+   },
+   {
+    "nombre": "Jar Jar Binks",
+    "referencia": "Episodio I: La amenaza fantasma",
+    "frase": "Mesa explicar cosa… y nadie saber qué cosa. Muy muy confuso."
+   },
+   {
+    "nombre": "C-3PO",
+    "referencia": "Episodio V: El Imperio contraataca",
+    "frase": "Diste 3.720 detalles cuando bastaba con uno. Exacto, pero eterno."
+   },
+   {
+    "nombre": "Luke Skywalker",
+    "referencia": "Episodio IV: Una nueva esperanza",
+    "frase": "Se entendió la idea, aunque con su toque de quejarse por los convertidores."
+   },
+   {
+    "nombre": "Han Solo",
+    "referencia": "Episodio IV: Una nueva esperanza",
+    "frase": "Directo y con estilo, pero improvisaste más de la cuenta."
+   },
+   {
+    "nombre": "Padmé Amidala",
+    "referencia": "Episodio II: El ataque de los clones",
+    "frase": "Diplomacia ordenada: todos entendieron, aunque el Senado se alargó."
+   },
+   {
+    "nombre": "Mon Mothma",
+    "referencia": "Episodio VI: El retorno del Jedi",
+    "frase": "Briefing rebelde de manual: el plan quedó clarito para la flota."
+   },
+   {
+    "nombre": "Obi-Wan Kenobi",
+    "referencia": "Episodio IV: Una nueva esperanza",
+    "frase": "Calma, orden y sabiduría. Hasta los droides tomaron nota."
+   },
+   {
+    "nombre": "Leia Organa",
+    "referencia": "Episodio IV: Una nueva esperanza",
+    "frase": "Un mensaje corto, claro y urgente. Así se salva una galaxia."
+   }
+  ],
+  "escucha": [
+   {
+    "nombre": "Jar Jar Binks",
+    "referencia": "Episodio I: La amenaza fantasma",
+    "frase": "Hablaste sin parar y la lengua llegó antes que las orejas."
+   },
+   {
+    "nombre": "Han Solo",
+    "referencia": "Episodio V: El Imperio contraataca",
+    "frase": "¡Nunca me digas las probabilidades! Y nadie alcanzó a decirte nada."
+   },
+   {
+    "nombre": "Anakin Skywalker",
+    "referencia": "Episodio II: El ataque de los clones",
+    "frase": "Obi-Wan te habló harto rato y tú pensando en otra cosa."
+   },
+   {
+    "nombre": "C-3PO",
+    "referencia": "Episodio IV: Una nueva esperanza",
+    "frase": "Escuchaste, sí, pero entraste en pánico antes de que terminaran."
+   },
+   {
+    "nombre": "Luke Skywalker",
+    "referencia": "Episodio V: El Imperio contraataca",
+    "frase": "Escuchaste a medias, como Luke con Yoda en Dagobah. Vas aprendiendo."
+   },
+   {
+    "nombre": "Chewbacca",
+    "referencia": "Episodio V: El Imperio contraataca",
+    "frase": "Leal y atento al copiloto. Un rugido ocasional, pero escuchaste."
+   },
+   {
+    "nombre": "R2-D2",
+    "referencia": "Episodio IV: Una nueva esperanza",
+    "frase": "Grabaste todo el mensaje sin interrumpir. Bip bup de aprobación."
+   },
+   {
+    "nombre": "Qui-Gon Jinn",
+    "referencia": "Episodio I: La amenaza fantasma",
+    "frase": "Escuchaste el momento presente. La Fuerza viva aprueba."
+   },
+   {
+    "nombre": "Obi-Wan Kenobi",
+    "referencia": "Episodio III: La venganza de los Sith",
+    "frase": "Paciencia de maestro: dejaste hablar y luego respondiste con sabiduría."
+   },
+   {
+    "nombre": "Yoda",
+    "referencia": "Episodio V: El Imperio contraataca",
+    "frase": "Escuchar lo no dicho, tú sabes. Muy poderoso tu silencio es."
+   }
+  ],
+  "preguntas": [
+   {
+    "nombre": "Soldado de asalto",
+    "referencia": "Episodio IV: Una nueva esperanza",
+    "frase": "Te movieron la mano y aceptaste todo sin preguntar. Avanza."
+   },
+   {
+    "nombre": "Boba Fett",
+    "referencia": "Episodio V: El Imperio contraataca",
+    "frase": "Cero preguntas. Llegaste, hiciste lo tuyo y te fuiste."
+   },
+   {
+    "nombre": "Han Solo",
+    "referencia": "Episodio IV: Una nueva esperanza",
+    "frase": "Disparaste primero y las preguntas quedaron para después."
+   },
+   {
+    "nombre": "Anakin Skywalker (niño)",
+    "referencia": "Episodio I: La amenaza fantasma",
+    "frase": "¿Eres un ángel? Preguntas con harto corazón y poco foco."
+   },
+   {
+    "nombre": "C-3PO",
+    "referencia": "Episodio IV: Una nueva esperanza",
+    "frase": "Muchas preguntas ansiosas: ¿qué pasa?, ¿y ahora?, ¿estamos condenados?"
+   },
+   {
+    "nombre": "Rey",
+    "referencia": "Episodio VII: El despertar de la Fuerza",
+    "frase": "Preguntas honestas y curiosas. Te faltó ir un poco más al fondo."
+   },
+   {
+    "nombre": "Luke Skywalker",
+    "referencia": "Episodio V: El Imperio contraataca",
+    "frase": "Preguntaste lo importante en Dagobah. La respuesta te sorprendió."
+   },
+   {
+    "nombre": "Qui-Gon Jinn",
+    "referencia": "Episodio I: La amenaza fantasma",
+    "frase": "Preguntaste por los midiclorianos y descubriste al Elegido."
+   },
+   {
+    "nombre": "Obi-Wan Kenobi",
+    "referencia": "Episodio II: El ataque de los clones",
+    "frase": "Investigaste hasta encontrar Kamino, aunque no estaba en los archivos."
+   },
+   {
+    "nombre": "Yoda",
+    "referencia": "Episodio II: El ataque de los clones",
+    "frase": "Tus preguntas desarmaron el problema como sable de luz en mantequilla."
+   }
+  ],
+  "cierre": [
+   {
+    "nombre": "Jar Jar Binks",
+    "referencia": "Episodio II: El ataque de los clones",
+    "frase": "Algo se aprobó, nadie sabe qué ni quién lo pidió. Uy, uy, uy."
+   },
+   {
+    "nombre": "Watto",
+    "referencia": "Episodio I: La amenaza fantasma",
+    "frase": "El acuerdo se decidió tirando un dado. Suerte con eso."
+   },
+   {
+    "nombre": "Lando Calrissian",
+    "referencia": "Episodio V: El Imperio contraataca",
+    "frase": "Estoy alterando el trato… y cada uno se fue con una versión distinta."
+   },
+   {
+    "nombre": "Han Solo",
+    "referencia": "Episodio IV: Una nueva esperanza",
+    "frase": "Te pago después, Jabba. Compromiso sin fecha: clásico de contrabandista."
+   },
+   {
+    "nombre": "C-3PO",
+    "referencia": "Episodio VI: El retorno del Jedi",
+    "frase": "Resumiste todo con lujo de detalle, pero faltó quién hace qué."
+   },
+   {
+    "nombre": "Almirante Ackbar",
+    "referencia": "Episodio VI: El retorno del Jedi",
+    "frase": "¡Es una trampa! Claro y fuerte, aunque llegó medio tarde."
+   },
+   {
+    "nombre": "Padmé Amidala",
+    "referencia": "Episodio I: La amenaza fantasma",
+    "frase": "Cerraste con propuesta concreta ante el Senado. Casi impecable."
+   },
+   {
+    "nombre": "Mon Mothma",
+    "referencia": "Episodio VI: El retorno del Jedi",
+    "frase": "Plan claro y equipos asignados. Muchos Bothans quedaron tranquilos."
+   },
+   {
+    "nombre": "Leia Organa",
+    "referencia": "Episodio V: El Imperio contraataca",
+    "frase": "Órdenes claras en Hoth: transportes, escoltas y horario. Bien."
+   },
+   {
+    "nombre": "Darth Vader",
+    "referencia": "Episodio V: El Imperio contraataca",
+    "frase": "Quién, qué y cuándo, sin excusas. Nadie se atrevió a fallar."
+   }
+  ]
+ },
+ "rangos": [
+  {
+   "nombre": "Granjero de humedad",
+   "frase": "Todo gran viaje parte mirando dos soles en Tatooine."
+  },
+  {
+   "nombre": "Iniciado",
+   "frase": "Ya sientes la Fuerza, aunque todavía te cuesta levantar la nave."
+  },
+  {
+   "nombre": "Padawan",
+   "frase": "Tienes maestro, trenza y muchas ganas de aprender."
+  },
+  {
+   "nombre": "Piloto del Escuadrón Rojo",
+   "frase": "Ya vuelas con la flota. Mantén la formación."
+  },
+  {
+   "nombre": "Caballero Jedi",
+   "frase": "Tu sable ya es tuyo. Las reuniones te respetan."
+  },
+  {
+   "nombre": "General de la República",
+   "frase": "Diriges tropas y reuniones con la misma calma."
+  },
+  {
+   "nombre": "Maestro Jedi",
+   "frase": "Ahora enseñas a otros a escuchar y preguntar."
+  },
+  {
+   "nombre": "Miembro del Consejo Jedi",
+   "frase": "Tu voz pesa en las decisiones importantes de la galaxia."
+  },
+  {
+   "nombre": "Gran Maestro",
+   "frase": "Pocos llegan aquí. Tus reuniones son leyenda en Coruscant."
+  },
+  {
+   "nombre": "Uno con la Fuerza",
+   "frase": "Ya no estás en la reunión: eres la reunión."
+  }
+ ],
+ "logros": {
+  "primera_reunion": {
+   "nombre": "Una nueva esperanza",
+   "descripcion": "Completaste tu primera reunión."
+  },
+  "reuniones_10": {
+   "nombre": "Padawan constante",
+   "descripcion": "Completaste 10 reuniones."
+  },
+  "reuniones_50": {
+   "nombre": "Veterano de Hoth",
+   "descripcion": "Completaste 50 reuniones."
+  },
+  "preguntas_10_en_una": {
+   "nombre": "Curioso como un Ewok",
+   "descripcion": "Hiciste 10 o más preguntas en una sola reunión."
+  },
+  "escucha_activa": {
+   "nombre": "Siente la Fuerza",
+   "descripcion": "Hablaste 35% o menos en una reunión de 15+ minutos."
+  },
+  "cero_interrupciones_5": {
+   "nombre": "Paciencia de Yoda",
+   "descripcion": "5 reuniones seguidas sin interrumpir a nadie."
+  },
+  "puntaje_perfecto": {
+   "nombre": "Tiro al puerto de escape",
+   "descripcion": "Sacaste un 10 en algún apartado."
+  },
+  "reunion_9": {
+   "nombre": "Maestro Jedi por un día",
+   "descripcion": "Promedio de 9 o más en una reunión."
+  },
+  "express": {
+   "nombre": "Kessel en 12 pársecs",
+   "descripcion": "Reunión de 15 minutos o menos con cierre de 8 o más."
+  },
+  "sin_muletillas": {
+   "nombre": "Hazlo o no lo hagas",
+   "descripcion": "Reunión de 15+ minutos sin ninguna muletilla."
+  },
+  "mejora_cierre": {
+   "nombre": "El retorno del cierre",
+   "descripcion": "Tu cierre promedio subió 2+ puntos vs. tus 5 reuniones anteriores."
+  },
+  "habito_1": {
+   "nombre": "Comienza el entrenamiento",
+   "descripcion": "Cumpliste por primera vez el hábito que te dejó Minuta. Todo maestro empezó con una sola lección."
+  },
+  "habito_racha_3": {
+   "nombre": "Entrenamiento en Dagobah",
+   "descripcion": "Cumpliste tu hábito en 3 reuniones seguidas. La constancia del pantano empieza a dar frutos."
+  },
+  "habito_10": {
+   "nombre": "Hazlo o no lo hagas",
+   "descripcion": "Cumpliste 10 hábitos en total. No hay intentos: hay hábitos cumplidos."
+  },
+  "cierre_racha_3": {
+   "nombre": "Blanco en la trinchera",
+   "descripcion": "3 reuniones seguidas con cierre de 8 o más. Apagaste la computadora y diste en el punto exacto."
+  },
+  "muletillas_racha_3": {
+   "nombre": "El silencio de Boba Fett",
+   "descripcion": "3 reuniones seguidas con menos de 3 muletillas cada 10 minutos. Pocas palabras, ninguna de relleno."
+  },
+  "habla_racha_5": {
+   "nombre": "Medido como Mace Windu",
+   "descripcion": "5 reuniones seguidas con tu tiempo de habla dentro del rango. Ni de más, ni de menos."
+  },
+  "monologo_racha_5": {
+   "nombre": "Sin discurso del Emperador",
+   "descripcion": "5 reuniones seguidas sin hablar más de 60 segundos de corrido. Dejaste de monologuear desde el trono."
+  },
+  "preguntas_racha_3": {
+   "nombre": "Tan curiosa como Rey",
+   "descripcion": "3 reuniones seguidas con al menos 1 pregunta cada 10 minutos. Preguntar también es explorar la galaxia."
+  },
+  "todo_verde": {
+   "nombre": "El sable verde de Luke",
+   "descripcion": "Una reunión con todas tus métricas de cómo hablaste dentro del rango. Todo encendido en verde."
+  },
+  "equilibrio": {
+   "nombre": "Balance en la Fuerza",
+   "descripcion": "Los 4 apartados en 8 o más en una misma reunión. La profecía, cumplida."
+  },
+  "remontada": {
+   "nombre": "El regreso del Jedi",
+   "descripcion": "Después de una reunión bajo 6, la siguiente sobre 8. Caíste en Hoth y volviste en Endor."
+  },
+  "mejora_debil": {
+   "nombre": "Levantar el X-Wing",
+   "descripcion": "Tu apartado más débil subió 2 o más puntos en promedio durante las siguientes 5 reuniones. Sacaste la nave del pantano."
+  },
+  "semana_8": {
+   "nombre": "Kessel en 12 parsecs",
+   "descripcion": "Una semana con 3 o más reuniones y promedio de 8 o más. Ruta rápida y limpia."
+  }
+ },
+ "iconos_logros": {
+  "primera_reunion": "✨",
+  "reuniones_10": "🧒",
+  "reuniones_50": "❄️",
+  "preguntas_10_en_una": "🐻",
+  "escucha_activa": "🌀",
+  "cero_interrupciones_5": "🐸",
+  "puntaje_perfecto": "💥",
+  "reunion_9": "⚔️",
+  "express": "⚡",
+  "sin_muletillas": "🧘",
+  "mejora_cierre": "🔄",
+  "habito_1": "🌱",
+  "habito_racha_3": "🐸",
+  "habito_10": "🧘",
+  "cierre_racha_3": "🎯",
+  "muletillas_racha_3": "🔇",
+  "habla_racha_5": "🗣️",
+  "monologo_racha_5": "🎙️",
+  "preguntas_racha_3": "❓",
+  "todo_verde": "💚",
+  "equilibrio": "⚖️",
+  "remontada": "🔥",
+  "mejora_debil": "🛸",
+  "semana_8": "🚀"
+ },
+ "iconos_apartados": {
+  "claridad": "💎",
+  "escucha": "🌀",
+  "preguntas": "🔭",
+  "cierre": "🪐"
+ },
+ "iconos_rangos": [
+  "💧",
+  "🌱",
+  "🧒",
+  "🛩️",
+  "⚔️",
+  "🎖️",
+  "🧘",
+  "🏛️",
+  "🐸",
+  "✨"
+ ],
+ "estilo": {
+  "modo": "oscuro",
+  "fondo": "#05070d",
+  "fondo2": "#0c1224",
+  "panel": "rgba(255,255,255,0.045)",
+  "texto": "#e8ecf4",
+  "suave": "#8a93a6",
+  "linea": "rgba(255,232,31,0.16)",
+  "acento": "#FFE81F",
+  "acento_texto": "#FFE81F",
+  "acento2": "#4FC3F7",
+  "fuente": "Avenir Next Condensed",
+  "peso": 800,
+  "mayusculas": true,
+  "cursiva": false,
+  "patron": "estrellas",
+  "radio": 0,
+  "textos": {
+   "reuniones": "Misiones",
+   "ico_reuniones": "🛰️",
+   "progreso": "Entrenamiento",
+   "ico_progreso": "🧘",
+   "logros": "Medallas",
+   "ico_logros": "🎖️",
+   "titulo_progreso": "Tu entrenamiento Jedi",
+   "buscar": "Buscar en los archivos del Templo"
+  }
+ },
+ "idioma": "es"
+}

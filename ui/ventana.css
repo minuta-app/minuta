@@ -1,0 +1,365 @@
+/* Minuta — ventana propia: forma, marco, barra y botones de cada universo.
+   Capas: #sombra (resplandor/sombra dura) → #marco (material del borde) → #lienzo (contenido, recortado)
+   → #adornos (filetes y remaches encima) → #bordes (zonas para cambiar el tamaño).
+   html.ventana = hay contenedor nativo (barra y botones). html.forma = se dibuja la forma (no en pantalla completa). */
+
+:root {
+  --borde: 0px; --margen: 0px; --barra-h: 38px;
+  --clip-m: none; --clip-l: none; --r-m: 0px; --r-l: 0px;
+  --marco-bg: transparent; --sombra-bg: transparent; --sombra-t: none; --sombra-f: none;
+}
+
+#ventana { position: relative; height: 100%; }
+#sombra, #marco, #adornos { position: absolute; inset: 0; pointer-events: none; display: none; }
+#sombra > i { position: absolute; inset: 0; }
+#lienzo {
+  position: absolute; inset: 0; overflow: hidden; contain: layout paint; display: flex; flex-direction: column;
+  background-color: var(--fondo);
+  background-image: var(--patron), linear-gradient(160deg, var(--fondo) 0%, var(--fondo2) 100%);
+  background-size: var(--patron-tam), 100% 100%;
+  transition: background-color .4s;
+}
+#barra, #bordes { display: none; }
+
+/* ── Modo ventana (contenedor nativo) ── */
+html.ventana, html.ventana body { background: transparent !important; }
+html.ventana #barra { display: grid; }
+html.ventana #bordes { display: block; }
+html.forma body { padding: var(--margen); }
+html.forma #sombra, html.forma #marco, html.forma #adornos { display: block; }
+html.forma #sombra { transform: var(--sombra-t); filter: var(--sombra-f); }
+html.forma #sombra > i { clip-path: var(--clip-m); border-radius: var(--r-m); background: var(--sombra-bg); }
+html.forma #marco { clip-path: var(--clip-m); border-radius: var(--r-m); background: var(--marco-bg); }
+html.forma #lienzo { inset: var(--borde); clip-path: var(--clip-l); border-radius: var(--r-l); }
+html.forma #adornos { z-index: 3; }
+
+/* Vista previa en el navegador (#ventana en la URL): escritorio falso detrás */
+html.emulada { background: radial-gradient(120% 90% at 20% 0%, #6f7d99 0%, #3b4459 55%, #1f2433 100%) !important; }
+html.emulada body { padding: calc(var(--margen) + 0px); }
+html.emulada.forma body { padding: 34px 40px 46px; }
+html.emulada.forma #ventana { filter: drop-shadow(0 22px 34px rgba(0,0,0,.5)) drop-shadow(0 2px 6px rgba(0,0,0,.35)); }
+
+/* ── Zonas de cambio de tamaño (las atiende el contenedor nativo) ── */
+#bordes { position: absolute; inset: 0; pointer-events: none; z-index: 30; }
+#bordes i { position: absolute; pointer-events: auto; background: rgba(0,0,0,.012); }
+#bordes [data-lado="n"] { top: -5px; left: 14px; right: 14px; height: 9px; cursor: ns-resize; }
+#bordes [data-lado="s"] { bottom: -5px; left: 14px; right: 14px; height: 9px; cursor: ns-resize; }
+#bordes [data-lado="e"] { right: -5px; top: 14px; bottom: 14px; width: 9px; cursor: ew-resize; }
+#bordes [data-lado="w"] { left: -5px; top: 14px; bottom: 14px; width: 9px; cursor: ew-resize; }
+#bordes [data-lado="nw"] { left: -5px; top: -5px; width: 19px; height: 19px; cursor: nwse-resize; }
+#bordes [data-lado="se"] { right: -5px; bottom: -5px; width: 19px; height: 19px; cursor: nwse-resize; }
+#bordes [data-lado="ne"] { right: -5px; top: -5px; width: 19px; height: 19px; cursor: nesw-resize; }
+#bordes [data-lado="sw"] { left: -5px; bottom: -5px; width: 19px; height: 19px; cursor: nesw-resize; }
+/* los botones de ventana quedan por encima de la esquina */
+html.ventana #barra { position: relative; z-index: 31; }
+html.pantalla #bordes { display: none; }
+
+/* ── Barra de título ── */
+#barra {
+  flex: none; height: var(--barra-h); grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; padding: 0 16px;
+  -webkit-user-select: none; user-select: none; cursor: default;
+  background: color-mix(in srgb, var(--fondo) 82%, var(--texto) 4%);
+  border-bottom: 1px solid var(--linea); position: relative;
+}
+#controles { display: flex; align-items: center; gap: 8px; justify-self: start; }
+.barra-titulo { display: flex; align-items: center; gap: 9px; white-space: nowrap; font-family: var(--fuente-t); font-weight: var(--peso-t);
+  font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--suave); }
+.bt-app { color: var(--texto); }
+.bt-sep { width: 4px; height: 4px; background: var(--acento); transform: rotate(45deg); }
+.barra-der { justify-self: end; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--suave); white-space: nowrap; }
+html.inactiva #barra .barra-titulo, html.inactiva #barra .barra-der { opacity: .55; }
+
+/* ── Botones de ventana (base: semáforo sobrio) ── */
+.ctl { --c: #888; position: relative; width: 13px; height: 13px; padding: 0; border: 0; margin: 0; cursor: default; display: grid; place-items: center;
+  background: var(--c); border-radius: 50%; color: transparent; font: 800 10px/1 -apple-system, system-ui, sans-serif; transition: transform .12s, filter .12s, box-shadow .12s; }
+.ctl b { pointer-events: none; transition: color .12s; }
+.c-cerrar { --c: #ff5f57; } .c-min { --c: #febc2e; } .c-max { --c: #28c840; }
+#controles:hover .ctl b { color: rgba(0,0,0,.62); }
+.ctl:active { filter: brightness(.82); }
+.ctl:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+html.inactiva .ctl { filter: grayscale(1) opacity(.45); }
+html.inactiva #controles:hover .ctl { filter: none; }
+
+/* ═════════════════ STAR WARS — consola imperial: chaflanes asimétricos, fósforo amarillo ═════════════════ */
+:root[data-u="starwars"] {
+  --borde: 1.5px; --margen: 9px; --c1: 26px; --c2: 8px;
+  --clip-m: polygon(var(--c1) 0, calc(100% - var(--c2)) 0, 100% var(--c2), 100% calc(100% - var(--c1)), calc(100% - var(--c1)) 100%, var(--c2) 100%, 0 calc(100% - var(--c2)), 0 var(--c1));
+  --clip-l: polygon(calc(var(--c1) - .9px) 0, calc(100% - var(--c2) + .9px) 0, 100% calc(var(--c2) - .9px), 100% calc(100% - var(--c1) + .9px), calc(100% - var(--c1) + .9px) 100%, calc(var(--c2) - .9px) 100%, 0 calc(100% - var(--c2) + .9px), 0 calc(var(--c1) - .9px));
+  --marco-bg: linear-gradient(135deg, #ffe81f, rgba(255,232,31,.35) 30%, rgba(79,195,247,.45) 70%, #ffe81f);
+  --sombra-bg: rgba(255,232,31,.55); --sombra-f: blur(7px) opacity(.5);
+}
+:root[data-u="starwars"] #barra { background: linear-gradient(180deg, #0a0e1a, #05070d); border-bottom: 1px solid rgba(255,232,31,.35);
+  background-image: repeating-linear-gradient(0deg, rgba(255,232,31,.04) 0 1px, transparent 1px 3px), linear-gradient(180deg, #0a0e1a, #05070d); }
+:root[data-u="starwars"] .barra-titulo { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-weight: 600; letter-spacing: .32em; font-size: 10.5px; color: rgba(255,232,31,.7); }
+:root[data-u="starwars"] .bt-app { color: #ffe81f; text-shadow: 0 0 10px rgba(255,232,31,.55); }
+:root[data-u="starwars"] .bt-app::before { content: "◢ "; } :root[data-u="starwars"] .bt-app::after { content: " ◣"; }
+:root[data-u="starwars"] .bt-sep { background: #4fc3f7; box-shadow: 0 0 6px #4fc3f7; }
+:root[data-u="starwars"] .bt-der { font-family: "SF Mono", ui-monospace, Menlo, monospace; color: rgba(79,195,247,.85); letter-spacing: .2em; }
+:root[data-u="starwars"] .bt-der::before { content: "● "; color: #3bff6a; animation: parpadeo 1.6s steps(2) infinite; }
+:root[data-u="starwars"] .bt-der::after { content: "COM-LINK ESTABLE"; }
+:root[data-u="starwars"] .ctl { width: 24px; height: 11px; border-radius: 0; background: color-mix(in srgb, var(--c) 22%, #02040a);
+  box-shadow: inset 0 0 0 1px var(--c), inset 0 0 8px color-mix(in srgb, var(--c) 45%, transparent);
+  clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px); font: 700 9px/1 "SF Mono", Menlo, monospace; }
+:root[data-u="starwars"] .c-cerrar { --c: #ff3b30; } :root[data-u="starwars"] .c-min { --c: #ffe81f; } :root[data-u="starwars"] .c-max { --c: #4fc3f7; }
+:root[data-u="starwars"] #controles:hover .ctl b { color: var(--c); text-shadow: 0 0 6px var(--c); }
+:root[data-u="starwars"] .ctl:hover { background: color-mix(in srgb, var(--c) 40%, #02040a); }
+:root[data-u="starwars"] #adornos .e3 { right: 40px; bottom: 0; width: 60px; height: 3px; background: #ffe81f; box-shadow: 0 0 8px #ffe81f; }
+:root[data-u="starwars"] #adornos .e2 { position: absolute; left: 40px; top: 0; width: 60px; height: 3px; background: #ffe81f; box-shadow: 0 0 8px #ffe81f; }
+
+/* ═════════════════ HARRY POTTER — grimorio: doble filete dorado, esquinas con ornamento ═════════════════ */
+:root[data-u="harrypotter"] {
+  --borde: 2px; --r-m: 4px; --r-l: 2px;
+  --marco-bg: linear-gradient(135deg, #f6dd8f, #9c7424 25%, #f3d27a 50%, #8a6420 75%, #f6dd8f);
+}
+:root[data-u="harrypotter"] #adornos::before { content: ""; position: absolute; inset: 7px; border: 1px solid rgba(212,175,55,.55); border-radius: 1px; }
+:root[data-u="harrypotter"] #adornos .esq { position: absolute; width: 14px; height: 14px; display: grid; place-items: center; color: #e9c766; font-size: 13px; line-height: 1; font-style: normal;
+  text-shadow: 0 0 6px rgba(212,175,55,.6); }
+:root[data-u="harrypotter"] #adornos .esq::before { content: "❖"; }
+:root[data-u="harrypotter"] #adornos .e1 { left: 1px; top: 1px; } :root[data-u="harrypotter"] #adornos .e2 { right: 1px; top: 1px; }
+:root[data-u="harrypotter"] #adornos .e3 { right: 1px; bottom: 1px; } :root[data-u="harrypotter"] #adornos .e4 { left: 1px; bottom: 1px; }
+:root[data-u="harrypotter"] #barra { background: linear-gradient(180deg, #2a1414, #170d0d); border-bottom: 3px double rgba(212,175,55,.6); }
+:root[data-u="harrypotter"] .barra-titulo { font-family: "Iowan Old Style", Palatino, Georgia, serif; font-style: italic; text-transform: none; letter-spacing: .08em; font-size: 13px; color: rgba(243,233,210,.7); }
+:root[data-u="harrypotter"] .bt-app { background: linear-gradient(180deg, #f6dd8f, #b8862b); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 700; }
+:root[data-u="harrypotter"] .bt-sep { background: none; width: auto; height: auto; transform: none; } :root[data-u="harrypotter"] .bt-sep::before { content: "⚡"; color: #d4af37; font-style: normal; }
+:root[data-u="harrypotter"] .bt-der::after { content: "✦ ✦ ✦"; color: rgba(212,175,55,.6); letter-spacing: .4em; }
+:root[data-u="harrypotter"] #controles { gap: 12px; padding-left: 6px; }
+:root[data-u="harrypotter"] .ctl { width: 11px; height: 11px; border-radius: 1px; transform: rotate(45deg); background: var(--c); box-shadow: 0 0 0 1.5px #d4af37, 0 0 0 2.5px rgba(0,0,0,.5); }
+:root[data-u="harrypotter"] .ctl b { transform: rotate(-45deg); font-size: 9px; }
+:root[data-u="harrypotter"] .c-cerrar { --c: #9b1b1b; } :root[data-u="harrypotter"] .c-min { --c: #e3a81b; } :root[data-u="harrypotter"] .c-max { --c: #1f5c3a; }
+:root[data-u="harrypotter"] #controles:hover .ctl b { color: #f6dd8f; }
+:root[data-u="harrypotter"] .ctl:hover { box-shadow: 0 0 0 1.5px #f6dd8f, 0 0 10px rgba(212,175,55,.8); }
+
+/* ═════════════════ SEÑOR DE LOS ANILLOS — mapa de pergamino con bordes rasgados ═════════════════ */
+:root[data-u="senoranillos"] { --clip-m: var(--rasgado); --clip-l: var(--rasgado); }
+:root[data-u="senoranillos"] #adornos { clip-path: var(--rasgado); box-shadow: inset 0 0 38px rgba(110,62,18,.55), inset 0 0 6px rgba(70,38,8,.7); }
+:root[data-u="senoranillos"] #barra { background: linear-gradient(180deg, rgba(220,200,150,.9), rgba(236,224,191,.6)); border-bottom: 1px solid rgba(51,36,15,.5);
+  box-shadow: 0 3px 0 -2px rgba(51,36,15,.25); }
+:root[data-u="senoranillos"] .barra-titulo { font-family: "Iowan Old Style", Palatino, Georgia, serif; letter-spacing: .22em; color: #5c4320; font-size: 11px; }
+:root[data-u="senoranillos"] .bt-app { color: #8a2416; font-weight: 700; }
+:root[data-u="senoranillos"] .bt-sep { background: none; width: auto; height: auto; transform: none; } :root[data-u="senoranillos"] .bt-sep::before { content: "❦"; color: #8a2416; }
+:root[data-u="senoranillos"] .bt-der { color: #5c4320; } :root[data-u="senoranillos"] .bt-der::after { content: "✧ N"; font-family: Georgia, serif; letter-spacing: .3em; }
+:root[data-u="senoranillos"] #controles { gap: 9px; padding-left: 8px; }
+:root[data-u="senoranillos"] .ctl { width: 15px; height: 15px; background: transparent; border-radius: 50%;
+  box-shadow: inset 0 0 0 3px #c9971f, inset 0 0 0 4px #7a5410, 0 0 0 1px #f3d27a, 0 1px 2px rgba(60,30,0,.5); }
+:root[data-u="senoranillos"] #controles:hover .ctl b { color: #3b2a14; }
+:root[data-u="senoranillos"] .ctl b { font-size: 8px; }
+:root[data-u="senoranillos"] .c-cerrar:hover { box-shadow: inset 0 0 0 3px #e0a92a, inset 0 0 0 4px #7a5410, 0 0 0 1px #ffe28a, 0 0 9px 2px rgba(255,120,30,.75); }
+:root[data-u="senoranillos"] .ctl:hover { box-shadow: inset 0 0 0 3px #e0a92a, inset 0 0 0 4px #7a5410, 0 0 0 1px #ffe28a, 0 0 8px 1px rgba(255,200,80,.7); }
+
+/* ═════════════════ MARVEL — viñeta de cómic: tinta negra gruesa y sombra dura ═════════════════ */
+:root[data-u="marvel"] {
+  --borde: 3px; --margen: 2px 11px 11px 2px;
+  --marco-bg: #0a0a0a; --sombra-bg: #0a0a0a; --sombra-t: translate(9px, 9px);
+}
+:root[data-u="marvel"] #barra { background: #f7d117; border-bottom: 3px solid #0a0a0a;
+  background-image: radial-gradient(rgba(0,0,0,.18) 1px, transparent 1.4px); background-size: 6px 6px; }
+:root[data-u="marvel"] .barra-titulo { font-family: Impact, "Arial Black", sans-serif; font-weight: 400; font-style: italic; letter-spacing: .1em; font-size: 14px; color: #0a0a0a; }
+:root[data-u="marvel"] .bt-app { color: #e62429; -webkit-text-stroke: .6px #0a0a0a; }
+:root[data-u="marvel"] .bt-sep { background: #0a0a0a; width: 6px; height: 6px; }
+:root[data-u="marvel"] .bt-der::after { content: "Nº 1"; font-family: Impact, sans-serif; font-size: 13px; letter-spacing: .06em; color: #fff; background: #e62429; padding: 2px 8px 1px;
+  border: 2px solid #0a0a0a; box-shadow: 2px 2px 0 #0a0a0a; display: inline-block; transform: rotate(-3deg); }
+:root[data-u="marvel"] #controles { gap: 7px; }
+:root[data-u="marvel"] .ctl { width: 17px; height: 17px; border-radius: 0; border: 2px solid #0a0a0a; box-shadow: 2px 2px 0 #0a0a0a; font: 400 13px/1 Impact, sans-serif; }
+:root[data-u="marvel"] .c-cerrar { --c: #e62429; } :root[data-u="marvel"] .c-min { --c: #ffffff; } :root[data-u="marvel"] .c-max { --c: #2c5fd6; }
+:root[data-u="marvel"] #controles:hover .ctl b { color: #0a0a0a; }
+:root[data-u="marvel"] .c-cerrar:hover b, :root[data-u="marvel"] .c-max:hover b { color: #fff !important; }
+:root[data-u="marvel"] .ctl:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 #0a0a0a; }
+:root[data-u="marvel"] .ctl:active { transform: translate(2px, 2px); box-shadow: 0 0 0 #0a0a0a; filter: none; }
+
+/* ═════════════════ RÁPIDO Y FURIOSO — carrocería: cortes en diagonal, neón de bajos ═════════════════ */
+:root[data-u="rapidoyfurioso"] {
+  --borde: 2px; --margen: 10px; --k1: 8px; --k2: 34px;
+  --clip-m: polygon(var(--k1) 0, calc(100% - var(--k2)) 0, 100% var(--k2), 100% calc(100% - var(--k1)), calc(100% - var(--k1)) 100%, var(--k2) 100%, 0 calc(100% - var(--k2)), 0 var(--k1));
+  --clip-l: polygon(calc(var(--k1) - 1.2px) 0, calc(100% - var(--k2) + 1.2px) 0, 100% calc(var(--k2) - 1.2px), 100% calc(100% - var(--k1) + 1.2px), calc(100% - var(--k1) + 1.2px) 100%, calc(var(--k2) - 1.2px) 100%, 0 calc(100% - var(--k2) + 1.2px), 0 calc(var(--k1) - 1.2px));
+  --marco-bg: linear-gradient(100deg, #ff6a00, #ff2d55 45%, #00e5ff);
+  --sombra-bg: linear-gradient(100deg, #ff6a00, #ff2d55 45%, #00e5ff); --sombra-f: blur(9px) opacity(.55);
+}
+:root[data-u="rapidoyfurioso"] #barra { border-bottom: 0;
+  background: linear-gradient(90deg, rgba(255,106,0,.0), rgba(255,106,0,.0)), repeating-linear-gradient(45deg, #141414 0 3px, #0c0c0c 3px 6px); }
+:root[data-u="rapidoyfurioso"] #barra::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, #ff6a00, #ff2d55, #00e5ff); box-shadow: 0 0 10px rgba(0,229,255,.6); }
+:root[data-u="rapidoyfurioso"] .barra-titulo { font-family: Futura, "Avenir Next", sans-serif; font-weight: 800; font-style: italic; letter-spacing: .26em; font-size: 11px; color: rgba(242,242,242,.6); transform: skewX(-12deg); }
+:root[data-u="rapidoyfurioso"] .bt-app { color: #fff; text-shadow: 0 0 10px rgba(255,106,0,.8); }
+:root[data-u="rapidoyfurioso"] .bt-sep { width: 14px; height: 2px; transform: none; background: #00e5ff; box-shadow: 0 0 6px #00e5ff; }
+:root[data-u="rapidoyfurioso"] .bt-der { font-family: "SF Mono", Menlo, monospace; color: #00e5ff; font-style: italic; }
+:root[data-u="rapidoyfurioso"] .bt-der::before { content: "RPM "; color: rgba(242,242,242,.5); }
+:root[data-u="rapidoyfurioso"] .bt-der::after { content: "▮▮▮▮▮▮▯▯"; letter-spacing: 1px; background: linear-gradient(90deg, #00e5ff, #ffe600 60%, #ff2d55); -webkit-background-clip: text; background-clip: text; color: transparent; }
+:root[data-u="rapidoyfurioso"] #controles { gap: 5px; padding-left: 4px; }
+:root[data-u="rapidoyfurioso"] .ctl { width: 22px; height: 11px; border-radius: 0; transform: skewX(-24deg); background: #111;
+  box-shadow: inset 0 0 0 1.5px var(--c), 0 0 8px color-mix(in srgb, var(--c) 70%, transparent); font: 800 9px/1 Futura, sans-serif; }
+:root[data-u="rapidoyfurioso"] .ctl b { transform: skewX(24deg); }
+:root[data-u="rapidoyfurioso"] .c-cerrar { --c: #ff2d55; } :root[data-u="rapidoyfurioso"] .c-min { --c: #ff6a00; } :root[data-u="rapidoyfurioso"] .c-max { --c: #00e5ff; }
+:root[data-u="rapidoyfurioso"] #controles:hover .ctl b { color: var(--c); }
+:root[data-u="rapidoyfurioso"] .ctl:hover { background: var(--c); } :root[data-u="rapidoyfurioso"] #controles .ctl:hover b { color: #000; }
+
+/* ═════════════════ DRAGON BALL — página de manga: tinta, medianil blanco y aura de ki ═════════════════ */
+:root[data-u="dragonball"] {
+  --borde: 3.5px; --margen: 10px;
+  --marco-bg: #140c02; --sombra-bg: radial-gradient(120% 120% at 50% 100%, #ffd23f, #f85b1a 60%, #ff9a1f); --sombra-f: blur(10px) opacity(.6);
+}
+:root[data-u="dragonball"] #adornos::before { content: ""; position: absolute; inset: 3.5px; border: 3px solid #fff8ee; box-shadow: inset 0 0 0 1.5px #140c02; }
+:root[data-u="dragonball"] #barra { background: linear-gradient(180deg, #ff8a2a, #f85b1a); border-bottom: 3px solid #140c02;
+  background-image: repeating-conic-gradient(from 0deg at 50% 260%, rgba(255,255,255,.14) 0 2deg, transparent 2deg 6deg), linear-gradient(180deg, #ff8a2a, #f85b1a); }
+:root.forma[data-u="dragonball"] #lienzo { padding: 4.5px; }
+:root[data-u="dragonball"] .barra-titulo { font-family: Futura, sans-serif; font-weight: 900; letter-spacing: .18em; font-size: 12px; color: #fff3d6; }
+:root[data-u="dragonball"] .bt-app { color: #ffe23a; -webkit-text-stroke: 1px #140c02; paint-order: stroke fill; font-size: 14px; }
+:root[data-u="dragonball"] .bt-sep { background: #140c02; }
+:root[data-u="dragonball"] .bt-der { color: #140c02; font-weight: 900; } :root[data-u="dragonball"] .bt-der::after { content: "気"; font-size: 17px; letter-spacing: 0; color: #fff; -webkit-text-stroke: .8px #140c02; }
+:root[data-u="dragonball"] #controles { gap: 7px; }
+:root[data-u="dragonball"] .ctl { width: 17px; height: 17px; background: radial-gradient(circle at 34% 28%, #fffbe0 0 9%, #ffcc4d 26%, #f7941d 62%, #c4550a 100%);
+  box-shadow: 0 0 0 1.5px #140c02, inset -2px -3px 4px rgba(120,40,0,.35); font: 900 9px/1 Futura, sans-serif; }
+:root[data-u="dragonball"] .ctl::before { content: attr(data-estrellas); position: absolute; inset: 0; display: grid; place-items: center; color: #d11a1a; font-size: 7px; letter-spacing: -1px; line-height: 1; transition: opacity .12s; }
+:root[data-u="dragonball"] .c-cerrar::before { content: "★"; font-size: 9px; } :root[data-u="dragonball"] .c-min::before { content: "★★"; } :root[data-u="dragonball"] .c-max::before { content: "★★★"; font-size: 6px; }
+:root[data-u="dragonball"] #controles:hover .ctl::before { opacity: 0; } :root[data-u="dragonball"] #controles:hover .ctl b { color: #a3150d; }
+:root[data-u="dragonball"] .ctl:hover { box-shadow: 0 0 0 1.5px #140c02, 0 0 10px 2px rgba(255,210,63,.95); }
+
+/* ═════════════════ LOS SIMPSON — dibujo animado: contorno negro grueso y curvas generosas ═════════════════ */
+:root[data-u="simpsons"] { --borde: 4px; --r-m: 30px; --r-l: 26px; --marco-bg: #1a1a1a; }
+:root[data-u="simpsons"] #barra { border-bottom: 3px solid #1a1a1a;
+  background: radial-gradient(28px 14px at 12% 70%, #fff 98%, transparent), radial-gradient(40px 16px at 18% 80%, #fff 98%, transparent),
+    radial-gradient(36px 14px at 78% 55%, #fff 98%, transparent), radial-gradient(26px 12px at 84% 75%, #fff 98%, transparent),
+    radial-gradient(30px 12px at 46% 95%, rgba(255,255,255,.9) 98%, transparent), linear-gradient(180deg, #4aa7f0, #8fd3ff); }
+:root[data-u="simpsons"] .barra-titulo { font-family: "Chalkboard SE", "Comic Sans MS", sans-serif; font-weight: 700; letter-spacing: .08em; font-size: 13px; color: #1a1a1a; text-transform: none; }
+:root[data-u="simpsons"] .bt-app { color: #fed90f; -webkit-text-stroke: 1.2px #1a1a1a; paint-order: stroke fill; font-size: 17px; letter-spacing: .02em; }
+:root[data-u="simpsons"] .bt-sep { background: #1a1a1a; border-radius: 50%; transform: none; width: 5px; height: 5px; }
+:root[data-u="simpsons"] .bt-u { background: rgba(255,255,255,.85); padding: 1px 9px; border: 2px solid #1a1a1a; border-radius: 99px; }
+:root[data-u="simpsons"] .bt-der::after { content: "🍩"; font-size: 15px; }
+:root[data-u="simpsons"] #controles { gap: 7px; padding-left: 6px; }
+:root[data-u="simpsons"] .ctl { width: 18px; height: 18px; border: 2px solid #1a1a1a;
+  background: radial-gradient(circle, #8fd3ff 0 20%, #1a1a1a 21% 26%, transparent 27%),
+    radial-gradient(circle at 32% 30%, #4fc3f7 0 1.3px, transparent 1.8px), radial-gradient(circle at 68% 36%, #fed90f 0 1.3px, transparent 1.8px),
+    radial-gradient(circle at 60% 72%, #6be06b 0 1.3px, transparent 1.8px), radial-gradient(circle at 28% 64%, #fff 0 1.2px, transparent 1.7px),
+    radial-gradient(circle, var(--c) 0 64%, #e8b46a 66%); }
+:root[data-u="simpsons"] .c-cerrar { --c: #ff7eb6; } :root[data-u="simpsons"] .c-min { --c: #7a4a2a; } :root[data-u="simpsons"] .c-max { --c: #f4f1ea; }
+:root[data-u="simpsons"] .ctl b { display: none; }
+:root[data-u="simpsons"] .ctl:hover { transform: rotate(28deg) scale(1.12); }
+
+/* ═════════════════ GAME OF THRONES — hierro forjado: marco con remaches y filete de bronce ═════════════════ */
+:root[data-u="gameofthrones"] {
+  --borde: 7px;
+  --marco-bg: linear-gradient(145deg, #6b6f76 0%, #2c2f35 22%, #4b4f57 48%, #23262b 74%, #5d6169 100%);
+}
+:root[data-u="gameofthrones"] #marco { box-shadow: inset 1px 1px 0 rgba(255,255,255,.25), inset -1px -1px 0 rgba(0,0,0,.6); }
+:root[data-u="gameofthrones"] #adornos::before { content: ""; position: absolute; inset: 7px; border: 1px solid rgba(184,134,11,.65); box-shadow: inset 0 0 0 2px rgba(0,0,0,.35); }
+:root[data-u="gameofthrones"] #adornos .esq { position: absolute; width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d9dde3, #7d828b 45%, #2b2e33 85%); box-shadow: 0 1px 1px rgba(0,0,0,.7); }
+:root[data-u="gameofthrones"] #adornos .e1 { left: -1px; top: -1px; } :root[data-u="gameofthrones"] #adornos .e2 { right: -1px; top: -1px; }
+:root[data-u="gameofthrones"] #adornos .e3 { right: -1px; bottom: -1px; } :root[data-u="gameofthrones"] #adornos .e4 { left: -1px; bottom: -1px; }
+:root[data-u="gameofthrones"] #adornos .esq { transform: translate(0,0); margin: 0; }
+:root[data-u="gameofthrones"] #adornos .e1, :root[data-u="gameofthrones"] #adornos .e2 { top: 0; } :root[data-u="gameofthrones"] #adornos .e3, :root[data-u="gameofthrones"] #adornos .e4 { bottom: 0; }
+:root[data-u="gameofthrones"] #adornos .e1, :root[data-u="gameofthrones"] #adornos .e4 { left: 0; } :root[data-u="gameofthrones"] #adornos .e2, :root[data-u="gameofthrones"] #adornos .e3 { right: 0; }
+:root[data-u="gameofthrones"] #barra { background: linear-gradient(180deg, #1c2229, #0f1317); border-bottom: 1px solid rgba(184,134,11,.55);
+  box-shadow: 0 1px 0 rgba(0,0,0,.6); }
+:root[data-u="gameofthrones"] .barra-titulo { font-family: Copperplate, "Trajan Pro", Georgia, serif; letter-spacing: .34em; font-size: 11px; color: rgba(233,237,241,.55); }
+:root[data-u="gameofthrones"] .bt-app { color: #d7dde3; text-shadow: 0 -1px 0 rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.12); }
+:root[data-u="gameofthrones"] .bt-sep { background: none; width: auto; height: auto; transform: none; } :root[data-u="gameofthrones"] .bt-sep::before { content: "⚔"; color: #b8860b; }
+:root[data-u="gameofthrones"] .bt-der::after { content: "❄ · 🜂"; color: rgba(159,201,230,.6); letter-spacing: .3em; }
+:root[data-u="gameofthrones"] #controles { gap: 8px; padding-left: 6px; }
+:root[data-u="gameofthrones"] .ctl { width: 14px; height: 14px; background: radial-gradient(circle at 35% 30%, #cfd4da, #6e737b 45%, #24272c 90%);
+  box-shadow: 0 0 0 1px #0b0e11, 0 1px 1px rgba(0,0,0,.8); font: 700 9px/1 Copperplate, serif; }
+:root[data-u="gameofthrones"] .c-cerrar { --c: #ff5a2a; } :root[data-u="gameofthrones"] .c-min { --c: #9fc9e6; } :root[data-u="gameofthrones"] .c-max { --c: #e0b64a; }
+:root[data-u="gameofthrones"] #controles:hover .ctl b { color: #0b0e11; }
+:root[data-u="gameofthrones"] .ctl:hover { background: radial-gradient(circle at 35% 30%, #fff, var(--c) 55%, #3a1a0a 100%); box-shadow: 0 0 0 1px #0b0e11, 0 0 10px var(--c); }
+
+/* ═════════════════ SHREK — cartel de madera hecho a mano, nada es derecho ═════════════════ */
+:root[data-u="shrek"] {
+  --borde: 5px; --r-m: 30px 16px 34px 12px / 14px 32px 16px 28px; --r-l: 26px 12px 30px 8px / 10px 28px 12px 24px;
+  --marco-bg: repeating-linear-gradient(2deg, rgba(0,0,0,.0) 0 5px, rgba(60,30,8,.25) 5px 6px, rgba(0,0,0,0) 6px 11px), linear-gradient(160deg, #a06a35, #6e4419 50%, #8b5a2b);
+}
+:root[data-u="shrek"] #marco { box-shadow: inset 0 0 0 1.5px #3b2208; }
+:root[data-u="shrek"] #barra { border-bottom: 3px solid #4a2c0c;
+  background: repeating-linear-gradient(178deg, rgba(0,0,0,0) 0 7px, rgba(60,30,8,.18) 7px 8px), linear-gradient(180deg, #c99a5b, #a87a3e); }
+:root[data-u="shrek"] .barra-titulo { font-family: "Marker Felt", "Chalkboard SE", sans-serif; font-weight: 700; letter-spacing: .06em; font-size: 14px; color: #3b2208; text-transform: none; transform: rotate(-1.2deg); }
+:root[data-u="shrek"] .bt-app { color: #2f5a10; font-size: 16px; }
+:root[data-u="shrek"] .bt-sep { background: #3b2208; border-radius: 40% 60% 50% 50%; transform: none; width: 6px; height: 5px; }
+:root[data-u="shrek"] .bt-der { color: #3b2208; font-family: "Marker Felt", sans-serif; text-transform: none; letter-spacing: .04em; font-size: 12.5px; transform: rotate(1.5deg); }
+:root[data-u="shrek"] .bt-der::after { content: "¡Fuera de mi pantano!"; }
+:root[data-u="shrek"] #controles { gap: 7px; padding-left: 4px; }
+:root[data-u="shrek"] .ctl { width: 19px; height: 15px; border-radius: 48% 52% 44% 56% / 58% 46% 54% 42%; background: var(--c); box-shadow: 0 0 0 2px #3b2208, inset 0 -2px 0 rgba(0,0,0,.2);
+  font: 700 11px/1 "Marker Felt", sans-serif; }
+:root[data-u="shrek"] .c-cerrar { --c: #c94a2a; transform: rotate(-4deg); } :root[data-u="shrek"] .c-min { --c: #e7c76b; transform: rotate(3deg); } :root[data-u="shrek"] .c-max { --c: #7bb32e; transform: rotate(-2deg); }
+:root[data-u="shrek"] #controles:hover .ctl b { color: #3b2208; }
+:root[data-u="shrek"] .ctl:hover { transform: rotate(6deg) scale(1.1); }
+
+/* ═════════════════ PIRATAS — cuerda trenzada, tablas y doblones ═════════════════ */
+:root[data-u="piratas"] {
+  --borde: 7px; --r-m: 6px; --r-l: 2px;
+  --marco-bg: repeating-linear-gradient(-45deg, #e3c48a 0 2.5px, #b38a4c 2.5px 5px, #7a5626 5px 6.5px, #c9a465 6.5px 8px);
+}
+:root[data-u="piratas"] #marco { box-shadow: inset 0 0 0 1px rgba(40,24,6,.8), inset 0 0 0 7px rgba(0,0,0,.0), inset 0 2px 3px rgba(255,240,200,.35); }
+:root[data-u="piratas"] #adornos::before { content: ""; position: absolute; inset: 7px; box-shadow: inset 0 0 0 1px rgba(40,24,6,.9), inset 0 0 30px rgba(0,0,0,.45); border-radius: 2px; }
+:root[data-u="piratas"] #adornos .esq { position: absolute; width: 18px; height: 18px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #fff2b8 0 8%, #e2b84a 30%, #9a6b12 75%, #5a3c06); box-shadow: 0 1px 2px rgba(0,0,0,.7), inset 0 0 0 1.5px rgba(90,60,6,.8); }
+:root[data-u="piratas"] #adornos .esq::after { content: "⚓"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 10px; color: #5a3c06; font-style: normal; }
+:root[data-u="piratas"] #adornos .e1 { left: -3px; top: -3px; } :root[data-u="piratas"] #adornos .e2 { right: -3px; top: -3px; }
+:root[data-u="piratas"] #adornos .e3 { right: -3px; bottom: -3px; } :root[data-u="piratas"] #adornos .e4 { left: -3px; bottom: -3px; }
+:root[data-u="piratas"] #barra { border-bottom: 2px solid #2a1a08;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 11px, rgba(0,0,0,.45) 11px 12px), linear-gradient(180deg, #4a321b, #2e1f10); }
+:root[data-u="piratas"] .barra-titulo { font-family: "Iowan Old Style", Palatino, Georgia, serif; letter-spacing: .24em; font-size: 11.5px; color: rgba(239,230,208,.6); }
+:root[data-u="piratas"] .bt-app { color: #e2b84a; text-shadow: 0 1px 0 #000; }
+:root[data-u="piratas"] .bt-sep { background: none; width: auto; height: auto; transform: none; } :root[data-u="piratas"] .bt-sep::before { content: "☠"; color: #efe6d0; font-size: 13px; }
+:root[data-u="piratas"] .bt-der::after { content: "N ✧ 47° 12′"; font-family: Georgia, serif; color: rgba(226,184,74,.7); letter-spacing: .2em; }
+:root[data-u="piratas"] #controles { gap: 7px; padding-left: 10px; }
+:root[data-u="piratas"] .ctl { width: 16px; height: 16px; background: radial-gradient(circle at 38% 32%, #fff2b8 0 8%, #e2b84a 32%, #a47414 78%, #5a3c06);
+  box-shadow: inset 0 0 0 1.5px #6b4708, inset 0 0 0 3px rgba(255,236,170,.45), 0 1px 2px rgba(0,0,0,.7); font: 700 10px/1 Georgia, serif; }
+:root[data-u="piratas"] #controles:hover .ctl b { color: #4a2e04; }
+:root[data-u="piratas"] .c-cerrar b { font-size: 0; } :root[data-u="piratas"] #controles:hover .c-cerrar b::before { content: "☠"; font-size: 10px; }
+:root[data-u="piratas"] .ctl:hover { transform: rotateY(25deg) scale(1.08); box-shadow: inset 0 0 0 1.5px #6b4708, inset 0 0 0 3px rgba(255,236,170,.6), 0 0 9px rgba(226,184,74,.8); }
+
+/* ═════════════════ TOY STORY — juguete de plástico: piezas de colores, brillo y tornillos ═════════════════ */
+:root[data-u="toystory"] {
+  --borde: 7px; --r-m: 24px; --r-l: 17px;
+  --marco-bg: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 45%, rgba(0,0,0,.12)),
+    linear-gradient(90deg, #e63b2e 0 33.3%, #f6c519 33.3% 66.6%, #2f6fd6 66.6%);
+}
+:root[data-u="toystory"] #marco { box-shadow: inset 0 0 0 1.5px rgba(0,0,0,.25); }
+  background: radial-gradient(circle at 35% 30%, #fff, #c9d2dc 50%, #8a96a3); box-shadow: 0 1px 1px rgba(0,0,0,.4); }
+:root[data-u="toystory"] #barra { border-bottom: 0; background: linear-gradient(180deg, #4f97ff, #2f6fd6); }
+:root[data-u="toystory"] #barra::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5px;
+  background: linear-gradient(90deg, #e63b2e 0 25%, #f6c519 25% 50%, #8ac926 50% 75%, #e63b2e 75%); }
+:root[data-u="toystory"] #barra::before { content: ""; position: absolute; inset: 0 0 50% 0; background: linear-gradient(180deg, rgba(255,255,255,.35), transparent); pointer-events: none; }
+:root[data-u="toystory"] .barra-titulo { font-family: ui-rounded, system-ui; font-weight: 900; letter-spacing: .12em; font-size: 12px; color: rgba(255,255,255,.8); }
+:root[data-u="toystory"] .bt-app { color: #fff; text-shadow: 0 2px 0 #1b4a9e; font-size: 14px; }
+:root[data-u="toystory"] .bt-sep { background: #f6c519; border-radius: 50%; transform: none; width: 7px; height: 7px; box-shadow: 0 1px 0 #1b4a9e; }
+:root[data-u="toystory"] .bt-der::after { content: "★ AL INFINITO"; color: #fff; font-weight: 900; font-family: ui-rounded, system-ui; }
+:root[data-u="toystory"] #controles { gap: 8px; padding-left: 8px; }
+:root[data-u="toystory"] .ctl { width: 17px; height: 17px; background: radial-gradient(circle at 50% 28%, rgba(255,255,255,.95) 0 14%, rgba(255,255,255,0) 42%), var(--c);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 60%, #000), 0 2px 0 color-mix(in srgb, var(--c) 50%, #000); font: 900 11px/1 ui-rounded, system-ui; }
+:root[data-u="toystory"] .c-cerrar { --c: #e63b2e; } :root[data-u="toystory"] .c-min { --c: #f6c519; } :root[data-u="toystory"] .c-max { --c: #8ac926; }
+:root[data-u="toystory"] #controles:hover .ctl b { color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.35); }
+:root[data-u="toystory"] .ctl:active { transform: translateY(2px); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 60%, #000); filter: none; }
+
+/* ═════════════════ CINE — palacio art déco: esquinas escalonadas, oro y marquesina ═════════════════ */
+:root[data-u="cine"] {
+  --borde: 2px; --s: 9px;
+  --esc: polygon(0 calc(var(--s) * 2), var(--s) calc(var(--s) * 2), var(--s) var(--s), calc(var(--s) * 2) var(--s), calc(var(--s) * 2) 0,
+    calc(100% - var(--s) * 2) 0, calc(100% - var(--s) * 2) var(--s), calc(100% - var(--s)) var(--s), calc(100% - var(--s)) calc(var(--s) * 2), 100% calc(var(--s) * 2),
+    100% calc(100% - var(--s) * 2), calc(100% - var(--s)) calc(100% - var(--s) * 2), calc(100% - var(--s)) calc(100% - var(--s)), calc(100% - var(--s) * 2) calc(100% - var(--s)), calc(100% - var(--s) * 2) 100%,
+    calc(var(--s) * 2) 100%, calc(var(--s) * 2) calc(100% - var(--s)), var(--s) calc(100% - var(--s)), var(--s) calc(100% - var(--s) * 2), 0 calc(100% - var(--s) * 2));
+  --clip-m: var(--esc); --clip-l: var(--esc);
+  --marco-bg: linear-gradient(135deg, #fbe3a0, #a8822a 28%, #f5d77a 50%, #8c6a1f 72%, #fbe3a0);
+  --margen: 6px; --sombra-bg: #f5b700; --sombra-f: blur(8px) opacity(.32);
+}
+:root[data-u="cine"] #barra { background: linear-gradient(180deg, #1a1611, #0d0b08); border-bottom: 0; height: 42px; }
+:root[data-u="cine"] #barra::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px;
+  background: radial-gradient(circle, #fff6c9 0 1.4px, #f5b700 2.2px, rgba(245,183,0,.0) 3.2px) 0 0 / 12px 6px repeat-x, linear-gradient(180deg, #3a2c10, #1a1408);
+  border-top: 1px solid #a8822a; border-bottom: 1px solid #a8822a; animation: marquesina 1.2s steps(2) infinite; }
+:root[data-u="cine"] .barra-titulo { font-family: Didot, "Bodoni 72", Georgia, serif; letter-spacing: .42em; font-size: 11px; color: rgba(242,239,233,.55); }
+:root[data-u="cine"] .bt-app { background: linear-gradient(180deg, #fbe3a0, #b8862b); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 700; font-size: 13px; }
+:root[data-u="cine"] .bt-app::before, :root[data-u="cine"] .bt-app::after { content: "★"; font-size: 8px; vertical-align: 2px; margin: 0 .5em; }
+:root[data-u="cine"] .bt-sep { background: #f5b700; }
+:root[data-u="cine"] .bt-der { font-family: Didot, Georgia, serif; color: rgba(245,183,0,.75); letter-spacing: .3em; }
+:root[data-u="cine"] .bt-der::after { content: "FUNCIÓN 20:30"; }
+:root[data-u="cine"] #controles { gap: 7px; padding-left: 8px; }
+:root[data-u="cine"] .ctl { width: 15px; height: 15px; border-radius: 0; clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+  background: radial-gradient(circle, var(--c) 0 38%, color-mix(in srgb, var(--c) 40%, #000) 46%, transparent 49%), linear-gradient(135deg, #fbe3a0, #8c6a1f 50%, #f5d77a);
+  font: 700 9px/1 Didot, Georgia, serif; }
+:root[data-u="cine"] .c-cerrar { --c: #c81d1d; } :root[data-u="cine"] .c-min { --c: #f5b700; } :root[data-u="cine"] .c-max { --c: #2f8f5b; }
+:root[data-u="cine"] #controles:hover .ctl b { color: #fff6dc; text-shadow: 0 0 4px #000; }
+:root[data-u="cine"] .ctl:hover { filter: brightness(1.25) drop-shadow(0 0 4px #f5b700); }
+
+@keyframes parpadeo { 50% { opacity: .25; } }
+@keyframes marquesina { 50% { background-position: 6px 0, 0 0; } }
+
+/* Pantalla completa / navegador: sin forma, sin margen */
+html:not(.forma) body { padding: 0; }
+@media (prefers-reduced-motion: reduce) { :root[data-u="cine"] #barra::after, :root[data-u="starwars"] .bt-der::before { animation: none; } }

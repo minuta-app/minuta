@@ -1,0 +1,107 @@
+# Minuta — guía para trabajar en el proyecto
+
+Minuta es una app de macOS (estilo Granola) que graba reuniones, transcribe **localmente** (whisper.cpp), separa voces,
+y con la IA del usuario (hoy Claude vía `claude -p`) genera notas, feedback de comunicación y un mensaje para los participantes.
+Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromisos, fichas de personas, gimnasio de práctica y coach en vivo.
+
+**Principios que no se negocian**
+1. **Todo es del usuario.** Audio, transcripciones y notas viven en su Mac (y, si quiere, en *su* repo git). No hay servidores ni base de datos propios.
+2. **Gratis y abierto.** El catálogo (universos e idiomas) es un repo público con JSON; los comentarios llegan como issues de GitHub.
+3. **Nada personal en el código.** Lo personal va en `~/minuta/perfil.json` (no versionado). Ver "Privacidad" abajo.
+4. **Plug and play.** Lo que haya que preguntar al usuario se pregunta en la app (Preferencias / asistente), no se escribe a mano en archivos.
+
+## Mapa del repo
+
+| Ruta | Qué es |
+|---|---|
+| `app/Sources/Minuta/` | App Swift (SwiftPM, macOS 15). Barra de menú (`BarraMenu.swift`), ventana web (`VisorWeb.swift`), captura de audio y detección de reuniones (`Audio.swift`), modelo y flujo (`MinutaApp.swift`), alertas flotantes (`Alerta.swift`), coach en vivo (`Vivo.swift`), dictado del Gimnasio (`Dictado.swift`), perfil (`Perfil.swift`), catálogo e idiomas (`Catalogo.swift`), universos y juego (`Juego.swift`). `Visor.swift` es el visor SwiftUI antiguo (casi sin uso). |
+| `app/Sources/Diarizar/` | Binario `minuta-diarizar` (FluidAudio) que separa voces de la pista "Ellos". |
+| `app/Sources/Transcribir/` | Binario `minuta-transcribir`: whisper.cpp (xcframework oficial v1.8.3, Metal) con las **mismas opciones que `whisper-cli`**, para que el pipeline sea igual en Mac, Windows y Linux. |
+| `bin/` | Python: `procesar.py` (pipeline principal y prompt de notas), `perfil.py` (perfil compartido), `redactar.py` (mensaje para participantes), `gimnasio.py`, `preguntar.py` (⌘K), `semana.py`, `universo.py` (creador de universos), `logros.py`, `recalcular_interrupciones.py`. |
+| `ui/` | Interfaz web única (`app.js` + CSS) que usan la ventana y el panel de la barra de menú. `demo.json` = datos ficticios para la vista previa en navegador. `idiomas/en.json` = inglés incluido. |
+| `universos/` | Los 4 universos incluidos (cine, starwars, harrypotter, marvel). El resto está en el catálogo. |
+| `herramientas/` | `revisar_privacidad.sh` (auditoría antes de commitear) y `empaquetar.sh` (arma `dist/Minuta.app` + `dist/Minuta-macOS.zip` y su `.sha256`). |
+| `build.sh` | Empaqueta e instala en `~/Applications/Minuta.app`. **Cierra la app** (ver Despliegue). |
+| `instalar.sh` | Instalador de un comando para usuarios (`curl … \| bash`): baja la última Release, verifica SHA-256 e instala. Sin Python ni Homebrew. |
+| `.github/workflows/publicar.yml` | Al subir un tag `vX.Y.Z`: compila en macos-15 con `empaquetar.sh` y publica la Release. |
+| `docs/` | Página pública (GitHub Pages): `index.html` (español/inglés) y capturas en `docs/img` hechas con `demo.json`. |
+| `.claude/agents/` | Agentes especializados (ver abajo). |
+
+Repos relacionados: catálogo público `soydavidcornejo/minuta-catalogo` (universos/, idiomas/, herramientas/).
+
+## Qué lleva la app adentro (sin Homebrew)
+
+`herramientas/empaquetar.sh` (lo usan `build.sh` y la Release) arma `Minuta.app` con: la app, `minuta-transcribir` + `whisper.framework`, `minuta-diarizar` y un Python portátil
+(python-build-standalone 3.13, verificado por SHA-256) en `Contents/Resources/python`, y una copia de `bin/`, `ui/` y `universos/`
+en `Contents/Resources/minuta`. **Código vs. datos:** `Temas.base` (`~/minuta`) son los datos; `Temas.recursos` es el código: `~/minuta` si es
+un checkout git con `ui/` (desarrollo), si no `Contents/Resources/minuta`. Los scripts lo reciben en `MINUTA_RECURSOS` (`perfil.RECURSOS`).
+Firma ad hoc con requisito por identificador (`app.minuta.mac`), así los permisos sobreviven a cada actualización. La app lanza los scripts con ese Python y
+les pasa `MINUTA_HERRAMIENTAS` (= `Contents/MacOS`); `procesar.herramienta()` busca ahí, luego en `bin/`, luego en el sistema.
+La conversión de audio usa `afconvert` (viene con macOS); ffmpeg solo se usa en Windows/Linux. Los scripts solo usan la biblioteca
+estándar de Python: no agregues dependencias de pip. `build.sh` se niega a instalar si hay una grabación o un procesamiento en curso.
+
+## Primera vez, respaldo y actualizaciones (`Bienvenida.swift`)
+
+- **Bienvenida:** se abre si no existe `perfil.json` (o desde Preferencias). Pasos: idioma → quién eres → IA (`IA.buscar`/`IA.probar`
+  detectan y prueban `claude`; Codex/Gemini figuran como "pronto") → modelo (`Modelos`: turbo/small según RAM, descarga verificada por
+  SHA-256 desde Hugging Face) → notas (carpeta nueva, carpeta existente o `git clone` de su repo) → respaldo opcional → permisos → universo.
+- **Respaldo:** `Respaldo.crearRepo` crea un repo **privado en la cuenta del usuario** (GitHub o GitLab) con su token; el token va al
+  Llavero y git lo recibe como encabezado en memoria (`-c http.extraHeader`), nunca en disco. Tras cada nota: `Respaldo.sincronizar()`.
+- **Actualizaciones:** `Actualizaciones.revisar` al abrir y cada 6 h. Instalación de desarrollo (`~/minuta/.git` existe): `git fetch` y,
+  al aceptar, `git pull` + `build.sh` + reabrir. Instalación normal: GitHub Releases (`Minuta-macOS.zip` + `.sha256`); un script espera a que la app
+  cierre, reemplaza `Minuta.app` (deja `.anterior` si falla) y la reabre. **Publicar versión:** sube `CFBundleShortVersionString` en
+  `app/Info.plist`, commit, `git tag vX.Y.Z && git push --tags` (el workflow pone la versión del tag). Los datos del usuario viven fuera de `Minuta.app`, por eso actualizar no borra nada.
+
+## Datos en tiempo de ejecución (Mac, nunca en git)
+
+`~/minuta` es a la vez el checkout del repo **y** la carpeta de datos. El `.gitignore` es una lista blanca: solo se versiona lo listado.
+- `perfil.json` (nombre, rol, idiomas, carpeta de notas) · `config.json` (universo elegido) · `ajustes.json` (avisos) · `categorias.json`
+- `correcciones.json`, `vocabulario.txt`, `votos.json`, `historial.jsonl`, `practicas.jsonl`, `mensajes/` (borradores redactados por nota)
+- `temas/` (universos descargados o creados; ganan sobre los incluidos con el mismo id) · `idiomas/` (idiomas descargados) · `catalogo/` (caché de índices)
+- `grabaciones/<fecha>/` (audio .caf, JSON de whisper, `hablantes.json`, `meta.json`, `procesar.log`) · `models/` (whisper)
+- Notas: carpeta `carpeta_notas` del perfil (`.md` con frontmatter: fecha, hora, tipo, plataforma, correos, métricas, participantes).
+
+## Cómo se conectan las piezas
+
+- **JS ↔ Swift:** la UI llama `host.enviar(accion, datos)` → `webkit.messageHandlers.minuta` → `switch` en `VisorWeb.swift` (ventana) o `BarraMenu.swift` (panel). Swift responde con `window.Minuta.<funcion>(json)` (`llamarFuncion` / `llamar`). Al agregar una acción: caso en Swift + manejador en `window.Minuta` + modo `E.plataforma === "web"` simulado para la vista previa.
+- **Swift → Python:** `AppModel.ejecutar` / `correrScriptJSON(script, args)`; el último argumento siempre es la ruta del JSON de salida. Los scripts leen el perfil con `from perfil import …`.
+- **Formato de nota:** el prompt de `procesar.py` define secciones y marcadores (`### Próximos pasos`, `## Personas`, `## Feedback para …`, `**Veredicto:**`, `**Puntajes:**`, `**Hábito para la próxima:**`, `**Decisión:**`, `**Pendiente:**`, `🔧`, `✅`, `→ Prueba:`). **Los marcadores van siempre en español** aunque la nota esté en otro idioma: `app.js`, `redactar.py`, `semana.py` y `preguntar.py` los usan para leer.
+- **Universos:** JSON de solo datos (rangos ×10, apartados claridad/escucha/preguntas/cierre ×10, logros, íconos, `estilo`). `Temas.paraJS()` une incluidos + `~/minuta/temas`. Se descargan con `Catalogo.descargarUniverso` (valida antes de guardar).
+- **Idiomas:** el español es el idioma del código. `traducirDOM()` en `app.js` traduce el DOM ya pintado con `textos` (claves = texto en español, `{n}` números, `{x}` texto libre) y `palabras` (fechas). En Swift: `Idioma.t("…")` e `Idioma.f("… {x} …", valor)`.
+
+## Reglas al cambiar cosas
+
+- Código, comentarios, commits y textos de la app en **español** (de Chile neutro). Nombres descriptivos en español como el resto.
+- **Todo texto nuevo visible en la UI** (JS o Swift) debe agregarse a `ui/idiomas/en.json` en el mismo cambio. Para otros idiomas: `herramientas/traducir_idioma.py` en el catálogo.
+- Nunca pongas el contenido de las notas en una ruta de traducción: usa `data-sin-traducir` o una clase de `NO_TRADUCIR`.
+- Lo que se envía a otras personas (correo/Teams) **siempre** lo redacta Claude con `redactar.py`, sin feedback, opiniones ni la sección `## Personas`.
+- Universos y paquetes de idioma son datos: nunca agregues campos que se ejecuten o se inyecten como HTML sin `esc()`.
+- Interfaz: usa `render({ mantenerScroll: true })` para no saltar; el contenedor de página usa `data-pagina` (no `data-vista`, que dispara navegación).
+- Antes de terminar un cambio de UI: `node --check ui/app.js` y prueba en navegador (`cd ui && python3 -m http.server 8765` → `http://localhost:8765/index.html`; `#panel` para el panel, `?idioma=en` para inglés, `window.Minuta._probar({...})` para saltar a cualquier vista).
+- Python: `python3 -m py_compile bin/*.py`. Swift: solo compila en el Mac (`build.sh`).
+
+## Despliegue al Mac del usuario
+
+El Mac se maneja con las herramientas `mcp__remote-devices__*` (osascript con `do shell script`). Flujo:
+1. Commit y push desde el clon de trabajo (autor: el usuario de GitHub dueño del repo con su correo `@users.noreply.github.com`, nunca un correo personal; y las líneas de atribución que pida la sesión).
+2. **Comprobar que Minuta esté libre** antes de tocar nada: la carpeta más nueva de `~/minuta/grabaciones` debe tener `meta.json` (si solo tiene `.caf`, **está grabando**) y `pgrep -fl procesar.py` debe estar vacío. Si no está libre, no compiles: programa un chequeo y avisa.
+3. `cd ~/minuta && git pull --ff-only`. Los cambios de Python/UI aplican al tiro (la UI al recargar la ventana).
+4. Si cambió Swift: compilar en segundo plano (`nohup` de un script que corra `bash ./build.sh` y escriba `FIN $?` en `/tmp/minuta-build.log`), esperar en tramos de ≤25 s (osascript corta los comandos largos), luego `open ~/Applications/Minuta.app`.
+5. Nunca reemplazar `bin/minuta-diarizar` mientras se procesa (rompe la separación de voces; `build.sh` ya solo lo cambia si cambió).
+6. No dejes archivos temporales ni capturas en `~/minuta`; borra capturas de pantalla al terminar (son privadas).
+
+## Privacidad (el repo será open source)
+
+- Prohibido versionar: nombres reales de personas, empresas o clientes del usuario, correos, rutas personales, notas, transcripciones, `perfil.json`, ni ejemplos sacados de reuniones reales. Ejemplos y `demo.json` usan datos ficticios (Ana Pérez, Matías Soto, "Clientes", "Equipo"…).
+- Antes de cada commit corre `bash herramientas/revisar_privacidad.sh` (o usa el agente `minuta-privacidad`). Busca en lo que se va a
+  subir los términos de `.terminos-privados` (archivo local, **nunca versionado**: nombres, empresas, correos y rutas del usuario, uno por línea),
+  además de correos y rutas `/Users/…`. Si el archivo no existe, créalo a partir de `perfil.json`, `categorias.json` y los participantes de las notas.
+- Los universos del catálogo no deben mencionar al usuario ni sus empresas (ni en elogios ni en logros).
+- El repo es público desde v0.2.0 (historial nuevo; la historia previa quedó en un repo privado). Bundle id: `app.minuta.mac`.
+  Cada commit es público al tiro: la revisión de privacidad no es opcional.
+
+## Agentes
+
+En `.claude/agents/`: `minuta-mac` (Swift y sistema), `minuta-pipeline` (Python, prompts y métricas), `minuta-interfaz` (UI web e idiomas),
+`minuta-catalogo` (universos e idiomas descargables), `minuta-despliegue` (instalar en el Mac sin romper una grabación) y `minuta-privacidad`
+(auditoría antes de commitear o publicar). Úsalos para trabajo acotado a su área; el despliegue y la privacidad son obligatorios al cerrar un cambio.

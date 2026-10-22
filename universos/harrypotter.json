@@ -1,0 +1,436 @@
+{
+ "id": "harrypotter",
+ "nombre": "Harry Potter",
+ "emoji": "⚡",
+ "xp": "puntos para tu casa",
+ "personaje_por_defecto": "Solo personajes canónicos de los siete libros y ocho películas de Harry Potter.",
+ "elogios": [
+  "¡Cincuenta puntos para tu casa!",
+  "Supera las expectativas. Bien ahí.",
+  "Aceptable… McGonagall espera más.",
+  "Esto es un Troll. Al Gran Comedor a repasar."
+ ],
+ "apartados": {
+  "claridad": [
+   {
+    "nombre": "Grawp",
+    "referencia": "Harry Potter y la Orden del Fénix",
+    "frase": "¡Hagger! Pusiste toda la fuerza, pero el mensaje no llegó."
+   },
+   {
+    "nombre": "Rubeus Hagrid",
+    "referencia": "Harry Potter y la piedra filosofal",
+    "frase": "No debí haber dicho eso… y lo importante quedó enredado."
+   },
+   {
+    "nombre": "Gilderoy Lockhart",
+    "referencia": "Harry Potter y la cámara secreta",
+    "frase": "Mucha sonrisa y mucha palabra, contenido casi cero."
+   },
+   {
+    "nombre": "Ron Weasley",
+    "referencia": "Harry Potter y el prisionero de Azkaban",
+    "frase": "La idea venía bien, pero se la comió una tartamudeada nerviosa."
+   },
+   {
+    "nombre": "Neville Longbottom",
+    "referencia": "Harry Potter y la Orden del Fénix",
+    "frase": "Te costó partir, pero al final se entendió. Vas creciendo."
+   },
+   {
+    "nombre": "Harry Potter",
+    "referencia": "Harry Potter y la Orden del Fénix",
+    "frase": "Claro como en el Ejército de Dumbledore, aunque algo improvisado."
+   },
+   {
+    "nombre": "Hermione Granger",
+    "referencia": "Harry Potter y la piedra filosofal",
+    "frase": "Clarísimo y correcto… solo que en versión de tres pergaminos."
+   },
+   {
+    "nombre": "Remus Lupin",
+    "referencia": "Harry Potter y el prisionero de Azkaban",
+    "frase": "Explicaste como el mejor profe de Defensa: simple y cercano."
+   },
+   {
+    "nombre": "Kingsley Shacklebolt",
+    "referencia": "Harry Potter y las reliquias de la Muerte",
+    "frase": "Voz calma y frases justas. Hasta el Ministerio te entendió."
+   },
+   {
+    "nombre": "Minerva McGonagall",
+    "referencia": "Harry Potter y la piedra filosofal",
+    "frase": "Conciso, ordenado y con peso. Nadie se atrevió a pedir que repitieras."
+   }
+  ],
+  "escucha": [
+   {
+    "nombre": "Gilderoy Lockhart",
+    "referencia": "Harry Potter y la cámara secreta",
+    "frase": "Hablaste tanto de ti mismo que nadie más alcanzó a opinar."
+   },
+   {
+    "nombre": "Dolores Umbridge",
+    "referencia": "Harry Potter y la Orden del Fénix",
+    "frase": "Ejem, ejem. Interrumpiste con sonrisa y no escuchaste a nadie."
+   },
+   {
+    "nombre": "Vernon Dursley",
+    "referencia": "Harry Potter y la piedra filosofal",
+    "frase": "No hay cartas, no hay opiniones. Te tapaste los oídos con fuerza."
+   },
+   {
+    "nombre": "Cornelius Fudge",
+    "referencia": "Harry Potter y el cáliz de fuego",
+    "frase": "Te avisaron lo importante y preferiste no creerlo."
+   },
+   {
+    "nombre": "Ron Weasley",
+    "referencia": "Harry Potter y el cáliz de fuego",
+    "frase": "Escuchaste lo justo… mientras pensabas en el almuerzo."
+   },
+   {
+    "nombre": "Harry Potter",
+    "referencia": "Harry Potter y el misterio del príncipe",
+    "frase": "Escuchaste, pero ya tenías tu teoría armada antes de que terminaran."
+   },
+   {
+    "nombre": "Hermione Granger",
+    "referencia": "Harry Potter y el prisionero de Azkaban",
+    "frase": "Atenta y con apuntes. Solo te ganaron las ganas de corregir."
+   },
+   {
+    "nombre": "Remus Lupin",
+    "referencia": "Harry Potter y el prisionero de Azkaban",
+    "frase": "Escuchaste con paciencia y sin juzgar. Un profe de verdad."
+   },
+   {
+    "nombre": "Luna Lovegood",
+    "referencia": "Harry Potter y la Orden del Fénix",
+    "frase": "Notaste lo que nadie dijo en voz alta. Los thestrals te saludan."
+   },
+   {
+    "nombre": "Albus Dumbledore",
+    "referencia": "Harry Potter y la piedra filosofal",
+    "frase": "Escuchaste incluso lo que el otro no sabía que quería decir."
+   }
+  ],
+  "preguntas": [
+   {
+    "nombre": "Gregory Goyle",
+    "referencia": "Harry Potter y la piedra filosofal",
+    "frase": "Cero preguntas. Solo asentiste y miraste a Malfoy."
+   },
+   {
+    "nombre": "Dudley Dursley",
+    "referencia": "Harry Potter y la piedra filosofal",
+    "frase": "Tu única pregunta fue cuántos regalos quedaban. Treinta y siete."
+   },
+   {
+    "nombre": "Colin Creevey",
+    "referencia": "Harry Potter y la cámara secreta",
+    "frase": "Muchas preguntas por puro entusiasmo, y ninguna para el problema."
+   },
+   {
+    "nombre": "Ron Weasley",
+    "referencia": "Harry Potter y la cámara secreta",
+    "frase": "¿Por qué arañas? Buena duda, mala oportunidad."
+   },
+   {
+    "nombre": "Harry Potter",
+    "referencia": "Harry Potter y la cámara secreta",
+    "frase": "Preguntaste lo necesario, aunque algunas llegaron tarde."
+   },
+   {
+    "nombre": "Neville Longbottom",
+    "referencia": "Harry Potter y la Orden del Fénix",
+    "frase": "Te atreviste a preguntar con valentía. Gryffindor lo nota."
+   },
+   {
+    "nombre": "Alastor Moody",
+    "referencia": "Harry Potter y el cáliz de fuego",
+    "frase": "¡Alerta permanente! Tus preguntas no dejaron cabos sueltos."
+   },
+   {
+    "nombre": "Hermione Granger",
+    "referencia": "Harry Potter y la piedra filosofal",
+    "frase": "Mano arriba todo el rato, y cada pregunta valía la pena."
+   },
+   {
+    "nombre": "Albus Dumbledore",
+    "referencia": "Harry Potter y el misterio del príncipe",
+    "frase": "Preguntaste por el pasado para entender el presente. Brillante."
+   },
+   {
+    "nombre": "Severus Snape",
+    "referencia": "Harry Potter y la piedra filosofal",
+    "frase": "Una pregunta y el problema quedó desarmado como poción mal hecha."
+   }
+  ],
+  "cierre": [
+   {
+    "nombre": "Sybill Trelawney",
+    "referencia": "Harry Potter y el prisionero de Azkaban",
+    "frase": "El cierre fue una profecía: veo niebla, veo dudas, nadie sabe nada."
+   },
+   {
+    "nombre": "Mundungus Fletcher",
+    "referencia": "Harry Potter y la Orden del Fénix",
+    "frase": "Te desapareciste antes de que alguien se comprometiera a algo."
+   },
+   {
+    "nombre": "Fred y George Weasley",
+    "referencia": "Harry Potter y la Orden del Fénix",
+    "frase": "Cierre espectacular con fuegos artificiales, pero sin acuerdos."
+   },
+   {
+    "nombre": "Ron Weasley",
+    "referencia": "Harry Potter y la piedra filosofal",
+    "frase": "Hubo plan, más o menos. Como el ajedrez: alguien se sacrificó."
+   },
+   {
+    "nombre": "Harry Potter",
+    "referencia": "Harry Potter y las reliquias de la Muerte",
+    "frase": "Sabías la misión, pero el resto quedó con dudas de qué hacer."
+   },
+   {
+    "nombre": "Oliver Wood",
+    "referencia": "Harry Potter y la piedra filosofal",
+    "frase": "Estrategia de Quidditch clara, aunque faltaron fechas."
+   },
+   {
+    "nombre": "Molly Weasley",
+    "referencia": "Harry Potter y la Orden del Fénix",
+    "frase": "Cada uno salió con tarea asignada, como en Grimmauld Place."
+   },
+   {
+    "nombre": "Kingsley Shacklebolt",
+    "referencia": "Harry Potter y las reliquias de la Muerte",
+    "frase": "Acuerdos firmes y responsables claros. Digno de Ministro."
+   },
+   {
+    "nombre": "Hermione Granger",
+    "referencia": "Harry Potter y las reliquias de la Muerte",
+    "frase": "Lista, plan y bolso sin fondo listos. Casi perfecto."
+   },
+   {
+    "nombre": "Minerva McGonagall",
+    "referencia": "Harry Potter y las reliquias de la Muerte",
+    "frase": "Quién defiende qué y cuándo. Hasta las estatuas obedecieron."
+   }
+  ]
+ },
+ "rangos": [
+  {
+   "nombre": "Muggle curioso",
+   "frase": "Recién descubres que las reuniones tienen magia."
+  },
+  {
+   "nombre": "Alumno de primer año",
+   "frase": "Ya tienes varita, pero todavía te pierdes en las escaleras."
+  },
+  {
+   "nombre": "TIMOs aprobados",
+   "frase": "Pasaste los exámenes básicos de la conversación."
+  },
+  {
+   "nombre": "Prefecto",
+   "frase": "Ya te confían ordenar a otros. Úsalo bien."
+  },
+  {
+   "nombre": "Capitán de Quidditch",
+   "frase": "Armas equipos y estrategias. La Snitch es tuya."
+  },
+  {
+   "nombre": "Premio Anual",
+   "frase": "Lo mejor de tu generación en Hogwarts."
+  },
+  {
+   "nombre": "Auror",
+   "frase": "Alerta permanente: nada se te escapa en una reunión."
+  },
+  {
+   "nombre": "Profesor de Hogwarts",
+   "frase": "Ahora enseñas a otros a hablar y escuchar mejor."
+  },
+  {
+   "nombre": "Director de Hogwarts",
+   "frase": "Hasta los retratos de tu oficina te piden consejo."
+  },
+  {
+   "nombre": "Maestro de las Reliquias",
+   "frase": "Dominas las tres: claridad, escucha y cierre."
+  }
+ ],
+ "logros": {
+  "primera_reunion": {
+   "nombre": "El niño que se conectó",
+   "descripcion": "Completaste tu primera reunión."
+  },
+  "reuniones_10": {
+   "nombre": "Primer año aprobado",
+   "descripcion": "Completaste 10 reuniones."
+  },
+  "reuniones_50": {
+   "nombre": "EXTASIS con honores",
+   "descripcion": "Completaste 50 reuniones."
+  },
+  "preguntas_10_en_una": {
+   "nombre": "Veritaserum en vena",
+   "descripcion": "Hiciste 10 o más preguntas en una sola reunión."
+  },
+  "escucha_activa": {
+   "nombre": "Orejas extensibles",
+   "descripcion": "Hablaste 35% o menos en una reunión de 15+ minutos."
+  },
+  "cero_interrupciones_5": {
+   "nombre": "Maestro del Silencio",
+   "descripcion": "5 reuniones seguidas sin interrumpir a nadie."
+  },
+  "puntaje_perfecto": {
+   "nombre": "Extraordinario",
+   "descripcion": "Sacaste un 10 en algún apartado."
+  },
+  "reunion_9": {
+   "nombre": "Copa de las Casas",
+   "descripcion": "Promedio de 9 o más en una reunión."
+  },
+  "express": {
+   "nombre": "Snitch en 15 minutos",
+   "descripcion": "Reunión de 15 minutos o menos con cierre de 8 o más."
+  },
+  "sin_muletillas": {
+   "nombre": "Sin tartamudeo de Quirrell",
+   "descripcion": "Reunión de 15+ minutos sin ninguna muletilla."
+  },
+  "mejora_cierre": {
+   "nombre": "Ya no necesitas Recordadora",
+   "descripcion": "Tu cierre promedio subió 2+ puntos vs. tus 5 reuniones anteriores."
+  },
+  "habito_1": {
+   "nombre": "Wingardium Leviosa",
+   "descripcion": "Cumpliste por primera vez el hábito que te dejó Minuta. Todo mago empieza levantando una pluma."
+  },
+  "habito_racha_3": {
+   "nombre": "Giratiempo de hábitos",
+   "descripcion": "Cumpliste tu hábito en 3 reuniones seguidas. Como Hermione, repetiste la clase hasta dominarla."
+  },
+  "habito_10": {
+   "nombre": "Diez puntos para tu casa",
+   "descripcion": "Cumpliste 10 hábitos en total. Dumbledore te mira desde la mesa alta y asiente."
+  },
+  "cierre_racha_3": {
+   "nombre": "Snitch atrapada tres veces",
+   "descripcion": "3 reuniones seguidas con cierre de 8 o más. Cerraste el partido antes de que nadie lo notara."
+  },
+  "muletillas_racha_3": {
+   "nombre": "Silencio bien lanzado",
+   "descripcion": "3 reuniones seguidas con menos de 3 muletillas cada 10 minutos. El hechizo Silencio aplicado a los \"eh\" y \"o sea\"."
+  },
+  "habla_racha_5": {
+   "nombre": "La medida de Ollivander",
+   "descripcion": "5 reuniones seguidas con tu tiempo de habla en rango. Ni corto ni largo: la varita justa para tu mano."
+  },
+  "monologo_racha_5": {
+   "nombre": "Sin monólogos de Lockhart",
+   "descripcion": "5 reuniones seguidas sin hablar más de 60 segundos de corrido. Nada de autobiografías en medio de la reunión."
+  },
+  "preguntas_racha_3": {
+   "nombre": "La mano de Hermione",
+   "descripcion": "3 reuniones seguidas con al menos 1 pregunta cada 10 minutos. Mano arriba en primera fila, siempre."
+  },
+  "todo_verde": {
+   "nombre": "Felix Felicis en acción",
+   "descripcion": "Una reunión con todas tus métricas de cómo hablaste en rango. Suerte líquida: ese día te salió todo."
+  },
+  "equilibrio": {
+   "nombre": "Las cuatro casas alineadas",
+   "descripcion": "Los 4 apartados en 8 o más en una misma reunión. Gryffindor, Slytherin, Ravenclaw y Hufflepuff de acuerdo por una vez."
+  },
+  "remontada": {
+   "nombre": "Renacer como Fawkes",
+   "descripcion": "Después de una reunión bajo 6, la siguiente sobre 8. De las cenizas al vuelo en una sola sesión."
+  },
+  "mejora_debil": {
+   "nombre": "El crecimiento de Neville",
+   "descripcion": "Tu apartado más débil subió 2+ puntos en promedio en las siguientes 5 reuniones. Nadie apostaba por él y terminó blandiendo la espada."
+  },
+  "semana_8": {
+   "nombre": "Copa de las Casas",
+   "descripcion": "Una semana con 3+ reuniones y promedio de 8 o más. Puntos suficientes para llevarte la copa del Gran Comedor."
+  }
+ },
+ "iconos_logros": {
+  "primera_reunion": "⚡",
+  "reuniones_10": "🚂",
+  "reuniones_50": "📜",
+  "preguntas_10_en_una": "⚗️",
+  "escucha_activa": "👂",
+  "cero_interrupciones_5": "🤫",
+  "puntaje_perfecto": "🎓",
+  "reunion_9": "🏆",
+  "express": "🟡",
+  "sin_muletillas": "🗣️",
+  "mejora_cierre": "🔮",
+  "habito_1": "🪶",
+  "habito_racha_3": "⏳",
+  "habito_10": "⭐",
+  "cierre_racha_3": "🥇",
+  "muletillas_racha_3": "🤫",
+  "habla_racha_5": "📏",
+  "monologo_racha_5": "🪞",
+  "preguntas_racha_3": "🙋",
+  "todo_verde": "🍀",
+  "equilibrio": "🏰",
+  "remontada": "🔥",
+  "mejora_debil": "🌱",
+  "semana_8": "🏆"
+ },
+ "iconos_apartados": {
+  "claridad": "🪄",
+  "escucha": "🦉",
+  "preguntas": "🎩",
+  "cierre": "🗝️"
+ },
+ "iconos_rangos": [
+  "🤔",
+  "🚂",
+  "📝",
+  "📛",
+  "🧹",
+  "🏆",
+  "🕵️",
+  "🧙",
+  "🏰",
+  "🔺"
+ ],
+ "estilo": {
+  "modo": "oscuro",
+  "fondo": "#170d0d",
+  "fondo2": "#2b1515",
+  "panel": "rgba(212,175,55,0.07)",
+  "texto": "#f3e9d2",
+  "suave": "#b9a98a",
+  "linea": "rgba(212,175,55,0.22)",
+  "acento": "#D4AF37",
+  "acento_texto": "#E5C158",
+  "acento2": "#9B1B1B",
+  "fuente": "Luminari",
+  "peso": 400,
+  "mayusculas": false,
+  "cursiva": false,
+  "patron": "pergamino",
+  "radio": 2,
+  "textos": {
+   "reuniones": "Clases",
+   "ico_reuniones": "📜",
+   "progreso": "Progreso",
+   "ico_progreso": "🔮",
+   "logros": "Trofeos",
+   "ico_logros": "🏆",
+   "titulo_progreso": "Tu progreso en Hogwarts",
+   "buscar": "Accio reunión…"
+  }
+ },
+ "idioma": "es"
+}
