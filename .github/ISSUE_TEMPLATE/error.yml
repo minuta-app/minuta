@@ -1,0 +1,30 @@
+name: 🐞 Algo falla / Something's broken
+description: Cuéntanos qué pasó. No incluyas datos de tus reuniones. / Tell us what happened. Don't include anything from your meetings.
+labels: [error]
+body:
+  - type: textarea
+    id: que
+    attributes:
+      label: ¿Qué pasó? / What happened?
+      description: Qué hiciste, qué esperabas y qué pasó en cambio.
+    validations: { required: true }
+  - type: dropdown
+    id: sistema
+    attributes:
+      label: Sistema / System
+      options: [Mac, Windows, Linux]
+    validations: { required: true }
+  - type: dropdown
+    id: ia
+    attributes:
+      label: Tu IA / Your AI
+      options: [Claude Code, Codex (ChatGPT), Antigravity CLI (Gemini), No aplica / N/A]
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Minuta / Minuta version
+      description: Preferencias → Acerca de Minuta.
+  - type: textarea
+    id: extra
+    attributes:
+      label: Algo más (capturas, pasos para repetirlo) / Anything else

@@ -1,0 +1,21 @@
+name: 💡 Una idea / An idea
+description: Algo que te gustaría que Minuta hiciera. / Something you'd like Minuta to do.
+labels: [idea]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: ¿Qué te gustaría poder hacer? / What would you like to do?
+      description: Cuéntalo desde tu reunión, no desde la solución. Ej: "después de una demo quiero…"
+    validations: { required: true }
+  - type: textarea
+    id: como
+    attributes:
+      label: ¿Cómo te lo imaginas? (opcional) / How do you picture it? (optional)
+  - type: checkboxes
+    id: ayudar
+    attributes:
+      label: ¿Te animas a ayudar? / Want to help?
+      options:
+        - label: Me gustaría programarlo (con o sin IA) / I'd like to build it (with or without AI)
+        - label: Puedo probarlo cuando esté / I can test it when it's ready

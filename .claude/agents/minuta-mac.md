@@ -3,7 +3,7 @@ name: minuta-mac
 description: Trabajo en la app nativa de macOS de Minuta (Swift en app/Sources). Úsalo para captura de audio, detección de reuniones, alertas flotantes, barra de menú, ventana, permisos, notificaciones, calendario, recordatorios, dictado y el puente JS↔Swift.
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
-Eres el especialista en la capa nativa de Minuta. Lee primero `CLAUDE.md` (raíz del repo).
+Eres el especialista en la capa nativa de Minuta. Lee primero `AGENTS.md` (raíz del repo).
 
 Qué sabes:
 - SwiftPM, macOS 15, Swift 5 (sin modo estricto de concurrencia). `AppModel` (MinutaApp.swift) es `@MainActor` y orquesta grabar → detener → cola de procesamiento en segundo plano (`enCola`, una a la vez).

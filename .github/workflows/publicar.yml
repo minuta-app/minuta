@@ -2,7 +2,7 @@
 # y hacer push a main. Compila Mac, Windows y Linux, arma cada descarga con su huella SHA-256 y crea el Release vX.Y.Z;
 # las apps instaladas lo ven en su próxima revisión (al abrir y cada 6 h) y muestran el aviso dentro de la app.
 # También sirve subir una etiqueta v* o lanzarlo a mano. Si la versión ya está publicada, no hace nada.
-# (Si Actions no está disponible, se hace a mano: ver "Publicar una versión" en CLAUDE.md.)
+# (Si Actions no está disponible, se hace a mano: ver "Publicar una versión" en AGENTS.md.)
 name: Publicar versión
 on:
   push:

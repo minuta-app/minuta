@@ -153,7 +153,7 @@ cd ui && python3 -m http.server 8765  # vista previa de la interfaz con datos fi
   `universos/` universos incluidos · `herramientas/` empaquetado y revisión de privacidad · `docs/` sitio.
 - Con `~/minuta` como checkout git, la app usa ese código y se actualiza con `git pull`.
 - Publicar una versión: sube la versión en `app/Info.plist` y `git tag vX.Y.Z && git push --tags`; GitHub Actions compila y crea la Release.
-- La guía completa para contribuir (arquitectura, reglas, agentes) está en [`CLAUDE.md`](CLAUDE.md).
+- La guía completa para contribuir (arquitectura, reglas, agentes) está en [`AGENTS.md`](AGENTS.md).
 - **Pruebas:** `bash pruebas/correr.sh` corre lo mismo que GitHub revisa en cada cambio (sintaxis, privacidad, contrato entre la
   interfaz y las apps, pruebas de Python y de la interfaz en español e inglés con todos los universos). `python3 pruebas/evaluar_ia.py --real`
   prueba el prompt de las notas con tu IA y transcripciones ficticias.
@@ -173,14 +173,19 @@ Comentarios y errores: desde la app (⋯ → Enviar comentarios) o en [issues](h
 <a id="comunidad"></a>
 ## Comunidad
 
-Minuta es gratis y abierta, y la hacemos entre todos. Ninguna de estas formas de sumarte exige programar:
+Minuta es gratis y abierta, y la hacemos entre todos. Casi ninguna forma de sumarte exige programar:
 
-- ⭐ **Dale una estrella** a este repo: ayuda a que más gente lo encuentre.
-- 🗳️ **Vota los universos** con 👍/👎 en los [issues de votos del catálogo](https://github.com/minuta-app/minuta-catalogo/issues?q=is%3Aissue+label%3Avotos): ordenan la galería de la app.
-- 🌌 **Crea un universo** desde la app (Universos → Crear universo) y compártelo en el [catálogo](https://github.com/minuta-app/minuta-catalogo).
+- 💬 **Conversa** en [Discussions](https://github.com/minuta-app/minuta/discussions): preguntas, ideas y consejos entre quienes la usan.
+- 🧩 **Muestra lo que armaste** con tus notas (scripts, tableros, automatizaciones) en [Show and tell](https://github.com/minuta-app/minuta/discussions/categories/show-and-tell).
+- 🗳️ **Vota los universos** desde la galería de la app (o en los [issues de votos](https://github.com/minuta-app/minuta-catalogo/issues?q=is%3Aissue+label%3Avotos)).
+- 🌌 **Crea un universo** (Universos → Crear universo) y propónlo al [catálogo](https://github.com/minuta-app/minuta-catalogo) con 📤.
 - 🌍 **Traduce** la interfaz: los idiomas viven en el [catálogo](https://github.com/minuta-app/minuta-catalogo/tree/main/idiomas).
-- 💬 **Cuéntanos** qué falló o qué te gustaría en [issues](https://github.com/minuta-app/minuta/issues/new).
-- 🛠️ **Programa**: lee [`CLAUDE.md`](CLAUDE.md) (arquitectura y reglas) y usa los agentes de `.claude/agents/` si trabajas con una IA.
+- 🐞 **Cuéntanos** qué falló o qué te gustaría, desde la app o en [issues](https://github.com/minuta-app/minuta/issues/new/choose).
+- 🛠️ **Programa, con o sin IA:** [`AGENTS.md`](AGENTS.md) es la guía del proyecto para personas y para cualquier IA de programación
+  (Claude Code, Codex, Gemini/Antigravity). Empieza por [CONTRIBUTING.md](CONTRIBUTING.md) y los issues
+  [`good first issue`](https://github.com/minuta-app/minuta/labels/good%20first%20issue).
+
+Al participar aceptas el [código de conducta](CODE_OF_CONDUCT.md).
 
 ---
 

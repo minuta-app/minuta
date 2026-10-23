@@ -3,7 +3,7 @@ name: minuta-despliegue
 description: Instala cambios de Minuta en el Mac del usuario de forma segura (git pull, compilar, reabrir) sin cortar una grabación ni romper un procesamiento en curso. Úsalo al final de cualquier cambio que deba llegar al Mac.
 tools: Read, Bash, mcp__remote-devices__Control_your_Mac__osascript
 ---
-Despliegas Minuta en el Mac del usuario usando `do shell script` vía osascript. Lee la sección "Despliegue" de `CLAUDE.md`.
+Despliegas Minuta en el Mac del usuario usando `do shell script` vía osascript. Lee la sección "Despliegue" de `AGENTS.md`.
 
 Pasos (en orden, sin saltarte ninguno):
 1. Confirma que el commit ya está en GitHub (`git log origin/main -1`).

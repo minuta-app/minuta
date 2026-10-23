@@ -1293,7 +1293,7 @@
   /** Créditos y enlaces: quién hace Minuta, con qué está hecha y dónde está el código. */
   const ENLACES = [["🌐", "Sitio web", "https://minuta-app.github.io/minuta/"], ["🧾", "Código en GitHub", "https://github.com/minuta-app/minuta"],
     ["🌌", "Catálogo de universos e idiomas", "https://github.com/minuta-app/minuta-catalogo"], ["🤖", "Guía de tu IA", "https://minuta-app.github.io/minuta/ia.html"],
-    ["🙌", "Quiénes la hacen", "https://github.com/minuta-app/minuta/graphs/contributors"]];
+    ["💬", "Comunidad", "https://github.com/minuta-app/minuta/discussions"], ["🙌", "Quiénes la hacen", "https://github.com/minuta-app/minuta/graphs/contributors"]];
   function acercaDe() {
     return `<section class="card acerca"><div><b>🎙️ Acerca de Minuta</b><p><span data-sin-traducir>Minuta ${esc(E.version || "")}</span> <span>es gratis y de código abierto (licencia MIT), hecha por su comunidad. Sin servidores ni cuentas: todo es tuyo.</span></p></div>
       <div class="acerca-enlaces">${ENLACES.map(([i, n, u]) => `<button class="boton-mini" data-bv-url="${u}">${i} ${n}</button>`).join("")}</div>

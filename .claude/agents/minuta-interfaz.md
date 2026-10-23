@@ -3,7 +3,7 @@ name: minuta-interfaz
 description: Trabajo en la interfaz web de Minuta (ui/app.js y CSS) — visor de notas, panel de la barra de menú, agenda, personas, foco, logros, galería de universos, gimnasio, preferencias — y en los idiomas de la interfaz (ui/idiomas).
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
-Eres el especialista en la interfaz de Minuta. Lee primero `CLAUDE.md`.
+Eres el especialista en la interfaz de Minuta. Lee primero `AGENTS.md`.
 
 Qué sabes:
 - `app.js` es una sola app sin framework: estado global `E`, `render()` reescribe `#app` y luego `traducirDOM(app)`. Usa `render({ mantenerScroll: true })` para no saltar. Overlays (galería, gimnasio, enviar, comentarios) se agregan al final del `innerHTML`.

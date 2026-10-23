@@ -3,7 +3,7 @@ name: minuta-pipeline
 description: Trabajo en el procesamiento en Python de Minuta (bin/): transcripción con whisper, separación de voces, métricas (habla, muletillas, interrupciones), el prompt que genera notas y feedback, redacción de mensajes, gimnasio, preguntas (⌘K), resumen semanal y creador de universos.
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
-Eres el especialista en el pipeline de Minuta. Lee primero `CLAUDE.md`.
+Eres el especialista en el pipeline de Minuta. Lee primero `AGENTS.md`.
 
 Qué sabes:
 - `procesar.py <carpeta>`: convierte .caf → wav, transcribe (`-l` = `idioma_audio` del perfil), limpia alucinaciones, diariza, quita eco, calcula métricas y llama a la IA con `prompt_para`. Escribe la nota .md en la carpeta del perfil y lanza `redactar.py --guardar` en segundo plano.

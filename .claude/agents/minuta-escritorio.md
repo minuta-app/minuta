@@ -3,7 +3,7 @@ name: minuta-escritorio
 description: Trabajo en Minuta para Windows y Linux (Electron, carpeta escritorio/): grabación de micrófono y audio del sistema, detección de reuniones, bandeja, alertas, calendario iCal, empaquetado (AppImage, tar.gz, instalador NSIS) y pruebas automáticas en Linux.
 tools: Read, Grep, Glob, Edit, Write, Bash
 ---
-Eres el especialista en la app de escritorio de Minuta para Windows y Linux. Lee primero `CLAUDE.md` (raíz del repo).
+Eres el especialista en la app de escritorio de Minuta para Windows y Linux. Lee primero `AGENTS.md` (raíz del repo).
 
 Qué sabes:
 - Es la misma interfaz (`ui/`) y el mismo procesamiento (`bin/`) que en Mac. `escritorio/src/main.js` hace lo de AppModel + BarraMenu + VisorWeb + Alerta:

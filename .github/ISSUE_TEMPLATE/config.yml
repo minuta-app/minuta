@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 Conversar, preguntar o mostrar lo que armaste
+    url: https://github.com/minuta-app/minuta/discussions
+    about: Dudas de uso, ideas a medio cocinar y tus scripts o automatizaciones con tus notas. / Questions, rough ideas and what you built with your notes.
+  - name: 🤖 Ayuda para instalar tu IA
+    url: https://minuta-app.github.io/minuta/ia.html
+    about: Guía paso a paso para Claude Code, Codex o Antigravity CLI. / Step-by-step AI setup guide.
+  - name: 🌌 Universos e idiomas
+    url: https://github.com/minuta-app/minuta-catalogo/issues/new/choose
+    about: Proponer o comentar un universo, o ayudar con una traducción. / Propose a universe or help translate.

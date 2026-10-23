@@ -1,7 +1,7 @@
 # Revisión automática de cada cambio: si algo falla, se ve en GitHub antes de que llegue a alguien.
 # - comun: sintaxis, privacidad básica, contrato interfaz ↔ apps, pruebas de Python y de la interfaz (español/inglés, universos).
 # - mac: que la app de Mac compile (solo si cambió algo de Swift o del empaquetado).
-# Para correrlo en tu computador: ver "Pruebas" en CLAUDE.md.
+# Para correrlo en tu computador: ver "Pruebas" en AGENTS.md.
 name: Revisar
 on:
   push:

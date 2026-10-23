@@ -5,6 +5,10 @@
 !/build.sh
 !/perfil.ejemplo.json
 !/CLAUDE.md
+!/AGENTS.md
+!/GEMINI.md
+!/CONTRIBUTING.md
+!/CODE_OF_CONDUCT.md
 !/.claude/
 !/herramientas/
 !/instalar.sh
