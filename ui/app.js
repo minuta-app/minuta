@@ -1284,8 +1284,8 @@
       </section>
       <section class="card pref-comentarios"><div><b>🧭 Bienvenida</b><p>Vuelve a revisar tu IA, el modelo de transcripción, tus notas y su respaldo.</p></div>
         <button class="boton-txt" data-accion="bienvenida">Abrir la bienvenida</button></section>
-      <section class="card pref-comentarios"><div><b>✨ Versión ${esc(E.version || "")}</b><p><span>${E.act.hay ? "Hay una versión nueva lista para instalar." : "Minuta revisa sola si hay versiones nuevas."}</span> <span>Tus notas, perfil y universos no se tocan al actualizar.</span></p></div>
-        <button class="boton-txt${E.act.hay ? " aplicar" : ""}" data-act="${E.act.hay ? "instalar" : "buscar"}">${E.act.hay ? "Actualizar ahora" : "Buscar actualizaciones"}</button></section>
+      <section class="card pref-comentarios"><div><b>✨ Versión ${esc(E.version || "")}</b><p><span>${E.act.hay ? "Hay una versión nueva lista para instalar." : E.act.alDia ? "✓ Estás en la última versión." : "Minuta revisa sola si hay versiones nuevas."}</span> <span>Tus notas, perfil y universos no se tocan al actualizar.</span></p></div>
+        <button class="boton-txt${E.act.hay ? " aplicar" : ""}" data-act="${E.act.hay ? "instalar" : "buscar"}" ${E.act.buscando ? "disabled" : ""}>${E.act.hay ? "Actualizar ahora" : E.act.buscando ? "Buscando…" : "Buscar actualizaciones"}</button></section>
       <section class="card pref-comentarios"><div><b>💬 ¿Algo no funciona o tienes una idea?</b><p>Cuéntanos: llega como un reporte público en GitHub. No incluyas datos de tus reuniones.</p></div>
         <button class="boton-txt aplicar" data-accion="comentarios">Enviar comentarios</button></section>
       ${acercaDe()}`;
@@ -2597,7 +2597,12 @@
         if (E.plataforma === "web") simularActualizacion(); else host.enviar("actualizar");
         return;
       }
-      if (ac.dataset.act === "buscar") { host.enviar("buscarActualizacion"); toast("Buscando actualizaciones…"); return; }
+      if (ac.dataset.act === "buscar") {
+        if (E.act.buscando) return;
+        E.act.buscando = true; E.act.alDia = false; render({ mantenerScroll: true });
+        if (E.plataforma === "web") setTimeout(() => window.Minuta.actualizacion({ hay: false }), 900); else host.enviar("buscarActualizacion");
+        return;
+      }
       host.enviar("actualizar"); if (E.plataforma === "web") toast("Actualizando…"); return;
     }
     if (E.bv) {
@@ -3293,7 +3298,12 @@
     },
     /** Avance de la actualización: { paso: "1"|"2"|"3"|"error", texto, total, pct } */
     actualizacionProgreso(d) { E.act.progreso = d; render({ mantenerScroll: true }); },
-    actualizacion(r) { const antes = E.act.hay; E.act = { ...E.act, ...r }; if (r.hay !== antes || r.hay) render({ mantenerScroll: true }); },
+    actualizacion(r) {
+      const antes = E.act.hay, manual = E.act.buscando;
+      E.act = { ...E.act, ...r, buscando: false, alDia: !r.hay && !r.error };
+      if (manual) toast(r.error ? "No pude revisar si hay versiones nuevas. Revisa tu conexión." : r.hay ? "Hay una versión nueva de Minuta ✨" : `Estás en la última versión${E.version ? ` (${E.version})` : ""} ✓`);
+      if (manual || r.hay !== antes || r.hay) render({ mantenerScroll: true });
+    },
     /** Índice del catálogo público (universos o idiomas). */
     catalogo(r) {
       const c = r.tipo === "idiomas" ? (E.catI ||= {}) : E.catU;

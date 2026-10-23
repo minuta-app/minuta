@@ -653,7 +653,8 @@ final class AppModel: ObservableObject {
     func buscarActualizacion() {
         Actualizaciones.revisar { [weak self] hay, detalle in
             guard let self else { return }
-            self.actualizacion = ["hay": hay, "detalle": detalle, "version": Actualizaciones.version]
+            let error = detalle == Actualizaciones.sinConexion
+            self.actualizacion = ["hay": hay, "detalle": error ? "" : detalle, "version": Actualizaciones.version, "error": error]
             if let json = try? JSONSerialization.data(withJSONObject: self.actualizacion), let t = String(data: json, encoding: .utf8) {
                 VentanaVisor.shared.web?.evaluateJavaScript("window.Minuta && window.Minuta.actualizacion && window.Minuta.actualizacion(\(t))")
             }

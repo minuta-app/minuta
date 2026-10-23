@@ -323,10 +323,13 @@ enum Actualizaciones {
     private static var zip: URL?, huella: URL?
 
     /// Revisa si hay versión nueva. Devuelve (hay, detalle) en el hilo principal.
+    /// Detalle que devuelve `revisar` cuando no pudo consultar (sin internet o GitHub no respondió).
+    static let sinConexion = "sin-conexion"
+
     static func revisar(_ fin: @escaping @MainActor (Bool, String) -> Void) {
         if esDesarrollo {
             Respaldo.git(["fetch", "--quiet", "origin", "main"], en: raiz) { ok, _ in
-                guard ok else { fin(false, ""); return }
+                guard ok else { fin(false, Actualizaciones.sinConexion); return }
                 Respaldo.git(["rev-list", "--count", "HEAD..origin/main"], en: raiz) { _, n in
                     let cambios = Int(n.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
                     guard cambios > 0 else { fin(false, ""); return }
@@ -340,12 +343,14 @@ enum Actualizaciones {
         var pedido = URLRequest(url: URL(string: "https://api.github.com/repos/\(repoPublico)/releases/latest")!)
         pedido.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         pedido.setValue("Minuta/\(version)", forHTTPHeaderField: "User-Agent")
-        URLSession.shared.dataTask(with: pedido) { datos, _, _ in
+        URLSession.shared.dataTask(with: pedido) { datos, respuesta, _ in
+            let respondio = (respuesta as? HTTPURLResponse)?.statusCode == 200
             let o = datos.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
             let tag = (o["tag_name"] as? String ?? "").trimmingCharacters(in: CharacterSet(charactersIn: "v"))
             let assets = o["assets"] as? [[String: Any]] ?? []
             let url = { (n: String) in (assets.first { $0["name"] as? String == n }?["browser_download_url"] as? String).flatMap(URL.init(string:)) }
             Task { @MainActor in
+                guard respondio else { fin(false, Actualizaciones.sinConexion); return }
                 guard !tag.isEmpty, tag.compare(version, options: .numeric) == .orderedDescending,
                       let z = url("Minuta-macOS.zip"), let h = url("Minuta-macOS.zip.sha256") else { fin(false, ""); return }
                 zip = z; huella = h

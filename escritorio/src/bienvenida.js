@@ -234,7 +234,7 @@ const Actualizaciones = {
   async revisar() {
     if (this.esDesarrollo) {
       const f = await Respaldo.git(["fetch", "--quiet", "origin", "main"], BASE);
-      if (!f.ok) return { hay: false, detalle: "" };
+      if (!f.ok) return { hay: false, detalle: "", error: true };
       const n = parseInt((await Respaldo.git(["rev-list", "--count", "HEAD..origin/main"], BASE)).texto.trim(), 10) || 0;
       if (!n) return { hay: false, detalle: "" };
       const log = (await Respaldo.git(["log", "--format=%s", "-n", "3", "HEAD..origin/main"], BASE)).texto;
@@ -243,13 +243,14 @@ const Actualizaciones = {
     try {
       const r = await net.fetch(`https://api.github.com/repos/${this.repoPublico}/releases/latest`,
         { headers: { Accept: "application/vnd.github+json", "User-Agent": `Minuta/${this.version}` } });
+      if (!r.ok) return { hay: false, detalle: "", error: true };
       const o = await r.json();
       const tag = String(o.tag_name || "").replace(/^v/, "");
       const url = (n) => (o.assets || []).find((a) => a.name === n)?.browser_download_url;
       if (!tag || compararVersiones(tag, this.version) <= 0 || !url(ASSET) || !url(ASSET + ".sha256")) return { hay: false, detalle: "" };
       this._url = url(ASSET); this._huella = url(ASSET + ".sha256");
       return { hay: true, detalle: `Versión ${tag}\n` + String(o.body || "").split("\n").slice(0, 4).join("\n") };
-    } catch { return { hay: false, detalle: "" }; }
+    } catch { return { hay: false, detalle: "", error: true }; }
   },
   /** Baja la versión nueva, verifica su huella y la instala. Notas, perfil, universos y modelos no se tocan (viven en ~/minuta). */
   /** avance({ paso: "1"|"2"|"3", texto, total, pct }): la interfaz lo muestra en el mismo aviso de actualización. */

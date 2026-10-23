@@ -856,7 +856,13 @@
   "La que más repetiste: “{x}” (×{n}). Cuando la sientas venir, haz una pausa en silencio.": "The one you repeated most: “{x}” (×{n}). When you feel it coming, pause in silence.",
   "Se mencionó en {n} reuniones desde el {x}": "Mentioned in {n} meetings since {x}",
   "✓ Desbloqueado el {x}": "✓ Unlocked on {x}",
-  "la última {x}": "last one {x}"
+  "la última {x}": "last one {x}",
+  "Estás en la última versión ({x}) ✓": "You're on the latest version ({x}) ✓",
+  "Estás en la última versión ✓": "You're on the latest version ✓",
+  "✓ Estás en la última versión.": "✓ You're on the latest version.",
+  "Hay una versión nueva de Minuta ✨": "There's a new version of Minuta ✨",
+  "No pude revisar si hay versiones nuevas. Revisa tu conexión.": "I couldn't check for new versions. Check your connection.",
+  "Buscando…": "Searching…"
  },
  "palabras": {
   "lunes": "Monday",
