@@ -1,7 +1,7 @@
 # Minuta — guía para trabajar en el proyecto
 
 Minuta es una app de escritorio (estilo Granola) para macOS, Windows y Linux que graba reuniones, transcribe **localmente** (whisper.cpp), separa voces,
-y con la IA del usuario (hoy Claude vía `claude -p`) genera notas, feedback de comunicación y un mensaje para los participantes.
+y con la IA del usuario (Claude Code, Codex o Gemini CLI, con su propia cuenta) genera notas, feedback de comunicación y un mensaje para los participantes.
 Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromisos, fichas de personas, gimnasio de práctica y coach en vivo.
 
 **Principios que no se negocian**
@@ -24,7 +24,7 @@ Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromis
 | `build.sh` | Empaqueta e instala en `~/Applications/Minuta.app`. **Cierra la app** (ver Despliegue). |
 | `instalar.sh` | Instalador de un comando para usuarios (`curl … \| bash`): baja la última Release, verifica SHA-256 e instala. Sin Python ni Homebrew. |
 | `.github/workflows/publicar.yml` | Al subir un tag `vX.Y.Z`: compila en macos-15 con `empaquetar.sh` y publica la Release. |
-| `docs/` | Página pública (GitHub Pages): `index.html` (español/inglés, detecta el sistema del visitante) y capturas en `docs/img` hechas con `demo.json`. |
+| `docs/` | Página pública (GitHub Pages): `index.html` (español/inglés, detecta el sistema del visitante), `ia.html` (guía para instalar Claude Code, Codex o Gemini CLI) y capturas en `docs/img` hechas con `demo.json`. |
 | `escritorio/` | App de **Windows y Linux** (Electron): misma `ui/` y mismo `bin/`. Ver "Windows y Linux" abajo. |
 | `instalar.ps1` | Instalador de un comando para Windows (`irm … \| iex`). `instalar.sh` sirve para Mac y Linux. |
 | `.claude/agents/` | Agentes especializados (ver abajo). |
@@ -45,7 +45,7 @@ estándar de Python: no agregues dependencias de pip. `build.sh` se niega a inst
 ## Primera vez, respaldo y actualizaciones (`Bienvenida.swift`)
 
 - **Bienvenida:** se abre si no existe `perfil.json` (o desde Preferencias). Pasos: idioma → quién eres → IA (`IA.buscar`/`IA.probar`
-  detectan y prueban `claude`; Codex/Gemini figuran como "pronto") → modelo (`Modelos`: turbo/small según RAM, descarga verificada por
+  detectan y prueban `claude`, `codex` o `gemini`; la elegida queda en `perfil.json` → `ia`) → modelo (`Modelos`: turbo/small según RAM, descarga verificada por
   SHA-256 desde Hugging Face) → notas (carpeta nueva, carpeta existente o `git clone` de su repo) → respaldo opcional → permisos → universo.
 - **Respaldo:** `Respaldo.crearRepo` crea un repo **privado en la cuenta del usuario** (GitHub o GitLab) con su token; el token va al
   Llavero y git lo recibe como encabezado en memoria (`-c http.extraHeader`), nunca en disco. Tras cada nota: `Respaldo.sincronizar()`.
@@ -90,6 +90,7 @@ estándar de Python: no agregues dependencias de pip. `build.sh` se niega a inst
 ## Cómo se conectan las piezas
 
 - **JS ↔ Swift:** la UI llama `host.enviar(accion, datos)` → `webkit.messageHandlers.minuta` → `switch` en `VisorWeb.swift` (ventana) o `BarraMenu.swift` (panel). Swift responde con `window.Minuta.<funcion>(json)` (`llamarFuncion` / `llamar`). Al agregar una acción: caso en Swift + manejador en `window.Minuta` + modo `E.plataforma === "web"` simulado para la vista previa.
+- **IA del usuario:** los scripts nunca llaman a `claude` directo: usan `perfil.ejecutar_ia(prompt, timeout, cwd)`, que arma el comando según `perfil.ia` (`claude -p`, `codex exec … -o archivo -`, `gemini -p … -o text`) y amplía el PATH (Homebrew, npm, nvm, `~/.local/bin`). Mensajes al usuario con `NOMBRE_IA`, no "Claude". Guía pública para instalarlas: `docs/ia.html`.
 - **Swift → Python:** `AppModel.ejecutar` / `correrScriptJSON(script, args)`; el último argumento siempre es la ruta del JSON de salida. Los scripts leen el perfil con `from perfil import …`.
 - **Formato de nota:** el prompt de `procesar.py` define secciones y marcadores (`### Próximos pasos`, `## Personas`, `## Feedback para …`, `**Veredicto:**`, `**Puntajes:**`, `**Hábito para la próxima:**`, `**Decisión:**`, `**Pendiente:**`, `🔧`, `✅`, `→ Prueba:`). **Los marcadores van siempre en español** aunque la nota esté en otro idioma: `app.js`, `redactar.py`, `semana.py` y `preguntar.py` los usan para leer.
 - **Universos:** JSON de solo datos (rangos ×10, apartados claridad/escucha/preguntas/cierre ×10, logros, íconos, `estilo`). `Temas.paraJS()` une incluidos + `~/minuta/temas`. Se descargan con `Catalogo.descargarUniverso` (valida antes de guardar).
@@ -100,7 +101,7 @@ estándar de Python: no agregues dependencias de pip. `build.sh` se niega a inst
 - Código, comentarios, commits y textos de la app en **español** (de Chile neutro). Nombres descriptivos en español como el resto.
 - **Todo texto nuevo visible en la UI** (JS o Swift) debe agregarse a `ui/idiomas/en.json` en el mismo cambio. Para otros idiomas: `herramientas/traducir_idioma.py` en el catálogo.
 - Nunca pongas el contenido de las notas en una ruta de traducción: usa `data-sin-traducir` o una clase de `NO_TRADUCIR`.
-- Lo que se envía a otras personas (correo/Teams) **siempre** lo redacta Claude con `redactar.py`, sin feedback, opiniones ni la sección `## Personas`.
+- Lo que se envía a otras personas (correo/Teams) **siempre** lo redacta la IA del usuario con `redactar.py`, sin feedback, opiniones ni la sección `## Personas`.
 - Universos y paquetes de idioma son datos: nunca agregues campos que se ejecuten o se inyecten como HTML sin `esc()`.
 - Interfaz: usa `render({ mantenerScroll: true })` para no saltar; el contenedor de página usa `data-pagina` (no `data-vista`, que dispara navegación).
 - Antes de terminar un cambio de UI: `node --check ui/app.js` y prueba en navegador (`cd ui && python3 -m http.server 8765` → `http://localhost:8765/index.html`; `#panel` para el panel, `?idioma=en` para inglés, `window.Minuta._probar({...})` para saltar a cualquier vista).

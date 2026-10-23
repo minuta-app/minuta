@@ -7,7 +7,7 @@ import os
 import re
 import subprocess
 
-from perfil import QUIEN, IDIOMA, CARPETA_NOTAS, CLAUDE
+from perfil import QUIEN, IDIOMA, CARPETA_NOTAS, ejecutar_ia, NOMBRE_IA
 
 HOME = os.path.expanduser("~")
 BASE = os.path.join(HOME, "minuta")
@@ -64,10 +64,9 @@ Escribe en {IDIOMA}, en markdown, con esta estructura:
 REUNIONES:
 {chr(10).join(bloques)}
 """
-    r = subprocess.run([CLAUDE, "-p", "--output-format", "text"], input=prompt, text=True,
-                       capture_output=True, cwd=BASE, timeout=900)
+    r = ejecutar_ia(prompt, timeout=900)
     if r.returncode != 0 or not r.stdout.strip():
-        raise SystemExit(f"claude -p falló: {r.stderr[:500]}")
+        raise SystemExit(f"{NOMBRE_IA} falló: {r.stderr[:500]}")
 
     os.makedirs(SALIDA, exist_ok=True)
     anio, semana, _ = hoy.isocalendar()

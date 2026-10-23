@@ -778,7 +778,7 @@
       ${hud()}
       ${nav}
       ${focoMini()}
-      <label class="buscador"><span class="lupa">⌕</span><input id="buscar" type="search" title="Escribe una pregunta y presiona ↵ para preguntarle a Claude (⌘K)" placeholder="${esc(txt("buscar", "Buscar en reuniones"))} · ⌘K pregunta" value="${esc(E.busqueda)}" autocomplete="off"></label>
+      <label class="buscador"><span class="lupa">⌕</span><input id="buscar" type="search" title="Escribe una pregunta y presiona ↵ para preguntarle a tu IA (⌘K)" placeholder="${esc(txt("buscar", "Buscar en reuniones"))} · ⌘K pregunta" value="${esc(E.busqueda)}" autocomplete="off"></label>
       <nav class="lista">${lista || `<div class="vacio-lista"><div>${tema()?.emoji || "🎙️"}</div>${E.notas.length ? "Sin resultados" : `Aún no hay reuniones.<br>${ESCRITORIO ? "Graba una desde el ícono de Minuta en la bandeja del sistema." : "Graba una desde la barra de menú."}`}</div>`}</nav>
     </aside>`;
   }
@@ -983,7 +983,7 @@
           <span class="u-emoji">${t.emoji}</span><span class="u-nombre">${esc(t.nombre)}</span><span class="u-xp">XP: ${esc(t.xp)}${t.creado ? "" : chipVotos(t.id)}</span>
           <span class="u-iconos">${(t.iconos_rangos || []).slice(0, 7).join(" ")}</span>${t.id === E.temaId ? '<span class="u-check">✓</span>' : ""}${t.creado ? '<span class="u-creado">⚒️ creado</span>' : t.incluido ? "" : '<span class="u-creado">⬇ descargado</span>'}</button>
           ${borrable ? `<button class="boton-mini u-quitar" data-forja="borrar-u" data-id="${esc(t.id)}" title="Quitar este universo">🗑</button>` : ""}</div>`;
-      }).join("")}<button class="universo u-nuevo" data-forja="abrir"><span class="u-emoji">＋</span><span class="u-nombre">Crear universo</span><span class="u-xp">Con Claude, en ~5 min</span></button></div>
+      }).join("")}<button class="universo u-nuevo" data-forja="abrir"><span class="u-emoji">＋</span><span class="u-nombre">Crear universo</span><span class="u-xp">Con tu IA, en ~5 min</span></button></div>
       <div class="u-sub">Más universos para descargar ${E.catU.estado === "cargando" ? `<small>cargando…</small>` : E.catU.error && !E.catU.lista.length ? `<small>sin conexión al catálogo</small>` : `<small>${porBajar.length} disponibles · gratis</small>`}</div>
       ${porBajar.length ? `<div class="galeria-grid">${porBajar.map((u) => `<div class="u-celda"><button class="universo u-catalogo" data-previa="${esc(u.id)}" style="${varsUniverso(u.estilo)}" title="Ver cómo es">
           <span class="u-emoji">${u.emoji}</span><span class="u-nombre">${esc(u.nombre)}</span><span class="u-xp">XP: ${esc(u.xp)}${chipVotos(u.id)}</span>
@@ -1079,7 +1079,7 @@
         <div class="pn-tit pn-tit-tipo">¿Qué tipo de reunión es?<button class="pn-link" data-pn="preferencias" title="Agregar o editar categorías">Editar</button></div>
         <div class="pestanas pn-tipos" role="radiogroup" aria-label="Tipo de reunión">${E.categorias.map((c) =>
           `<button role="radio" aria-checked="${p.tipo === c.id}" class="pestana${p.tipo === c.id ? " activa" : ""}" data-pn-tipo="${esc(c.id)}" title="${esc(c.descripcion || c.nombre)}"><span class="pn-emo">${esc(c.emoji)}</span>${esc(c.nombre)}</button>`).join("")}</div>
-        <div class="pn-pista"><span class="tipo-barra t-${esc(p.tipo)}"></span>${p.tipoAuto ? "<b>Elegida sola</b> · " : ""}Claude evaluará: ${esc(categoria(p.tipo).descripcion || "comunicación general")}</div>
+        <div class="pn-pista"><span class="tipo-barra t-${esc(p.tipo)}"></span>${p.tipoAuto ? "<b>Elegida sola</b> · " : ""}Tu IA evaluará: ${esc(categoria(p.tipo).descripcion || "comunicación general")}</div>
         <button class="pn-grabar" data-pn="grabar"><span class="pn-rec"></span><span class="pn-verbo">${esc(verbo)}</span></button>`;
     }
     const recientes = E.notas.slice(0, 3).map((n) => `<div class="fila-env"><button class="fila" data-pn-nota="${esc(n.ruta)}"><span class="tipo-barra t-${esc(n.tipo || "Otra")}"></span>
@@ -1199,7 +1199,7 @@
     const opcion = (lista, actual) => lista.map(([v, n]) => `<option value="${esc(v)}"${v === actual ? " selected" : ""}>${esc(n)}</option>`).join("");
     const notasOtra = p.idioma && !IDIOMAS_NOTAS.some(([v]) => v === p.idioma);
     return `<div class="subtitulo">Tú e idiomas</div>
-      <p class="pref-intro">Con esto Claude sabe a quién le da feedback y en qué idioma escribirte. Se guarda solo en tu computador.</p>
+      <p class="pref-intro">Con esto tu IA sabe a quién le da feedback y en qué idioma escribirte. Se guarda solo en tu computador.</p>
       <section class="card pref-perfil">
         <div class="pp-fila">
           <label class="cat-campo"><span>Tu nombre</span><input data-perfil="nombre" value="${esc(p.nombre || "")}" placeholder="ej: Ana"></label>
@@ -1208,7 +1208,7 @@
         <label class="cat-campo"><span>Qué haces <small>le da contexto al feedback</small></span><input data-perfil="descripcion" value="${esc(p.descripcion || "")}" placeholder="ej: Product Manager en una startup"></label>
         <div class="pp-fila">
           <label class="cat-campo"><span>Idioma de la app</span><select data-idioma-ui>${(I.instalados || []).map((x) => `<option value="${esc(x.codigo)}"${x.codigo === I.codigo ? " selected" : ""}>${esc(x.bandera || "")} ${esc(x.nombre)}</option>`).join("")}</select></label>
-          <label class="cat-campo"><span>Idioma de tus notas <small>lo que escribe Claude</small></span><select data-perfil-sel="idioma">${opcion(IDIOMAS_NOTAS, p.idioma)}${notasOtra ? `<option selected>${esc(p.idioma)}</option>` : ""}</select></label>
+          <label class="cat-campo"><span>Idioma de tus notas <small>lo que escribe tu IA</small></span><select data-perfil-sel="idioma">${opcion(IDIOMAS_NOTAS, p.idioma)}${notasOtra ? `<option selected>${esc(p.idioma)}</option>` : ""}</select></label>
           <label class="cat-campo"><span>Idioma de tus reuniones <small>para transcribir</small></span><select data-perfil-sel="idioma_audio">${opcion(IDIOMAS_AUDIO, p.idioma_audio || "auto")}</select></label>
         </div>
         ${cat.filter((x) => !inst.has(x.codigo)).length ? `<div class="pp-idiomas"><small>Más idiomas para la app:</small> ${cat.filter((x) => !inst.has(x.codigo)).map((x) =>
@@ -1236,7 +1236,7 @@
         <div class="cat-colores" role="radiogroup" aria-label="Color">${COLORES_CAT.map((col) =>
           `<button class="cat-color${col === c.color ? " elegido" : ""}" data-cat-color="${i}|${col}" style="background:${col}" aria-label="Color ${col}"></button>`).join("")}</div>
         <label class="cat-campo"><span>Descripción corta <small>se muestra al grabar</small></span><input data-campo="descripcion" value="${esc(c.descripcion)}" placeholder="ej: ventas y demos"></label>
-        <label class="cat-campo"><span>¿Qué debe evaluar Claude? <small>el enfoque del feedback</small></span><textarea data-campo="enfoque" rows="3" placeholder="ej: Es una reunión de ventas. Evalúa si descubrí necesidades, manejé objeciones y cerré con un siguiente paso.">${esc(c.enfoque)}</textarea></label>
+        <label class="cat-campo"><span>¿Qué debe evaluar tu IA? <small>el enfoque del feedback</small></span><textarea data-campo="enfoque" rows="3" placeholder="ej: Es una reunión de ventas. Evalúa si descubrí necesidades, manejé objeciones y cerré con un siguiente paso.">${esc(c.enfoque)}</textarea></label>
         <details class="cat-reglas"${(c.dominios?.length || c.palabras?.length || c.apps?.length) ? "" : ""}><summary>Elegirla sola cuando…</summary>
           <label class="cat-campo"><span>Los invitados tienen correo de</span><input data-campo="dominios" data-lista value="${lista(c.dominios)}" placeholder="empresa.cl, otra.com"></label>
           <label class="cat-campo"><span>El título de la reunión contiene</span><input data-campo="palabras" data-lista value="${lista(c.palabras)}" placeholder="demo, sprint, cliente"></label>
@@ -1249,7 +1249,7 @@
       ${seccionPerfil()}
       ${seccionAvisos()}
       <div class="subtitulo">Categorías de reunión</div>
-      <p class="pref-intro">Las <b>categorías</b> le dicen a Claude con qué lente evaluar cada reunión y separan tu progreso por tipo.
+      <p class="pref-intro">Las <b>categorías</b> le dicen a tu IA con qué lente evaluar cada reunión y separan tu progreso por tipo.
       Minuta elige una sola usando tu calendario; siempre puedes cambiarla antes de grabar.</p>
       <div class="cats">${cats}</div>
       <button class="boton-txt cat-nueva" data-cat-nueva>＋ Nueva categoría</button>
@@ -1401,12 +1401,12 @@
     const f = E.forja;
     if (!f) return "";
     if (f.estado === "trabajando") return `<div class="forja trabajando"><div class="forja-yunque">⚒️</div><h2>Forjando «${esc(f.nombre)}»…</h2>
-      <p>Claude está escribiendo 40 arquetipos, 10 rangos, 24 logros, la paleta y la ventana. Tarda unos 5 minutos; puedes seguir usando Minuta y te aviso al terminar.</p><div class="forja-barra"><i></i></div></div>`;
+      <p>Tu IA está escribiendo 40 arquetipos, 10 rangos, 24 logros, la paleta y la ventana. Tarda unos 5 minutos; puedes seguir usando Minuta y te aviso al terminar.</p><div class="forja-barra"><i></i></div></div>`;
     if (f.estado === "listo") return `<div class="forja listo"><div class="forja-yunque">✨</div><h2>¡${esc(f.nombreFinal || f.nombre)} está listo!</h2>
       <p>Ya aparece en la galería. Si un personaje no te calza, dímelo en la tarjeta "Personaje de la reunión" y lo voy puliendo.</p>
       <div class="borrar-botones"><button class="boton-txt" data-forja="cerrar">Seguir viendo</button><button class="boton-txt aplicar" data-tema="${esc(f.id)}">Probarlo ahora</button></div></div>`;
     return `<div class="forja"><h2>＋ Crear un universo</h2>
-      <p>Escribe una saga, serie, película, videojuego o lo que quieras. Claude arma los personajes, rangos, logros, colores y la forma de la ventana.</p>
+      <p>Escribe una saga, serie, película, videojuego o lo que quieras. Tu IA arma los personajes, rangos, logros, colores y la forma de la ventana.</p>
       ${f.estado === "error" ? `<p class="forja-error">No resultó: ${esc(f.error || "error desconocido")}. Intenta de nuevo.</p>` : ""}
       <label class="cat-campo"><span>Universo</span><input id="forja-nombre" value="${esc(f.nombre)}" placeholder="Pokémon, Breaking Bad, Stranger Things, Mundial 2026…" autocomplete="off"></label>
       <label class="cat-campo"><span>Indicaciones <small>opcional</small></span><textarea id="forja-notas" rows="2" placeholder="ej: más humor chileno, solo personajes de la primera temporada, estética retro de los 80">${esc(f.notas)}</textarea></label>
@@ -1665,7 +1665,7 @@
           <p class="foco-delta ${crec.d >= 0 ? "bien" : "mal"}">${crec.d >= 0 ? "+" : ""}${crec.d.toFixed(1)} <small>vs tus primeras reuniones</small></p></section>
       </div>
       <section class="co-habito">
-        <div class="co-eti">🎯 Tu hábito actual</div><p>${habito ? inline(habito) : "Graba tu próxima reunión y Claude te dejará uno."}</p>
+        <div class="co-eti">🎯 Tu hábito actual</div><p>${habito ? inline(habito) : "Graba tu próxima reunión y tu IA te dejará uno."}</p>
         ${evaluados.length ? `<div class="foco-hab"><div class="foco-hab-cab"><b>${cumplidos} de ${evaluados.length}</b> hábitos cumplidos en tus últimas reuniones</div>
           <ol>${evaluados.slice().reverse().map((x) => `<li class="${x.a.estado}" title="${esc(x.n.titulo)} · ${esc(x.a.texto)}"><span>${x.a.estado === "si" ? "✓" : "✗"}</span><small>${x.n.fecha.getDate()}/${x.n.fecha.getMonth() + 1}</small></li>`).join("")}</ol></div>`
           : `<p class="foco-nota">Desde tu próxima reunión, Minuta revisará si cumpliste el hábito anterior y lo irá marcando aquí.</p>`}
@@ -2025,7 +2025,7 @@
           <div class="pe-cab">${avatar(sel)}<div><h2>${esc(sel.nombre)}</h2><p>${sel.rol ? `${esc(sel.rol)} · ` : ""}${sel.notas.length} reuniones · la última ${fmtFechaCorta(sel.notas[0].fecha)} · ${Object.entries(tipos).map(([t, k]) => `${esc(categoria(t).emoji)} ${esc(nombreTipo(t))} ${k}`).join(" · ")}</p></div></div>
           <div class="ag-bloque"><div class="co-eti">Qué le importa y cómo es</div>
             ${sel.perfil.length ? `<ul class="ag-lista">${sel.perfil.slice(0, 6).map((x) => `<li>${inline(x.texto)} <button class="ag-nota" data-nota="${esc(x.nota.ruta)}">${fmtFechaCorta(x.nota.fecha)}</button></li>`).join("")}</ul>`
-              : `<p class="ag-txt suave">Desde tu próxima reunión con ${esc(sel.nombre.split(" ")[0])}, Claude anotará qué le importa, sus objeciones y su forma de decidir.</p>`}</div>
+              : `<p class="ag-txt suave">Desde tu próxima reunión con ${esc(sel.nombre.split(" ")[0])}, tu IA anotará qué le importa, sus objeciones y su forma de decidir.</p>`}</div>
           <div class="ag-bloque"><div class="co-eti">Compromisos abiertos</div>${comp.length ? `<ul class="ag-comps">${comp.map((c) => filaCompromiso(c)).join("")}</ul>` : `<p class="ag-txt suave">Nada pendiente con ${esc(sel.nombre.split(" ")[0])}.</p>`}</div>
           <div class="ag-bloque"><div class="co-eti">Reuniones juntos</div><div class="pe-reus">${sel.notas.slice(0, 12).map((n) => `<button class="fila" data-nota="${esc(n.ruta)}"><span class="tipo-barra t-${esc(n.tipo || "Otra")}"></span><span class="fila-txt"><span class="fila-titulo">${esc(n.titulo)}</span><span class="fila-det">${fmtFechaCorta(n.fecha)} · ${Math.round(n.duracion || 0)} min${puntajes(n) ? ` · ${promP(puntajes(n)).toFixed(1)}` : ""}</span></span></button>`).join("")}</div></div>
         </div>
@@ -2219,7 +2219,7 @@
     E.preg.borrador = "";
     render({ mantenerScroll: true });
     if (E.plataforma === "web") {
-      setTimeout(() => window.Minuta.respuesta({ id, ok: true, respuesta: "En la vista previa no hay Claude. En tu Mac, aquí aparece la respuesta con citas como [1] o [1@00:27:05].", fuentes: [{ n: 1, ruta: E.notas[0]?.ruta, titulo: E.notas[0]?.titulo, fecha: "" }] }), 900);
+      setTimeout(() => window.Minuta.respuesta({ id, ok: true, respuesta: "En la vista previa no hay IA. En tu Mac, aquí aparece la respuesta con citas como [1] o [1@00:27:05].", fuentes: [{ n: 1, ruta: E.notas[0]?.ruta, titulo: E.notas[0]?.titulo, fecha: "" }] }), 900);
     } else host.enviar("preguntar", { id, pregunta: q });
   }
   function respuestaHTML(r) {
@@ -2240,7 +2240,7 @@
       <div class="pr-cab"><span class="pr-ico">✦</span><input id="preg-txt" value="${esc(E.preg.borrador || "")}" placeholder="Pregúntale a tus reuniones…" autocomplete="off"><kbd>↵</kbd><button class="boton" data-accion="cerrar-preg" title="Cerrar (Esc)">✕</button></div>
       ${E.preg.lista.length ? `<div class="pr-lista">${E.preg.lista.map((r) => `<section class="pr-item"><div class="pr-q">${esc(r.q)}</div>${respuestaHTML(r)}</section>`).join("")}</div>`
         : `<div class="pr-sug"><div class="co-eti">Prueba con</div>${SUGERENCIAS.map((s) => `<button class="pr-chip" data-sugerencia="${esc(s)}">${esc(s)}</button>`).join("")}
-          <p class="cat-ayuda">Claude busca en tus notas y transcripciones y te dice de qué reunión (y de qué minuto) sale cada dato.</p></div>`}
+          <p class="cat-ayuda">Tu IA busca en tus notas y transcripciones y te dice de qué reunión (y de qué minuto) sale cada dato.</p></div>`}
     </div></div>`;
   }
 
@@ -2344,7 +2344,7 @@
     }
     if (g.error) cuerpo = `<p class="forja-error">No resultó: ${esc(g.error)}</p>` + cuerpo;
     return `<div class="galeria gy-fondo" data-accion="cerrar-gym"><div class="galeria-caja gy-caja" role="dialog" aria-label="Gimnasio">
-      <div class="gy-cab"><div><h2>🥊 Gimnasio</h2><p>${g.paso === "elegir" ? "Ensaya antes de la reunión de verdad. Claude hace de la otra persona y al final te evalúa." : esc(g.titulo || "")}</p></div>
+      <div class="gy-cab"><div><h2>🥊 Gimnasio</h2><p>${g.paso === "elegir" ? "Ensaya antes de la reunión de verdad. Tu IA hace de la otra persona y al final te evalúa." : esc(g.titulo || "")}</p></div>
         <button class="boton" data-accion="cerrar-gym" title="Cerrar (Esc)">✕</button></div>
       ${cuerpo}</div></div>`;
   }
@@ -2400,9 +2400,9 @@
       <div class="gy-cab"><div><h2>✉︎ Enviar resumen</h2><p>Se abre listo en la app que elijas; tú revisas y presionas Enviar.</p></div><button class="boton" data-accion="cerrar-env" title="Cerrar (Esc)">✕</button></div>
       <label class="cat-campo"><span>Para <small>${sinCorreos ? "no venían correos en el evento del calendario; escríbelos si quieres" : "invitados del evento"}</small></span><input id="env-para" value="${esc(e.para)}" placeholder="correo@empresa.cl, otro@empresa.cl"></label>
       <label class="cat-campo"><span>Asunto</span><input id="env-asunto" value="${esc(e.asunto)}"></label>
-      <label class="cat-campo"><span>Mensaje <small>redactado por Claude solo con los hechos: sin tu feedback, opiniones ni comentarios internos</small></span>
+      <label class="cat-campo"><span>Mensaje <small>redactado por tu IA solo con los hechos: sin tu feedback, opiniones ni comentarios internos</small></span>
         ${e.redactando === "abriendo" ? `<div class="env-redactando"></div>`
-          : e.redactando ? `<div class="env-redactando"><div class="pr-pensando"><span></span><span></span><span></span> Claude está redactando un mensaje apto para enviar…</div></div>`
+          : e.redactando ? `<div class="env-redactando"><div class="pr-pensando"><span></span><span></span><span></span> Tu IA está redactando un mensaje apto para enviar…</div></div>`
           : e.error ? `<p class="forja-error">No pude redactar: ${esc(e.error)}</p>` : `<textarea id="env-cuerpo" rows="12">${esc(e.cuerpo)}</textarea>`}</label>
       ${!e.redactando && e.cuerpo ? `<p class="env-estado">${e.editado ? "✓ Guardado con tus cambios" : e.guardado ? "✓ Mensaje guardado: se redactó una sola vez" : "✓ Redactado y guardado"}</p>` : ""}
       <div class="env-indic"><input id="env-indic" value="${esc(e.indic || "")}" placeholder="Indicaciones opcionales: más corto, solo para Matías, más formal…" ${e.redactando ? "disabled" : ""}>
@@ -2491,7 +2491,7 @@
       const ps = t.closest("[data-bv-paso]"); if (ps) { bvPaso(+ps.dataset.bvPaso); return; }
       if (t.closest("[data-bv-fin]")) { terminarBienvenida(); return; }
       const pr = t.closest("[data-bv-probar]");
-      if (pr) { b.probando = pr.dataset.bvProbar; b.iaTexto = ""; render({ mantenerScroll: true });
+      if (pr) { b.probando = b.probado = pr.dataset.bvProbar; b.iaTexto = ""; render({ mantenerScroll: true });
         if (E.plataforma === "web") setTimeout(() => window.Minuta.iaProbada({ id: b.probando, ok: true, texto: "listo" }), 800); else host.enviar("probarIA", { id: b.probando }); return; }
       if (t.closest("[data-bv-saltar-ia]")) { b.iaOk = "despues"; bvPaso(1); return; }
       if (t.closest("[data-bv-recargar]")) { b.cargando = true; render({ mantenerScroll: true }); host.enviar("bienvenidaEstado"); return; }
@@ -2744,7 +2744,7 @@
   function abrirBienvenida() {
     E.bv = { paso: 0, perfil: { ...(E.perfil || {}) }, ia: [], modelos: null, carpeta: "", notas: 0, tokens: {}, cargando: true, notasModo: "", respaldoModo: "" };
     if (!E.bv.perfil.idioma_ui) E.bv.perfil.idioma_ui = E.idioma.codigo;
-    if (E.plataforma === "web") setTimeout(() => window.Minuta.bienvenida({ ia: [{ id: "claude", nombre: "Claude", ruta: "/opt/homebrew/bin/claude", soportada: true }, { id: "codex", nombre: "ChatGPT (Codex)", ruta: null, soportada: false }, { id: "gemini", nombre: "Gemini", ruta: null, soportada: false }],
+    if (E.plataforma === "web") setTimeout(() => window.Minuta.bienvenida({ ia: [{ id: "claude", nombre: "Claude", ruta: "/opt/homebrew/bin/claude", soportada: true }, { id: "codex", nombre: "ChatGPT (Codex)", ruta: null, soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#codex" }, { id: "gemini", nombre: "Gemini", ruta: null, soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#gemini" }],
       modelos: { recomendado: "turbo", ram: 16, lista: [{ id: "turbo", nombre: "Preciso", mb: 574, detalle: "El mejor para reuniones; recomendado con 8 GB de RAM o más.", listo: false }, { id: "small", nombre: "Liviano", mb: 190, detalle: "Más rápido y pequeño; para Macs con poca memoria.", listo: false }], vadListo: false },
       perfil: E.perfil || {}, carpeta: "~/Documents/Minuta/Reuniones", notas: 0, tokens: {} }), 300);
     else host.enviar("bienvenidaEstado");
@@ -2789,26 +2789,27 @@
         <label class="cat-campo"><span>Idioma de la app</span><select data-bv-idioma>${(E.idioma.instalados || []).map((x) => `<option value="${esc(x.codigo)}"${x.codigo === E.idioma.codigo ? " selected" : ""}>${esc(x.bandera || "")} ${esc(x.nombre)}</option>`).join("")}</select></label>
         <p class="cat-ayuda">Son 5 pasos cortos. Todo se puede cambiar después en Preferencias.</p>`;
     } else if (paso === "tu") {
-      cuerpo = `<h2>¿Quién eres?</h2><p class="bv-sub">Con esto Claude sabe a quién le da el feedback. Se guarda solo en tu computador.</p>
+      cuerpo = `<h2>¿Quién eres?</h2><p class="bv-sub">Con esto tu IA sabe a quién le da el feedback. Se guarda solo en tu computador.</p>
         <div class="pp-fila"><label class="cat-campo"><span>Tu nombre</span><input data-bv-campo="nombre" value="${esc(p.nombre || "")}" placeholder="ej: Ana"></label>
           <label class="cat-campo"><span>Nombre completo <small>para reconocerte en las invitaciones</small></span><input data-bv-campo="nombre_completo" value="${esc(p.nombre_completo || "")}" placeholder="ej: Ana Pérez"></label></div>
         <label class="cat-campo"><span>Qué haces <small>le da contexto al feedback</small></span><input data-bv-campo="descripcion" value="${esc(p.descripcion || "")}" placeholder="ej: Product Manager en una startup"></label>
-        <div class="pp-fila"><label class="cat-campo"><span>Idioma de tus notas <small>lo que escribe Claude</small></span><select data-bv-campo="idioma">${opc(IDIOMAS_NOTAS, p.idioma || "español")}</select></label>
+        <div class="pp-fila"><label class="cat-campo"><span>Idioma de tus notas <small>lo que escribe tu IA</small></span><select data-bv-campo="idioma">${opc(IDIOMAS_NOTAS, p.idioma || "español")}</select></label>
           <label class="cat-campo"><span>Idioma de tus reuniones <small>para transcribir</small></span><select data-bv-campo="idioma_audio">${opc(IDIOMAS_AUDIO, p.idioma_audio || "auto")}</select></label></div>`;
     } else if (paso === "ia") {
       const lista = b.ia || [];
-      cuerpo = `<h2>Tu IA</h2><p class="bv-sub">Minuta usa <b>tu propia cuenta</b> (suscripción) para escribir las notas y el feedback. Nada pasa por servidores de Minuta.</p>
+      const CUENTA = { claude: "Claude Pro o Max", codex: "Cuenta de ChatGPT", gemini: "Cuenta de Google (tiene nivel gratis)" };
+      cuerpo = `<h2>Tu IA</h2><p class="bv-sub">Minuta usa <b>tu propia cuenta</b> para escribir las notas y el feedback: sin otra suscripción y sin pasar por servidores de Minuta. Elige la que ya tienes. <a href="#" data-bv-url="https://minuta-app.github.io/minuta/ia.html">¿Qué es esto?</a></p>
         ${b.cargando ? `<div class="pr-pensando"><span></span><span></span><span></span> Buscando qué tienes instalado…</div>` : `<div class="bv-ias">${lista.map((x) => `
           <div class="bv-ia${x.ruta ? " hay" : ""}${!x.soportada ? " pronto" : ""}"><b>${esc(x.nombre)}</b>
-            <small>${!x.soportada ? "Pronto" : x.ruta ? "Instalada" : "No está instalada"}</small>
+            <small><span>${!x.soportada ? "Pronto" : x.ruta ? "Instalada" : "No está instalada"}</span> · <span>${CUENTA[x.id] || ""}</span></small>
             ${x.soportada ? (x.ruta ? `<button class="boton-txt${b.iaOk === x.id ? "" : " aplicar"}" data-bv-probar="${esc(x.id)}" ${b.probando ? "disabled" : ""}>${b.probando === x.id ? "Probando…" : b.iaOk === x.id ? "✓ Funciona" : "Probar"}</button>`
               : `<button class="boton-txt" data-bv-url="${esc(x.guia || "")}">Cómo instalarla</button><button class="boton-txt" data-bv-recargar>Ya la instalé</button>`) : ""}
           </div>`).join("")}</div>`}
-        ${b.iaTexto && !b.iaOk ? `<p class="forja-error">${esc(b.iaTexto)}</p><p class="cat-ayuda">Si dice que no has iniciado sesión: abre la Terminal, escribe <code>claude</code> y sigue los pasos. Después vuelve a probar.</p>` : ""}
+        ${b.iaTexto && !b.iaOk ? `<p class="forja-error">${esc(b.iaTexto)}</p><p class="cat-ayuda">Si dice que no has iniciado sesión: abre la Terminal, escribe <code>${esc(b.probado || "claude")}</code> y sigue los pasos. Después vuelve a probar. <a href="#" data-bv-url="https://minuta-app.github.io/minuta/ia.html">Guía paso a paso</a></p>` : ""}
         <button class="boton-txt bv-saltar" data-bv-saltar-ia>La configuro después</button>`;
     } else if (paso === "modelo") {
       const m = b.modelos || { lista: [] };
-      cuerpo = `<h2>Transcripción en tu computador</h2><p class="bv-sub">Se descarga una sola vez el modelo que convierte la voz en texto. Tu audio nunca sale de tu computador.${m.ram ? ` Tu Mac tiene ${m.ram} GB de memoria.` : ""}</p>
+      cuerpo = `<h2>Transcripción en tu computador</h2><p class="bv-sub">Se descarga una sola vez el modelo que convierte la voz en texto. Tu audio nunca sale de tu computador.${m.ram ? ` Tu computador tiene ${m.ram} GB de memoria.` : ""}</p>
         <div class="bv-modelos">${m.lista.map((x) => `<button class="bv-modelo${(b.modeloElegido || m.elegido || m.recomendado) === x.id ? " elegido" : ""}" data-bv-modelo="${esc(x.id)}" ${b.descargando ? "disabled" : ""}>
           <b>${esc(x.nombre)} ${x.id === m.recomendado ? `<em>recomendado</em>` : ""}</b><small>${esc(x.detalle)}</small><span>${x.listo ? "✓ Descargado" : `${x.mb} MB`}</span></button>`).join("")}</div>
         ${b.descargando ? `<div class="bv-barra"><i style="width:${b.pct || 0}%"></i></div><p class="cat-ayuda">Descargando… ${b.pct || 0}% · puedes seguir con los demás pasos.</p>`
@@ -3119,7 +3120,7 @@
       if (!E.env) return;
       E.env.redactando = false;
       if (r.ok && r.texto) { E.env.cuerpo = r.texto; if (r.asunto) E.env.asunto = r.asunto; E.env.guardado = !!r.guardado; E.env.editado = !!r.editado; }
-      else E.env.error = r.error || "Claude no respondió";
+      else E.env.error = r.error || "Tu IA no respondió";
       render({ mantenerScroll: true });
     },
     abrirEnviar(ruta) { E.seccion = "reuniones"; E.sel = ruta; abrirEnviar(ruta); },

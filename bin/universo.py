@@ -12,7 +12,7 @@ import subprocess
 import sys
 import unicodedata
 
-from perfil import NOMBRE, QUIEN, IDIOMA, HUMOR, RECURSOS, CLAUDE
+from perfil import NOMBRE, QUIEN, IDIOMA, HUMOR, RECURSOS, ejecutar_ia, NOMBRE_IA
 
 HOME = os.path.expanduser("~")
 BASE = os.path.join(HOME, "minuta")
@@ -125,12 +125,9 @@ Ejemplo abreviado (Star Wars) para el formato y el tono:
 
 
 def llamar_claude(texto):
-    cmd = [CLAUDE, "-p", "--output-format", "text"]
-    if os.environ.get("MINUTA_MODELO"):
-        cmd += ["--model", os.environ["MINUTA_MODELO"]]
-    r = subprocess.run(cmd, input=texto, text=True, capture_output=True, cwd=BASE, timeout=900)
+    r = ejecutar_ia(texto, timeout=900)
     if r.returncode != 0 or not r.stdout.strip():
-        raise RuntimeError(f"claude -p falló ({r.returncode}): {r.stderr.strip()[:300]}")
+        raise RuntimeError(f"{NOMBRE_IA} falló ({r.returncode}): {r.stderr.strip()[:300]}")
     salida = r.stdout.strip()
     i, j = salida.find("{"), salida.rfind("}")
     if i < 0 or j < 0:

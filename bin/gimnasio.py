@@ -11,7 +11,7 @@ import os
 import subprocess
 import sys
 
-from perfil import NOMBRE, QUIEN, IDIOMA, PAIS, CLAUDE
+from perfil import NOMBRE, QUIEN, IDIOMA, PAIS, ejecutar_ia, NOMBRE_IA
 
 HOME = os.path.expanduser("~")
 
@@ -23,12 +23,9 @@ DIFICULTAD = {
 
 
 def claude(prompt):
-    cmd = [CLAUDE, "-p", "--output-format", "text"]
-    if os.environ.get("MINUTA_MODELO"):
-        cmd += ["--model", os.environ["MINUTA_MODELO"]]
-    r = subprocess.run(cmd, input=prompt, text=True, capture_output=True, timeout=300, cwd=os.path.join(HOME, "minuta"))
+    r = ejecutar_ia(prompt, timeout=300)
     if r.returncode != 0 or not r.stdout.strip():
-        raise SystemExit(f"claude -p falló: {r.stderr.strip()[:300]}")
+        raise SystemExit(f"{NOMBRE_IA} falló: {r.stderr.strip()[:300]}")
     s = r.stdout.strip()
     i, j = s.find("{"), s.rfind("}")
     if i < 0:

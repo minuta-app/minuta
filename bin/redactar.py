@@ -14,7 +14,7 @@ import subprocess
 import sys
 import time
 
-from perfil import NOMBRE, QUIEN, IDIOMA, CLAUDE
+from perfil import NOMBRE, QUIEN, IDIOMA, ejecutar_ia, NOMBRE_IA
 
 HOME = os.path.expanduser("~")
 
@@ -58,11 +58,10 @@ Devuelve SOLO JSON: {{"asunto": "<asunto corto y claro>", "texto": "<cuerpo del 
 
 NOTAS PRIVADAS DE {NOMBRE.upper()}:
 {notas}"""
-    r = subprocess.run([CLAUDE, "-p", "--output-format", "text"], input=prompt, text=True, capture_output=True, timeout=300,
-                       cwd=os.path.join(HOME, "minuta"))
+    r = ejecutar_ia(prompt, timeout=300)
     s = r.stdout.strip()
     if r.returncode != 0 or not s:
-        raise SystemExit(f"claude -p falló: {r.stderr.strip()[:300]}")
+        raise SystemExit(f"{NOMBRE_IA} falló: {r.stderr.strip()[:300]}")
     i, j = s.find("{"), s.rfind("}")
     try:
         d = json.loads(s[i:j + 1], strict=False)

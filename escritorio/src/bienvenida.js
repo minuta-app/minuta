@@ -72,13 +72,13 @@ async function descargarVerificado(url, sha256, destino, progreso = () => {}) {
 // ───────────── IA del usuario (su propia cuenta) ─────────────
 const IA = {
   conocidas: [
-    { id: "claude", nombre: "Claude", comando: "claude", soportada: true, guia: "https://docs.claude.com/en/docs/claude-code/setup" },
-    { id: "codex", nombre: "ChatGPT (Codex)", comando: "codex", soportada: false, guia: "https://github.com/openai/codex" },
-    { id: "gemini", nombre: "Gemini", comando: "gemini", soportada: false, guia: "https://github.com/google-gemini/gemini-cli" },
+    { id: "claude", nombre: "Claude", comando: "claude", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#claude", args: ["-p", "--output-format", "text"] },
+    { id: "codex", nombre: "ChatGPT (Codex)", comando: "codex", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#codex", args: ["exec", "--skip-git-repo-check", "-s", "read-only", "-"] },
+    { id: "gemini", nombre: "Gemini", comando: "gemini", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#gemini", args: ["-p", "Responde a las instrucciones de arriba.", "-o", "text"] },
   ],
   /** Carpetas donde suelen quedar estas herramientas (la app no siempre hereda el PATH de la terminal). */
   dirs() {
-    const d = [path.join(HOME, ".local", "bin"), path.join(HOME, ".claude", "local"), path.join(HOME, ".npm-global", "bin"),
+    const d = [path.join(HOME, ".local", "bin"), path.join(HOME, ".claude", "local"), path.join(HOME, ".codex", "bin"), path.join(HOME, ".npm-global", "bin"),
       path.join(HOME, ".volta", "bin"), path.join(HOME, ".bun", "bin"), "/usr/local/bin", "/usr/bin", "/opt/homebrew/bin"];
     if (ES_WIN) d.push(path.join(process.env.APPDATA || "", "npm"), path.join(process.env.LOCALAPPDATA || "", "Programs", "claude"));
     return [...(process.env.PATH || "").split(path.delimiter), ...d].filter(Boolean);
@@ -99,7 +99,7 @@ const IA = {
     return new Promise((fin) => {
       const ia = this.conocidas.find((x) => x.id === id), ruta = ia && this.buscar(ia.comando);
       if (!ruta) return fin({ ok: false, texto: "No está instalada." });
-      const p = lanzar(ruta, ["-p", "--output-format", "text"], { env: { ...process.env, PATH: this.path() } });
+      const p = lanzar(ruta, ia.args, { env: { ...process.env, PATH: this.path() }, cwd: os.tmpdir() });
       let out = "", err = "";
       p.stdout.on("data", (d) => (out += d));
       p.stderr.on("data", (d) => (err += d));

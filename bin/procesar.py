@@ -14,7 +14,7 @@ import time
 import unicodedata
 import wave
 
-from perfil import NOMBRE, NOMBRE_FB, IDIOMA, IDIOMA_AUDIO, HUMOR, CARPETA_NOTAS, es_usuario, P as PERFIL, CLAUDE
+from perfil import NOMBRE, NOMBRE_FB, IDIOMA, IDIOMA_AUDIO, HUMOR, CARPETA_NOTAS, es_usuario, P as PERFIL, ejecutar_ia, NOMBRE_IA
 PERFIL_MODELO = (PERFIL.get("modelo_whisper") or "").strip()  # noqa: E402
 
 HOME = os.path.expanduser("~")
@@ -595,13 +595,9 @@ TRANSCRIPCIÓN:
 
 
 def llamar_claude(prompt, cwd):
-    cmd = [CLAUDE, "-p", "--output-format", "text"]
-    modelo = os.environ.get("MINUTA_MODELO")
-    if modelo:
-        cmd += ["--model", modelo]
-    r = subprocess.run(cmd, input=prompt, text=True, capture_output=True, cwd=cwd, timeout=1200)
+    r = ejecutar_ia(prompt, timeout=1200, cwd=cwd)
     if r.returncode != 0 or not r.stdout.strip():
-        raise RuntimeError(f"claude -p falló ({r.returncode}): {r.stderr.strip()[:500]}")
+        raise RuntimeError(f"{NOMBRE_IA} falló ({r.returncode}): {r.stderr.strip()[:500]}")
     return r.stdout.strip()
 
 
@@ -699,7 +695,7 @@ def main():
     with open(os.path.join(carpeta, "transcripcion.txt"), "w", encoding="utf-8") as f:
         f.write(transcripcion)
 
-    log("Generando notas con Claude")
+    log("Generando notas con", NOMBRE_IA)
     titulo = meta.get("titulo") or "Reunión"
     try:
         respuesta = llamar_claude(prompt_para(meta, m, transcripcion), carpeta)
@@ -728,7 +724,7 @@ def main():
             m["interrupciones_yo"] = len(m["interrupciones_detalle"])
     except Exception as e:  # la transcripción no se pierde aunque falle Claude
         log("ERROR Claude:", e)
-        respuesta = f"> [!warning] No se pudieron generar las notas con Claude\n> {e}\n> Puedes reintentar con: `python3 ~/minuta/bin/procesar.py \"{carpeta}\"`"
+        respuesta = f"> [!warning] No se pudieron generar las notas con {NOMBRE_IA}\n> {e}\n> Puedes reintentar con: `python3 ~/minuta/bin/procesar.py \"{carpeta}\"`"
 
     os.makedirs(VAULT, exist_ok=True)
     nombre = f"{inicio:%Y-%m-%d %H%M} - {nombre_archivo(titulo)}.md"

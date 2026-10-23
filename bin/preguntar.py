@@ -14,7 +14,7 @@ import subprocess
 import sys
 import unicodedata
 
-from perfil import NOMBRE, IDIOMA, CARPETA_NOTAS, CLAUDE
+from perfil import NOMBRE, IDIOMA, CARPETA_NOTAS, ejecutar_ia, NOMBRE_IA
 
 HOME = os.path.expanduser("~")
 VAULT = CARPETA_NOTAS
@@ -130,12 +130,9 @@ PREGUNTA: {pregunta}
 REUNIONES MÁS RELEVANTES:
 {chr(10).join(bloques)}
 """
-    cmd = [CLAUDE, "-p", "--output-format", "text"]
-    if os.environ.get("MINUTA_MODELO"):
-        cmd += ["--model", os.environ["MINUTA_MODELO"]]
-    r = subprocess.run(cmd, input=prompt, text=True, capture_output=True, timeout=300, cwd=os.path.join(HOME, "minuta"))
+    r = ejecutar_ia(prompt, timeout=300)
     if r.returncode != 0 or not r.stdout.strip():
-        raise SystemExit(f"claude -p falló: {r.stderr.strip()[:300]}")
+        raise SystemExit(f"{NOMBRE_IA} falló: {r.stderr.strip()[:300]}")
     with open(salida, "w", encoding="utf-8") as f:
         json.dump({"respuesta": r.stdout.strip(), "fuentes": fuentes}, f, ensure_ascii=False)
 

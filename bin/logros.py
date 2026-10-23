@@ -12,7 +12,7 @@ import sys
 HOME = os.path.expanduser("~")
 TEMAS = os.path.join(HOME, "minuta", "temas")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from perfil import CLAUDE  # noqa: E402
+from perfil import ejecutar_ia, NOMBRE_IA  # noqa: E402
 
 LOGROS = {
     "primera_reunion": "Completaste tu primera reunión.",
@@ -58,8 +58,7 @@ La descripción debe explicar el criterio con la misma claridad (puedes darle un
 Elige 1 emoji por logro. Devuelve SOLO un objeto JSON: {{"<id>": {{"nombre": "...", "descripcion": "...", "icono": "..."}}}}
 Logros:
 {pedido}"""
-    r = subprocess.run([CLAUDE, "-p", "--output-format", "text"], input=prompt, text=True, capture_output=True, timeout=600,
-                       cwd=os.path.dirname(TEMAS))
+    r = ejecutar_ia(prompt, timeout=600)
     salida = r.stdout.strip()
     i, j = salida.find("{"), salida.rfind("}")
     if r.returncode != 0 or i < 0:

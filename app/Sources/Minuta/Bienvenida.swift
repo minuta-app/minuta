@@ -116,17 +116,35 @@ final class DescargaModelo: NSObject, URLSessionDownloadDelegate, @unchecked Sen
 @MainActor
 enum IA {
     static let conocidas: [(id: String, nombre: String, comando: String, soportada: Bool, guia: String)] = [
-        ("claude", "Claude", "claude", true, "https://docs.claude.com/en/docs/claude-code/setup"),
-        ("codex", "ChatGPT (Codex)", "codex", false, "https://github.com/openai/codex"),
-        ("gemini", "Gemini", "gemini", false, "https://github.com/google-gemini/gemini-cli"),
+        ("claude", "Claude", "claude", true, "https://minuta-app.github.io/minuta/ia.html#claude"),
+        ("codex", "ChatGPT (Codex)", "codex", true, "https://minuta-app.github.io/minuta/ia.html#codex"),
+        ("gemini", "Gemini", "gemini", true, "https://minuta-app.github.io/minuta/ia.html#gemini"),
     ]
 
     /// Rutas típicas donde quedan estas herramientas (la app no hereda el PATH de la Terminal).
     static func buscar(_ comando: String) -> String? {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
-        let dirs = ["/opt/homebrew/bin", "/usr/local/bin", "\(home)/.local/bin", "\(home)/.claude/local", "\(home)/.npm-global/bin",
-                    "\(home)/.volta/bin", "\(home)/.bun/bin", "/usr/bin"]
-        return dirs.map { "\($0)/\(comando)" }.first { FileManager.default.isExecutableFile(atPath: $0) }
+        return dirs().map { "\($0)/\(comando)" }.first { FileManager.default.isExecutableFile(atPath: $0) }
+    }
+
+    /// Carpetas donde suelen quedar los CLI de IA (instalador propio, Homebrew, npm, nvm, volta, bun).
+    static func dirs() -> [String] {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        var d = ["/opt/homebrew/bin", "/usr/local/bin", "\(home)/.local/bin", "\(home)/.claude/local", "\(home)/.codex/bin", "\(home)/.npm-global/bin",
+                 "\(home)/.volta/bin", "\(home)/.bun/bin", "/usr/bin"]
+        let nvm = "\(home)/.nvm/versions/node"
+        let versiones = ((try? FileManager.default.contentsOfDirectory(atPath: nvm)) ?? []).sorted { $0.compare($1, options: .numeric) == .orderedDescending }
+        d += versiones.map { "\(nvm)/\($0)/bin" }
+        return d
+    }
+
+    /// Cómo se le pide una respuesta de texto a cada IA, sin que toque archivos (mismo criterio que bin/perfil.py).
+    static func argumentos(_ id: String) -> [String] {
+        switch id {
+        case "codex": return ["exec", "--skip-git-repo-check", "-s", "read-only", "-"]
+        case "gemini": return ["-p", "Responde a las instrucciones de arriba.", "-o", "text"]
+        default: return ["-p", "--output-format", "text"]
+        }
     }
 
     static var paraJS: [[String: Any]] {
@@ -138,10 +156,11 @@ enum IA {
         guard let ia = conocidas.first(where: { $0.id == id }), let ruta = buscar(ia.comando) else { fin(false, "No está instalada."); return }
         let p = Process(), salida = Pipe(), error = Pipe(), entrada = Pipe()
         p.executableURL = URL(fileURLWithPath: ruta)
-        p.arguments = ["-p", "--output-format", "text"]
+        p.arguments = argumentos(id)
         var env = ProcessInfo.processInfo.environment
-        env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:\(FileManager.default.homeDirectoryForCurrentUser.path)/.local/bin:/usr/bin:/bin"
+        env["PATH"] = (dirs() + ["/bin"]).joined(separator: ":")
         p.environment = env
+        p.currentDirectoryURL = FileManager.default.temporaryDirectory
         p.standardInput = entrada; p.standardOutput = salida; p.standardError = error
         p.terminationHandler = { pr in
             let texto = String(data: salida.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
