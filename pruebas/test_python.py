@@ -4,6 +4,8 @@
 Uso: python3 pruebas/test_python.py   (desde la raíz del repo)
 Corren en un HOME temporal con un perfil ficticio y una IA simulada: nunca tocan tus notas ni llaman a una IA real.
 """
+import csv
+import io
 import json
 import os
 import shutil
@@ -153,6 +155,20 @@ class Ejemplos(unittest.TestCase):
                            check=True, capture_output=True, text=True)
         self.assertIn("Matías,revisar tablero,lunes,,Reunión de prueba,2026-10-20", r.stdout)
         self.assertNotIn("enviar acta", r.stdout)  # los marcados con [x] no salen
+
+    def test_reuniones_a_csv(self):
+        carpeta = tempfile.mkdtemp(dir=HOME)
+        with open(os.path.join(carpeta, "n.md"), "w", encoding="utf-8") as f:
+            f.write(NOTA.replace("Claridad 7 · Escucha 7", "Claridad 6 · Escucha 8"))
+        with open(os.path.join(carpeta, "otra.md"), "w", encoding="utf-8") as f:
+            f.write("# Apuntes sueltos\n\nsin frontmatter")
+        r = subprocess.run([sys.executable, os.path.join(RAIZ, "ejemplos", "reuniones_a_csv.py"), carpeta],
+                           check=True, capture_output=True, text=True)
+        filas = list(csv.DictReader(io.StringIO(r.stdout)))
+        self.assertEqual(len(filas), 1)  # la nota sin frontmatter no cuenta
+        self.assertEqual(filas[0], {"fecha": "2026-10-20", "hora": "", "tipo": "", "titulo": "Reunión de prueba", "duracion_min": "",
+                                    "habla_yo_pct": "", "participantes": "Matías (PO); Rocío (la separación de voces, x); Ana",
+                                    "claridad": "6", "escucha": "8", "preguntas": "7", "cierre": "7", "archivo": "n.md"})
 
 
 class Universos(unittest.TestCase):
