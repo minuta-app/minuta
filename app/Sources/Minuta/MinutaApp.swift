@@ -668,7 +668,9 @@ final class AppModel: ObservableObject {
             if ok, let ruta = try? String(contentsOf: self.base.appendingPathComponent("ultimo-semanal.txt"), encoding: .utf8) {
                 let url = URL(fileURLWithPath: ruta.trimmingCharacters(in: .whitespacesAndNewlines))
                 self.estado = "Resumen semanal listo."
-                NSWorkspace.shared.open(url)
+                // En Obsidian si está instalado: abrirlo con la app por defecto de los .md (a veces Xcode) choca cuando se regenera.
+                var c = URLComponents(); c.scheme = "obsidian"; c.host = "open"; c.queryItems = [URLQueryItem(name: "path", value: url.path)]
+                if let o = c.url, NSWorkspace.shared.urlForApplication(toOpen: o) != nil { NSWorkspace.shared.open(o) } else { NSWorkspace.shared.open(url) }
             } else {
                 self.estado = "No pude generar el resumen semanal (ver semana.log)."
             }

@@ -749,7 +749,7 @@ const ACCIONES = {
     let ruta = null;
     try { ruta = fs.readFileSync(path.join(BASE, "ultimo-semanal.txt"), "utf8").trim(); } catch {}
     M.estado = ok && ruta ? t("Resumen semanal listo.") : t("No pude generar el resumen semanal (ver semana.log).");
-    if (ok && ruta) shell.openPath(ruta);
+    if (ok && ruta) shell.openExternal(`obsidian://open?path=${encodeURIComponent(ruta)}`).catch(() => shell.openPath(ruta));
     cambio();
   },
   visor: (d) => { panel?.hide(); abrirVisor(d.ruta || null); },
