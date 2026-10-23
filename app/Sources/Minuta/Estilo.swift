@@ -4,11 +4,25 @@ import SwiftUI
 // MARK: - Colores y fuentes del universo
 
 extension Color {
+    /// Color de un universo: "#rgb", "#rrggbb", "#rrggbbaa", "rgb(r,g,b)" o "rgba(r,g,b,a)" (como en CSS).
+    /// Antes solo entendía "#…": los "rgba(…)" de los universos salían negros (botón «Ahora no» ilegible).
     init(hex: String) {
-        let limpio = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        let texto = hex.trimmingCharacters(in: .whitespaces).lowercased()
+        if texto.hasPrefix("rgb") {
+            let n = texto.drop(while: { $0 != "(" }).dropFirst().prefix(while: { $0 != ")" })
+                .split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+            if n.count >= 3 {
+                self.init(.sRGB, red: n[0] / 255, green: n[1] / 255, blue: n[2] / 255, opacity: n.count > 3 ? n[3] : 1)
+                return
+            }
+        }
+        var limpio = texto.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        if limpio.count == 3 { limpio = limpio.map { "\($0)\($0)" }.joined() }
         var v: UInt64 = 0
         Scanner(string: limpio).scanHexInt64(&v)
-        self.init(.sRGB, red: Double((v >> 16) & 0xFF) / 255, green: Double((v >> 8) & 0xFF) / 255, blue: Double(v & 0xFF) / 255)
+        let alfa = limpio.count == 8 ? Double(v & 0xFF) / 255 : 1
+        if limpio.count == 8 { v >>= 8 }
+        self.init(.sRGB, red: Double((v >> 16) & 0xFF) / 255, green: Double((v >> 8) & 0xFF) / 255, blue: Double(v & 0xFF) / 255, opacity: alfa)
     }
 }
 
