@@ -223,7 +223,7 @@ const Respaldo = {
 // Windows: instalador; Linux: el AppImage si se abrió así, si no el .tar.gz que deja instalar.sh en ~/.local/share/Minuta.
 const ASSET = PLATAFORMA === "windows" ? "Minuta-Windows.exe" : process.env.APPIMAGE ? "Minuta-Linux.AppImage" : "Minuta-Linux.tar.gz";
 const Actualizaciones = {
-  repoPublico: "soydavidcornejo/minuta",
+  repoPublico: "minuta-app/minuta",
   get version() { return app.getVersion(); },
   get esDesarrollo() { return fs.existsSync(path.join(BASE, ".git")); },
   _url: null, _huella: null,

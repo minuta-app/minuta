@@ -936,7 +936,7 @@
         .catch((e) => window.Minuta.catalogo({ tipo, lista: [], error: String(e) }));
     } else host.enviar("catalogo", { tipo });
   }
-  const CATALOGO_RAW = "https://raw.githubusercontent.com/soydavidcornejo/minuta-catalogo/main/";
+  const CATALOGO_RAW = "https://raw.githubusercontent.com/minuta-app/minuta-catalogo/main/";
   function descargarUniverso(id, usar) {
     E.catU.bajando = id; render({ mantenerScroll: true });
     if (E.plataforma === "web") {
@@ -946,7 +946,7 @@
   }
 
   /** Votos de la comunidad: cada universo tiene un issue en el catálogo y los votos son sus reacciones 👍/👎 en GitHub. */
-  const VOTOS_API = "https://api.github.com/repos/soydavidcornejo/minuta-catalogo/issues?labels=votos&state=open&per_page=100";
+  const VOTOS_API = "https://api.github.com/repos/minuta-app/minuta-catalogo/issues?labels=votos&state=open&per_page=100";
   E.votosU = null;
   function pedirVotos() {
     if (E.votosU) return;
@@ -2885,7 +2885,7 @@
     const pre = { error: "🐞", idea: "💡", universo: "🌌", otro: "💬" }[c.tipo] || "";
     const cuerpo = `${c.texto}${c.sistema ? `\n\n---\nMinuta · idioma ${E.idioma.codigo} · ${ESCRITORIO ? (window.MINUTA_HOST === "windows" ? "Windows" : "Linux") : navigator.userAgent.match(/Mac OS X [\d_]+/)?.[0]?.replace(/_/g, ".") || "macOS"}` : ""}`;
     const datos = { titulo: `${pre} ${c.titulo}`, cuerpo, etiqueta: { error: "error", idea: "idea", universo: "universo", otro: "comentario" }[c.tipo] };
-    if (E.plataforma === "web") window.open(`https://github.com/soydavidcornejo/minuta-catalogo/issues/new?title=${encodeURIComponent(datos.titulo)}&body=${encodeURIComponent(cuerpo)}&labels=${datos.etiqueta}`, "_blank");
+    if (E.plataforma === "web") window.open(`https://github.com/minuta-app/minuta-catalogo/issues/new?title=${encodeURIComponent(datos.titulo)}&body=${encodeURIComponent(cuerpo)}&labels=${datos.etiqueta}`, "_blank");
     else host.enviar("comentarios", datos);
     E.coment = null; render({ mantenerScroll: true }); toast("Se abrió GitHub: revisa y publica ✓");
   }

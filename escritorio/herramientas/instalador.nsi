@@ -46,7 +46,7 @@ Section "Minuta"
   WriteRegStr HKCU "${DESINSTALAR}" "InstallLocation" "$INSTDIR"
   WriteRegStr HKCU "${DESINSTALAR}" "UninstallString" '"$INSTDIR\Desinstalar Minuta.exe"'
   WriteRegStr HKCU "${DESINSTALAR}" "QuietUninstallString" '"$INSTDIR\Desinstalar Minuta.exe" /S'
-  WriteRegStr HKCU "${DESINSTALAR}" "URLInfoAbout" "https://soydavidcornejo.github.io/minuta/"
+  WriteRegStr HKCU "${DESINSTALAR}" "URLInfoAbout" "https://minuta-app.github.io/minuta/"
   WriteRegDWORD HKCU "${DESINSTALAR}" "NoModify" 1
   WriteRegDWORD HKCU "${DESINSTALAR}" "NoRepair" 1
   IfSilent 0 +2

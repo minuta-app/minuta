@@ -29,7 +29,7 @@ Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromis
 | `instalar.ps1` | Instalador de un comando para Windows (`irm … \| iex`). `instalar.sh` sirve para Mac y Linux. |
 | `.claude/agents/` | Agentes especializados (ver abajo). |
 
-Repos relacionados: catálogo público `soydavidcornejo/minuta-catalogo` (universos/, idiomas/, herramientas/).
+Repos relacionados: catálogo público `minuta-app/minuta-catalogo` (universos/, idiomas/, herramientas/).
 
 ## Qué lleva la app adentro (sin Homebrew)
 

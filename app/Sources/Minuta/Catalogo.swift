@@ -4,7 +4,7 @@ import Foundation
 /// No hay servidor propio: son archivos JSON servidos por GitHub. Todo lo descargado es solo datos y se valida antes de usarse.
 @MainActor
 enum Catalogo {
-    nonisolated static let repo = "soydavidcornejo/minuta-catalogo"
+    nonisolated static let repo = "minuta-app/minuta-catalogo"
     nonisolated static var raiz: URL { URL(string: "https://raw.githubusercontent.com/\(repo)/main/")! }
     /// Comentarios de los usuarios: se abren como issue en el repo público (no hay servidor ni base de datos).
     nonisolated static var urlComentarios: String { "https://github.com/\(repo)/issues/new" }

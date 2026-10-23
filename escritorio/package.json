@@ -3,7 +3,7 @@
   "productName": "Minuta",
   "version": "0.3.0",
   "description": "Notas de reuniones y coach de comunicación que vive en tu computador.",
-  "homepage": "https://soydavidcornejo.github.io/minuta/",
+  "homepage": "https://minuta-app.github.io/minuta/",
   "license": "MIT",
   "author": {
     "name": "Minuta",
@@ -98,7 +98,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/soydavidcornejo/minuta.git"
+    "url": "https://github.com/minuta-app/minuta.git"
   },
   "desktopName": "minuta.desktop"
 }

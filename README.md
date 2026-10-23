@@ -3,7 +3,7 @@
 <h1 align="center">Minuta</h1>
 <p align="center"><b>Notas de reuniones y coach de comunicación que vive en tu computador.</b><br>
 Gratis · Open source (MIT) · Mac, Windows y Linux · Tus datos no salen de tu computador</p>
-<p align="center"><a href="https://soydavidcornejo.github.io/minuta/">Sitio</a> · <a href="https://github.com/soydavidcornejo/minuta/releases/latest">Descargar</a> · <a href="#english">English</a></p>
+<p align="center"><a href="https://minuta-app.github.io/minuta/">Sitio</a> · <a href="https://github.com/minuta-app/minuta/releases/latest">Descargar</a> · <a href="#english">English</a></p>
 
 ---
 
@@ -15,9 +15,9 @@ Sin bots que entren a la llamada, sin cuentas de Minuta, sin servidores.
 
 | | Con un comando | Descargando |
 |---|---|---|
-| 🍎 **Mac** | `curl -fsSL https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.sh \| bash` (Terminal) | [`Minuta-macOS.zip`](https://github.com/soydavidcornejo/minuta/releases/latest/download/Minuta-macOS.zip): descomprime, arrastra a Aplicaciones y la primera vez ábrela con **clic derecho → Abrir** |
-| 🪟 **Windows** | `irm https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.ps1 \| iex` (PowerShell) | [`Minuta-Windows.exe`](https://github.com/soydavidcornejo/minuta/releases/latest/download/Minuta-Windows.exe): si aparece «Windows protegió tu PC», **Más información → Ejecutar de todas formas** |
-| 🐧 **Linux** | `curl -fsSL https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.sh \| bash` (sin sudo) | [`Minuta-Linux.AppImage`](https://github.com/soydavidcornejo/minuta/releases/latest/download/Minuta-Linux.AppImage) (necesita FUSE: `sudo apt install libfuse2`) |
+| 🍎 **Mac** | `curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh \| bash` (Terminal) | [`Minuta-macOS.zip`](https://github.com/minuta-app/minuta/releases/latest/download/Minuta-macOS.zip): descomprime, arrastra a Aplicaciones y la primera vez ábrela con **clic derecho → Abrir** |
+| 🪟 **Windows** | `irm https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.ps1 \| iex` (PowerShell) | [`Minuta-Windows.exe`](https://github.com/minuta-app/minuta/releases/latest/download/Minuta-Windows.exe): si aparece «Windows protegió tu PC», **Más información → Ejecutar de todas formas** |
+| 🐧 **Linux** | `curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh \| bash` (sin sudo) | [`Minuta-Linux.AppImage`](https://github.com/minuta-app/minuta/releases/latest/download/Minuta-Linux.AppImage) (necesita FUSE: `sudo apt install libfuse2`) |
 
 Los comandos bajan la última versión, verifican su huella SHA-256, la instalan solo para tu usuario y la abren.
 Las descargas aún no están firmadas por Apple ni Microsoft; por eso el aviso la primera vez.
@@ -46,7 +46,7 @@ pegando la dirección iCal secreta de Google Calendar u Outlook.
 | 🥊 **Gimnasio** | Ensaya hablando: la IA hace de la otra persona y te evalúa. |
 | ✦ **Pregúntale a tus reuniones** | ⌘K: "¿qué le debo a Matías?", con la reunión y el minuto exacto. |
 | ✉️ **Resumen para enviar** | Correo o mensaje para los participantes, solo con los hechos (nunca tu feedback privado). |
-| 🪐 **Universos** | Rangos y logros con la estética que te guste. 4 incluidos, más en el [catálogo](https://github.com/soydavidcornejo/minuta-catalogo), o crea el tuyo. |
+| 🪐 **Universos** | Rangos y logros con la estética que te guste. 4 incluidos, más en el [catálogo](https://github.com/minuta-app/minuta-catalogo), o crea el tuyo. |
 | 🌐 **Idiomas** | Español e inglés incluidos; portugués, francés y otros se descargan. |
 
 <p align="center"><img src="docs/img/desempeno.jpg" width="49%"> <img src="docs/img/agenda.jpg" width="49%"></p>
@@ -69,7 +69,7 @@ así que actualizar no borra nada.
 ## Desarrollo
 
 ```bash
-git clone https://github.com/soydavidcornejo/minuta ~/minuta
+git clone https://github.com/minuta-app/minuta ~/minuta
 cd ~/minuta && bash ./build.sh        # Mac: compila (Xcode 16+), empaqueta e instala en ~/Applications
 cd ui && python3 -m http.server 8765  # vista previa de la interfaz con datos ficticios: http://localhost:8765
 ```
@@ -90,7 +90,7 @@ npx electron-builder --linux AppImage tar.gz                                    
 npx electron-builder --win dir && bash herramientas/instalador-windows.sh           # instalador de Windows (makensis, sin Wine)
 ```
 
-Comentarios y errores: desde la app (⋯ → Enviar comentarios) o en [issues](https://github.com/soydavidcornejo/minuta/issues).
+Comentarios y errores: desde la app (⋯ → Enviar comentarios) o en [issues](https://github.com/minuta-app/minuta/issues).
 
 ---
 
@@ -102,9 +102,9 @@ Comentarios y errores: desde la app (⋯ → Enviar comentarios) o en [issues](h
 notes, commitments, and honest, quote-backed feedback. Audio never leaves your computer; notes are plain Markdown files you own,
 optionally backed up to a private repo in your own GitHub or GitLab account. No Minuta accounts, servers or telemetry.
 
-**Install:** Mac and Linux: `curl -fsSL https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.sh | bash` ·
-Windows (PowerShell): `irm https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.ps1 | iex` ·
-or download from the [latest release](https://github.com/soydavidcornejo/minuta/releases/latest). Requires Claude Code with your Claude account;
+**Install:** Mac and Linux: `curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh | bash` ·
+Windows (PowerShell): `irm https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.ps1 | iex` ·
+or download from the [latest release](https://github.com/minuta-app/minuta/releases/latest). Requires Claude Code with your Claude account;
 Mac needs Apple silicon and macOS 15+, Windows 10/11 64-bit, Linux x86_64 with PulseAudio or PipeWire.
 The interface ships in Spanish and English (more languages downloadable). The code and comments are in Spanish.
 

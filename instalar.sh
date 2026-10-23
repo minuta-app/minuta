@@ -1,11 +1,11 @@
 #!/bin/bash
 # Instala (o actualiza) Minuta con un solo comando, en Mac o Linux:
-#   curl -fsSL https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.sh | bash
-# (En Windows: irm https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.ps1 | iex)
+#   curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh | bash
+# (En Windows: irm https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.ps1 | iex)
 # Baja la última versión publicada en GitHub, verifica su huella SHA-256 y la instala solo para tu usuario.
 # No pide contraseña ni instala nada más: tus datos quedan en ~/minuta y nunca se tocan.
 set -euo pipefail
-REPO="soydavidcornejo/minuta"
+REPO="minuta-app/minuta"
 verde() { printf "\033[32m%s\033[0m\n" "$1"; }
 error() { printf "\033[31m✗ %s\033[0m\n" "$1" >&2; exit 1; }
 huella() { if command -v sha256sum >/dev/null; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi; }

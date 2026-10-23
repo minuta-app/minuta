@@ -257,7 +257,7 @@ const Idioma = {
 
 // ───────────── Catálogo público (universos e idiomas) ─────────────
 const Catalogo = {
-  repo: "soydavidcornejo/minuta-catalogo",
+  repo: "minuta-app/minuta-catalogo",
   get raiz() { return `https://raw.githubusercontent.com/${this.repo}/main/`; },
   get urlComentarios() { return `https://github.com/${this.repo}/issues/new`; },
   cache: path.join(BASE, "catalogo"),

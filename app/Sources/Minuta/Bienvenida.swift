@@ -294,7 +294,7 @@ enum Respaldo {
 enum Actualizaciones {
     static var version: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0" }
     /// Repo público de la app. Cada versión es un Release con `Minuta-macOS.zip` y `Minuta-macOS.zip.sha256`.
-    static let repoPublico = "soydavidcornejo/minuta"
+    static let repoPublico = "minuta-app/minuta"
     private static var raiz: URL { Temas.base }
     /// Instalación de desarrollo: ~/minuta es un checkout de git (se actualiza con git pull + build.sh).
     static var esDesarrollo: Bool { FileManager.default.fileExists(atPath: raiz.appendingPathComponent(".git").path) }

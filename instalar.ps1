@@ -1,10 +1,10 @@
 # Instala (o actualiza) Minuta en Windows con un solo comando (PowerShell):
-#   irm https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.ps1 | iex
+#   irm https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.ps1 | iex
 # Baja la última versión publicada en GitHub, verifica su huella SHA-256 y la instala solo para tu usuario
 # (sin permisos de administrador). Tus datos quedan en tu carpeta minuta y nunca se tocan.
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
-$repo = 'soydavidcornejo/minuta'
+$repo = 'minuta-app/minuta'
 function Falla($m) { Write-Host "x $m" -ForegroundColor Red; exit 1 }
 
 if (-not [Environment]::Is64BitOperatingSystem) { Falla 'Minuta necesita Windows de 64 bits.' }
