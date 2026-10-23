@@ -74,7 +74,7 @@ const IA = {
   conocidas: [
     { id: "claude", nombre: "Claude", comando: "claude", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#claude", args: ["-p", "--output-format", "text"] },
     { id: "codex", nombre: "ChatGPT (Codex)", comando: "codex", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#codex", args: ["exec", "--skip-git-repo-check", "-s", "read-only", "-"] },
-    { id: "gemini", nombre: "Gemini", comando: "gemini", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#gemini", args: ["-p", "Responde a las instrucciones de arriba.", "-o", "text"] },
+    { id: "gemini", nombre: "Gemini", comando: ["agy", "gemini"], soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#gemini", args: ["-p", "Responde a las instrucciones de arriba.", "-o", "text"] },
   ],
   /** Carpetas donde suelen quedar estas herramientas (la app no siempre hereda el PATH de la terminal). */
   dirs() {
@@ -83,9 +83,9 @@ const IA = {
     if (ES_WIN) d.push(path.join(process.env.APPDATA || "", "npm"), path.join(process.env.LOCALAPPDATA || "", "Programs", "claude"));
     return [...(process.env.PATH || "").split(path.delimiter), ...d].filter(Boolean);
   },
-  buscar(comando) {
+  buscar(comandos) {
     const ext = ES_WIN ? [".exe", ".cmd", ".bat", ""] : [""];
-    for (const d of this.dirs()) for (const e of ext) {
+    for (const comando of [].concat(comandos)) for (const d of this.dirs()) for (const e of ext) {
       const r = path.join(d, comando + e);
       try { if (fs.statSync(r).isFile()) return r; } catch {}
     }
@@ -99,14 +99,17 @@ const IA = {
     return new Promise((fin) => {
       const ia = this.conocidas.find((x) => x.id === id), ruta = ia && this.buscar(ia.comando);
       if (!ruta) return fin({ ok: false, texto: "No está instalada." });
-      const p = lanzar(ruta, ia.args, { env: { ...process.env, PATH: this.path() }, cwd: os.tmpdir() });
+      // Antigravity CLI (`agy`) recibe el prompt como argumento.
+      const agy = /^agy(\.exe|\.cmd)?$/i.test(path.basename(ruta));
+      const args = agy ? ["--output-format", "text", "--sandbox", "-p", "Responde solo con la palabra: listo"] : ia.args;
+      const p = lanzar(ruta, args, { env: { ...process.env, PATH: this.path() }, cwd: os.tmpdir() });
       let out = "", err = "";
       p.stdout.on("data", (d) => (out += d));
       p.stderr.on("data", (d) => (err += d));
       const reloj = setTimeout(() => p.kill(), 90000);
       p.on("error", (e) => { clearTimeout(reloj); fin({ ok: false, texto: e.message }); });
       p.on("close", (c) => { clearTimeout(reloj); fin(c === 0 && out.trim() ? { ok: true, texto: out.trim() } : { ok: false, texto: (err || out).slice(0, 300) }); });
-      p.stdin.end("Responde solo con la palabra: listo");
+      p.stdin.end(agy ? "" : "Responde solo con la palabra: listo");
     });
   },
 };

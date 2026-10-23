@@ -115,16 +115,17 @@ final class DescargaModelo: NSObject, URLSessionDownloadDelegate, @unchecked Sen
 
 @MainActor
 enum IA {
-    static let conocidas: [(id: String, nombre: String, comando: String, soportada: Bool, guia: String)] = [
-        ("claude", "Claude", "claude", true, "https://minuta-app.github.io/minuta/ia.html#claude"),
-        ("codex", "ChatGPT (Codex)", "codex", true, "https://minuta-app.github.io/minuta/ia.html#codex"),
-        ("gemini", "Gemini", "gemini", true, "https://minuta-app.github.io/minuta/ia.html#gemini"),
+    /// Gemini: primero Antigravity CLI (`agy`, el reemplazo de Google para cuentas personales) y si no, el Gemini CLI antiguo.
+    static let conocidas: [(id: String, nombre: String, comandos: [String], soportada: Bool, guia: String)] = [
+        ("claude", "Claude", ["claude"], true, "https://minuta-app.github.io/minuta/ia.html#claude"),
+        ("codex", "ChatGPT (Codex)", ["codex"], true, "https://minuta-app.github.io/minuta/ia.html#codex"),
+        ("gemini", "Gemini", ["agy", "gemini"], true, "https://minuta-app.github.io/minuta/ia.html#gemini"),
     ]
 
     /// Rutas típicas donde quedan estas herramientas (la app no hereda el PATH de la Terminal).
-    static func buscar(_ comando: String) -> String? {
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
-        return dirs().map { "\($0)/\(comando)" }.first { FileManager.default.isExecutableFile(atPath: $0) }
+    static func buscar(_ comandos: [String]) -> String? {
+        for c in comandos { if let r = dirs().map({ "\($0)/\(c)" }).first(where: { FileManager.default.isExecutableFile(atPath: $0) }) { return r } }
+        return nil
     }
 
     /// Carpetas donde suelen quedar los CLI de IA (instalador propio, Homebrew, npm, nvm, volta, bun).
@@ -139,24 +140,26 @@ enum IA {
     }
 
     /// Cómo se le pide una respuesta de texto a cada IA, sin que toque archivos (mismo criterio que bin/perfil.py).
-    static func argumentos(_ id: String) -> [String] {
+    static func argumentos(_ id: String, ruta: String = "") -> [String] {
         switch id {
         case "codex": return ["exec", "--skip-git-repo-check", "-s", "read-only", "-"]
+        case "gemini" where (ruta as NSString).lastPathComponent == "agy":
+            return ["--output-format", "text", "--sandbox", "-p", "Responde solo con la palabra: listo"]
         case "gemini": return ["-p", "Responde a las instrucciones de arriba.", "-o", "text"]
         default: return ["-p", "--output-format", "text"]
         }
     }
 
     static var paraJS: [[String: Any]] {
-        conocidas.map { ["id": $0.id, "nombre": $0.nombre, "ruta": buscar($0.comando) ?? NSNull(), "soportada": $0.soportada, "guia": $0.guia] }
+        conocidas.map { ["id": $0.id, "nombre": $0.nombre, "ruta": buscar($0.comandos) ?? NSNull(), "soportada": $0.soportada, "guia": $0.guia] }
     }
 
     /// Prueba real: le pide a la IA una palabra. Así sabemos que está instalada y con la sesión iniciada.
     static func probar(_ id: String, _ fin: @escaping @MainActor (Bool, String) -> Void) {
-        guard let ia = conocidas.first(where: { $0.id == id }), let ruta = buscar(ia.comando) else { fin(false, "No está instalada."); return }
+        guard let ia = conocidas.first(where: { $0.id == id }), let ruta = buscar(ia.comandos) else { fin(false, "No está instalada."); return }
         let p = Process(), salida = Pipe(), error = Pipe(), entrada = Pipe()
         p.executableURL = URL(fileURLWithPath: ruta)
-        p.arguments = argumentos(id)
+        p.arguments = argumentos(id, ruta: ruta)
         var env = ProcessInfo.processInfo.environment
         env["PATH"] = (dirs() + ["/bin"]).joined(separator: ":")
         p.environment = env

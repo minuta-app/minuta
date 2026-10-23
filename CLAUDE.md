@@ -45,7 +45,7 @@ estándar de Python: no agregues dependencias de pip. `build.sh` se niega a inst
 ## Primera vez, respaldo y actualizaciones (`Bienvenida.swift`)
 
 - **Bienvenida:** se abre si no existe `perfil.json` (o desde Preferencias). Pasos: idioma → quién eres → IA (`IA.buscar`/`IA.probar`
-  detectan y prueban `claude`, `codex` o `gemini`; la elegida queda en `perfil.json` → `ia`) → modelo (`Modelos`: turbo/small según RAM, descarga verificada por
+  detectan y prueban `claude`, `codex` o `agy`/`gemini`; la elegida queda en `perfil.json` → `ia`) → modelo (`Modelos`: turbo/small según RAM, descarga verificada por
   SHA-256 desde Hugging Face) → notas (carpeta nueva, carpeta existente o `git clone` de su repo) → respaldo opcional → permisos → universo.
 - **Respaldo:** `Respaldo.crearRepo` crea un repo **privado en la cuenta del usuario** (GitHub o GitLab) con su token; el token va al
   Llavero y git lo recibe como encabezado en memoria (`-c http.extraHeader`), nunca en disco. Tras cada nota: `Respaldo.sincronizar()`.
@@ -90,7 +90,7 @@ estándar de Python: no agregues dependencias de pip. `build.sh` se niega a inst
 ## Cómo se conectan las piezas
 
 - **JS ↔ Swift:** la UI llama `host.enviar(accion, datos)` → `webkit.messageHandlers.minuta` → `switch` en `VisorWeb.swift` (ventana) o `BarraMenu.swift` (panel). Swift responde con `window.Minuta.<funcion>(json)` (`llamarFuncion` / `llamar`). Al agregar una acción: caso en Swift + manejador en `window.Minuta` + modo `E.plataforma === "web"` simulado para la vista previa.
-- **IA del usuario:** los scripts nunca llaman a `claude` directo: usan `perfil.ejecutar_ia(prompt, timeout, cwd)`, que arma el comando según `perfil.ia` (`claude -p`, `codex exec … -o archivo -`, `gemini -p … -o text`) y amplía el PATH (Homebrew, npm, nvm, `~/.local/bin`). Mensajes al usuario con `NOMBRE_IA`, no "Claude". Guía pública para instalarlas: `docs/ia.html`.
+- **IA del usuario:** los scripts nunca llaman a `claude` directo: usan `perfil.ejecutar_ia(prompt, timeout, cwd)`, que arma el comando según `perfil.ia` (`claude -p`, `codex exec … -o archivo -`; para Gemini, `agy -p` de Antigravity CLI —prompt como argumento o en un archivo si es largo— o el `gemini -p` antiguo) y amplía el PATH (Homebrew, npm, nvm, `~/.local/bin`). Mensajes al usuario con `NOMBRE_IA`, no "Claude". Guía pública para instalarlas: `docs/ia.html`.
 - **Swift → Python:** `AppModel.ejecutar` / `correrScriptJSON(script, args)`; el último argumento siempre es la ruta del JSON de salida. Los scripts leen el perfil con `from perfil import …`.
 - **Formato de nota:** el prompt de `procesar.py` define secciones y marcadores (`### Próximos pasos`, `## Personas`, `## Feedback para …`, `**Veredicto:**`, `**Puntajes:**`, `**Hábito para la próxima:**`, `**Decisión:**`, `**Pendiente:**`, `🔧`, `✅`, `→ Prueba:`). **Los marcadores van siempre en español** aunque la nota esté en otro idioma: `app.js`, `redactar.py`, `semana.py` y `preguntar.py` los usan para leer.
 - **Universos:** JSON de solo datos (rangos ×10, apartados claridad/escucha/preguntas/cierre ×10, logros, íconos, `estilo`). `Temas.paraJS()` une incluidos + `~/minuta/temas`. Se descargan con `Catalogo.descargarUniverso` (valida antes de guardar).

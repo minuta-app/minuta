@@ -79,14 +79,18 @@ def _preparar_path():
 
 _preparar_path()
 
-#: IA del usuario, con su propia cuenta: "claude" (Claude Code), "codex" (ChatGPT) o "gemini" (Gemini CLI).
-IAS = {"claude": ("claude", "Claude"), "codex": ("codex", "ChatGPT (Codex)"), "gemini": ("gemini", "Gemini")}
+#: IA del usuario, con su propia cuenta: "claude" (Claude Code), "codex" (ChatGPT) o "gemini".
+#: Gemini: primero Antigravity CLI (`agy`, el reemplazo de Google para cuentas personales desde junio de 2026)
+#: y, si no está, el Gemini CLI antiguo (`gemini`, que hoy solo sirve con una clave de API de pago).
+IAS = {"claude": (("claude",), "Claude"), "codex": (("codex",), "ChatGPT (Codex)"), "gemini": (("agy", "gemini"), "Gemini")}
 IA = (P.get("ia") or "claude").strip().lower()
 if IA not in IAS:
     IA = "claude"
 NOMBRE_IA = IAS[IA][1]
 #: Ruta del CLI elegido (se mantiene el nombre CLAUDE por compatibilidad con scripts antiguos).
-CLAUDE = shutil.which(IAS[IA][0]) or IAS[IA][0]
+CLAUDE = next((r for r in map(shutil.which, IAS[IA][0]) if r), IAS[IA][0][0])
+#: Antigravity CLI recibe el prompt como argumento (no por la entrada estándar).
+ES_AGY = os.path.basename(CLAUDE).lower().split(".")[0] in ("agy", "antigravity")
 
 
 def ejecutar_ia(prompt, timeout=600, cwd=None):
@@ -105,6 +109,18 @@ def ejecutar_ia(prompt, timeout=600, cwd=None):
                 with open(salida, encoding="utf-8") as f:
                     texto = f.read()
             return subprocess.CompletedProcess(cmd, r.returncode, texto or "", r.stderr)
+        if IA == "gemini" and ES_AGY:
+            # Prompts cortos van como argumento; los largos (transcripciones) en un archivo que la IA lee
+            # (la línea de comandos tiene límite, sobre todo en Windows).
+            if len(prompt) < 20000:
+                pedido = prompt
+            else:
+                with open(os.path.join(tmp, "instrucciones.md"), "w", encoding="utf-8") as f:
+                    f.write(prompt)
+                pedido = ("Lee el archivo instrucciones.md de esta carpeta y haz exactamente lo que pide. "
+                          "Entrega solo el resultado pedido, sin comentarios. No modifiques ni crees archivos.")
+            cmd = [CLAUDE, "--output-format", "text", "--sandbox", "--add-dir", tmp, "-p", pedido]
+            return subprocess.run(cmd, stdin=subprocess.DEVNULL, text=True, encoding="utf-8", capture_output=True, timeout=timeout, cwd=tmp)
         if IA == "gemini":
             cmd = [CLAUDE, "-p", "Responde a las instrucciones de arriba. Entrega solo el resultado pedido.", "-o", "text"]
         else:

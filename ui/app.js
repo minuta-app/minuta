@@ -2797,7 +2797,7 @@
           <label class="cat-campo"><span>Idioma de tus reuniones <small>para transcribir</small></span><select data-bv-campo="idioma_audio">${opc(IDIOMAS_AUDIO, p.idioma_audio || "auto")}</select></label></div>`;
     } else if (paso === "ia") {
       const lista = b.ia || [];
-      const CUENTA = { claude: "Claude Pro o Max", codex: "Cuenta de ChatGPT", gemini: "Cuenta de Google (tiene nivel gratis)" };
+      const CUENTA = { claude: "Claude Pro o Max", codex: "Cuenta de ChatGPT", gemini: "Cuenta de Google" };
       cuerpo = `<h2>Tu IA</h2><p class="bv-sub">Minuta usa <b>tu propia cuenta</b> para escribir las notas y el feedback: sin otra suscripción y sin pasar por servidores de Minuta. Elige la que ya tienes. <a href="#" data-bv-url="https://minuta-app.github.io/minuta/ia.html">¿Qué es esto?</a></p>
         ${b.cargando ? `<div class="pr-pensando"><span></span><span></span><span></span> Buscando qué tienes instalado…</div>` : `<div class="bv-ias">${lista.map((x) => `
           <div class="bv-ia${x.ruta ? " hay" : ""}${!x.soportada ? " pronto" : ""}"><b>${esc(x.nombre)}</b>

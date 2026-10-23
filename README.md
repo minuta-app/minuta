@@ -1,15 +1,20 @@
 <p align="center"><img src="docs/img/notas.jpg" alt="Minuta" width="860"></p>
 
 <h1 align="center">Minuta</h1>
-<p align="center"><b>Notas de reuniones y coach de comunicación que vive en tu computador.</b><br>
-Gratis · Open source (MIT) · Mac, Windows y Linux · Tus datos no salen de tu computador</p>
-<p align="center"><a href="https://minuta-app.github.io/minuta/">Sitio</a> · <a href="https://github.com/minuta-app/minuta/releases/latest">Descargar</a> · <a href="#english">English</a></p>
+<p align="center"><b>Sal de cada reunión con las notas listas y sabiendo cómo mejorar.</b><br>
+Gratis · Open source (MIT) · Mac, Windows y Linux · Funciona con Claude, ChatGPT o Gemini · Tus datos no salen de tu computador</p>
+<p align="center"><a href="https://minuta-app.github.io/minuta/">Sitio</a> · <a href="https://github.com/minuta-app/minuta/releases/latest">Descargar</a> · <a href="https://minuta-app.github.io/minuta/ia.html">Guía de tu IA</a> · <a href="#comunidad">Comunidad</a> · <a href="#english">English</a></p>
 
 ---
 
-Minuta graba tus reuniones (Teams, Zoom, Meet, Slack…), las **transcribe en tu propio computador** y, con la IA que tú elijas,
-te deja notas, compromisos y un feedback honesto para que cada reunión te salga mejor que la anterior.
-Sin bots que entren a la llamada, sin cuentas de Minuta, sin servidores.
+Minuta graba tus reuniones (Teams, Zoom, Meet, Slack…), las **transcribe en tu propio computador** y le pide a **tu IA**
+(Claude, ChatGPT o Gemini, con tu propia cuenta) notas, compromisos y un feedback honesto para que cada reunión te salga mejor
+que la anterior. Mejoras subiendo de rango en tu saga favorita. Sin bots que entren a la llamada, sin cuentas de Minuta, sin servidores
+y sin otra suscripción.
+
+```
+🎙️ Graba  →  📝 Transcribe en tu computador  →  🤖 Tu IA escribe (solo texto)  →  ✅ Notas, feedback y logros en tu carpeta
+```
 
 ## Instalar
 
@@ -25,7 +30,16 @@ Las descargas aún no están firmadas por Apple ni Microsoft; por eso el aviso l
 Al abrirla, un asistente te pregunta lo necesario: idioma, quién eres, tu IA, el modelo de transcripción (se descarga y verifica solo),
 dónde guardar tus notas (carpeta nueva, una que ya tengas o tu repo de notas) y, si quieres, crea un respaldo privado en **tu** GitHub o GitLab.
 
-**Requisitos:** [Claude Code](https://claude.com/claude-code) con tu cuenta de Claude · ~1 GB libre, y además:
+**Requisitos:** tu IA con tu propia cuenta (una de estas) · ~1 GB libre, y además lo de tu sistema.
+
+| Tu IA | Herramienta | Cuenta |
+|---|---|---|
+| Claude | [Claude Code](https://minuta-app.github.io/minuta/ia.html#claude) (`claude`) | Claude Pro o Max (o Team/Enterprise) |
+| ChatGPT | [Codex](https://minuta-app.github.io/minuta/ia.html#codex) (`codex`) | Cualquier cuenta de ChatGPT, incluso la gratis (con límites) |
+| Gemini *(beta)* | [Antigravity CLI](https://minuta-app.github.io/minuta/ia.html#gemini) (`agy`), o Gemini CLI con clave de API | Cuenta de Google |
+
+¿Nunca usaste una de estas? La [guía de tu IA](https://minuta-app.github.io/minuta/ia.html) explica qué son y cómo instalarlas paso a paso, sin tecnicismos.
+
 - **Mac:** chip Apple (M1 o posterior) y macOS 15+.
 - **Windows:** Windows 10 u 11 de 64 bits. Git solo si quieres respaldar en GitHub/GitLab.
 - **Linux:** x86_64 (Ubuntu 18.04+, Debian, Fedora…) con PulseAudio o PipeWire (`pulseaudio-utils` para grabar a los demás).
@@ -54,7 +68,7 @@ pegando la dirección iCal secreta de Google Calendar u Outlook.
 ## Privacidad
 
 - **El audio nunca sale de tu computador.** La transcripción (whisper.cpp) y la separación de voces (FluidAudio en Mac, sherpa-onnx en Windows/Linux) corren ahí mismo.
-- **Solo el texto** va a la IA que elegiste, con tu propia cuenta (hoy Claude vía `claude -p`; ChatGPT y Gemini vienen pronto).
+- **Solo el texto** va a la IA que elegiste, directo y con tu propia cuenta (`claude -p`, `codex exec` o `agy -p`, en una carpeta temporal vacía y sin permisos para tocar archivos).
 - **Tus notas son archivos Markdown tuyos** (funcionan con Obsidian). El respaldo opcional va a un repo privado de tu cuenta;
   el token queda cifrado con el llavero del sistema (Llavero en Mac, DPAPI en Windows, libsecret en Linux).
 - Minuta no tiene servidores, cuentas ni telemetría. El catálogo de universos e idiomas es un repo público con JSON que la app valida al descargar.
@@ -92,19 +106,32 @@ npx electron-builder --win dir && bash herramientas/instalador-windows.sh       
 
 Comentarios y errores: desde la app (⋯ → Enviar comentarios) o en [issues](https://github.com/minuta-app/minuta/issues).
 
+<a id="comunidad"></a>
+## Comunidad
+
+Minuta es gratis y abierta, y la hacemos entre todos. Ninguna de estas formas de sumarte exige programar:
+
+- ⭐ **Dale una estrella** a este repo: ayuda a que más gente lo encuentre.
+- 🗳️ **Vota los universos** con 👍/👎 en los [issues de votos del catálogo](https://github.com/minuta-app/minuta-catalogo/issues?q=is%3Aissue+label%3Avotos): ordenan la galería de la app.
+- 🌌 **Crea un universo** desde la app (Universos → Crear universo) y compártelo en el [catálogo](https://github.com/minuta-app/minuta-catalogo).
+- 🌍 **Traduce** la interfaz: los idiomas viven en el [catálogo](https://github.com/minuta-app/minuta-catalogo/tree/main/idiomas).
+- 💬 **Cuéntanos** qué falló o qué te gustaría en [issues](https://github.com/minuta-app/minuta/issues/new).
+- 🛠️ **Programa**: lee [`CLAUDE.md`](CLAUDE.md) (arquitectura y reglas) y usa los agentes de `.claude/agents/` si trabajas con una IA.
+
 ---
 
 <a id="english"></a>
 ## English
 
 **Minuta** is a free, open-source meeting notes app and communication coach for Mac, Windows and Linux. It records your meetings,
-**transcribes them locally** (whisper.cpp + speaker separation), and uses the AI you choose — with your own account — to give you
+**transcribes them locally** (whisper.cpp + speaker separation), and uses the AI you choose — Claude (Claude Code), ChatGPT (Codex)
+or Gemini (Antigravity CLI, beta), with your own account — to give you
 notes, commitments, and honest, quote-backed feedback. Audio never leaves your computer; notes are plain Markdown files you own,
 optionally backed up to a private repo in your own GitHub or GitLab account. No Minuta accounts, servers or telemetry.
 
 **Install:** Mac and Linux: `curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh | bash` ·
 Windows (PowerShell): `irm https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.ps1 | iex` ·
-or download from the [latest release](https://github.com/minuta-app/minuta/releases/latest). Requires Claude Code with your Claude account;
+or download from the [latest release](https://github.com/minuta-app/minuta/releases/latest). Requires one of Claude Code, Codex or Antigravity CLI with your own account ([setup guide](https://minuta-app.github.io/minuta/ia.html));
 Mac needs Apple silicon and macOS 15+, Windows 10/11 64-bit, Linux x86_64 with PulseAudio or PipeWire.
 The interface ships in Spanish and English (more languages downloadable). The code and comments are in Spanish.
 

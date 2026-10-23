@@ -3,301 +3,476 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Minuta — notas de reuniones y coach de comunicación en tu Mac</title>
-<meta name="description" content="Notas de reuniones y un coach para comunicarte mejor, jugando. Todo queda en tu computador y en tu propio Git: sin servidores, sin cuentas. Gratis y de código abierto.">
-<meta property="og:title" content="Minuta — tus reuniones, tu Mac, tus notas">
-<meta property="og:description" content="Comunícate mejor, jugando. Tus notas quedan en tu computador y en tu propio Git: sin servidores ni cuentas. Gratis y de código abierto.">
-<meta property="og:image" content="img/notas.jpg">
+<title>Minuta — notas de reuniones y un coach para comunicarte mejor</title>
+<meta name="description" content="Sal de cada reunión con las notas listas y sabiendo cómo mejorar. Transcribe en tu computador, usa tu propia IA (Claude, ChatGPT o Gemini) y guarda todo en tu propio Git. Gratis y de código abierto.">
+<meta property="og:title" content="Minuta — tus reuniones, tus notas, tu IA">
+<meta property="og:description" content="Notas de reuniones y un coach de comunicación que se juega como tu saga favorita. Sin servidores ni cuentas. Gratis y de código abierto.">
+<meta property="og:image" content="https://minuta-app.github.io/minuta/img/notas.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root { --titulo: "Bricolage Grotesque", Inter, system-ui, -apple-system, sans-serif; --fondo: #0b0b0f; --fondo2: #13131a; --panel: #181822; --linea: #2a2a36; --texto: #f3f1ec; --suave: #a3a1ad; --acento: #ffd23f; --acento2: #ff6b4a; --verde: #3ddc84; --radio: 18px; }
+  :root { --titulo: "Bricolage Grotesque", Inter, system-ui, -apple-system, sans-serif; --fondo: #0d0c12; --fondo2: #14131b; --panel: #1b1a24; --linea: #2c2b38; --texto: #f3f1ec; --suave: #a7a4b2; --acento: #ffd23f; --acento2: #ff6b4a; --verde: #3ddc84; --papel: #f7f1e3; --tinta: #23201a; --radio: 18px; }
   * { box-sizing: border-box; } html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--fondo); color: var(--texto); font: 16px/1.6 Inter, system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
-  a { color: inherit; }
-  .ancho { width: min(1120px, 100% - 32px); margin: 0 auto; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 16px/1.6 Inter, system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  a { color: inherit; } :focus-visible { outline: 2px solid var(--acento); outline-offset: 3px; border-radius: 6px; }
+  .ancho { width: min(1140px, 100% - 32px); margin: 0 auto; }
   h1, h2, h3 { font-family: var(--titulo); letter-spacing: -.02em; line-height: 1.05; margin: 0; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
   /* barra */
-  .barra { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(14px); background: color-mix(in srgb, var(--fondo) 75%, transparent); border-bottom: 1px solid var(--linea); }
+  .barra { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px); background: color-mix(in srgb, var(--fondo) 78%, transparent); border-bottom: 1px solid var(--linea); }
   .barra .ancho { display: flex; align-items: center; gap: 18px; height: 60px; }
   .marca { display: flex; align-items: center; gap: 9px; font-family: var(--titulo); font-weight: 800; font-size: 20px; text-decoration: none; }
-  .marca i { width: 12px; height: 12px; border-radius: 50%; background: var(--acento2); box-shadow: 0 0 0 5px color-mix(in srgb, var(--acento2) 25%, transparent); animation: latido 2s ease-in-out infinite; }
-  @keyframes latido { 50% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--acento2) 0%, transparent); } }
-  .barra nav { display: flex; gap: 18px; margin-left: auto; font-size: 14px; color: var(--suave); }
+  .marca i { width: 12px; height: 12px; border-radius: 50%; background: var(--acento2); box-shadow: 0 0 0 5px color-mix(in srgb, var(--acento2) 25%, transparent); }
+  .barra nav { display: flex; gap: 20px; margin-left: auto; font-size: 14px; color: var(--suave); }
   .barra nav a { text-decoration: none; } .barra nav a:hover { color: var(--texto); }
-  .idioma { border: 1px solid var(--linea); background: none; color: var(--texto); border-radius: 999px; padding: 5px 11px; font: 600 12px Inter; cursor: pointer; }
-  @media (max-width: 760px) { .barra nav { display: none; } .idioma { margin-left: auto; } }
+  .estrellas { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--linea); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; text-decoration: none; }
+  .estrellas:hover { border-color: var(--acento); } .estrellas b { color: var(--acento); font-weight: 700; }
+  .idioma { border: 1px solid var(--linea); background: none; color: var(--texto); border-radius: 999px; padding: 5px 11px; font: 600 12px Inter, sans-serif; cursor: pointer; }
+  @media (max-width: 900px) { .barra nav { display: none; } .estrellas { margin-left: auto; } }
+
   /* héroe */
-  .heroe { padding: 76px 0 40px; text-align: center; position: relative; overflow: hidden; }
-  .heroe::before { content: ""; position: absolute; inset: -40% -20% auto; height: 620px; background: radial-gradient(closest-side, color-mix(in srgb, var(--acento) 18%, transparent), transparent), radial-gradient(closest-side at 70% 60%, color-mix(in srgb, var(--acento2) 16%, transparent), transparent); pointer-events: none; }
-  .etiqueta { display: inline-flex; gap: 8px; align-items: center; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--linea); background: var(--fondo2); color: var(--suave); font-size: 13px; position: relative; }
-  .etiqueta b { color: var(--verde); font-weight: 600; }
-  .heroe h1 { font-size: clamp(42px, 7.4vw, 86px); font-weight: 800; margin: 22px auto 18px; max-width: 13ch; position: relative; }
-  .heroe h1 em { font-style: normal; background: linear-gradient(100deg, var(--acento), var(--acento2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .heroe p.lema { font-size: clamp(17px, 2.1vw, 21px); color: var(--suave); max-width: 58ch; margin: 0 auto 30px; position: relative; }
-  .acciones { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; position: relative; }
-  .boton { display: inline-flex; align-items: center; gap: 9px; padding: 14px 22px; border-radius: 14px; font-weight: 600; text-decoration: none; border: 1px solid var(--linea); background: var(--panel); transition: transform .15s, border-color .15s; }
+  .heroe { padding: 64px 0 30px; position: relative; }
+  .heroe::before { content: ""; position: absolute; inset: -120px 0 auto; height: 640px; background: radial-gradient(40% 60% at 18% 30%, color-mix(in srgb, var(--acento) 13%, transparent), transparent), radial-gradient(35% 50% at 85% 10%, color-mix(in srgb, var(--acento2) 12%, transparent), transparent); pointer-events: none; z-index: -1; }
+  .heroe-cab { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 26px 56px; align-items: start; }
+  @media (max-width: 900px) { .heroe-cab { grid-template-columns: minmax(0, 1fr); gap: 26px; } }
+  .heroe h1 { grid-column: 1 / -1; font-size: clamp(38px, 5.4vw, 70px); font-weight: 800; max-width: 19ch; }
+  .heroe .lema { font-size: clamp(17px, 1.7vw, 19px); color: var(--suave); margin: 0; max-width: 56ch; }
+  .heroe .lema b { color: var(--texto); font-weight: 600; }
+  .acciones { display: flex; flex-wrap: wrap; gap: 12px; }
+  .boton { display: inline-flex; align-items: center; gap: 9px; padding: 14px 22px; border-radius: 14px; font-weight: 600; text-decoration: none; border: 1px solid var(--linea); background: var(--panel); color: var(--texto); transition: transform .15s, border-color .15s; cursor: pointer; font-size: 16px; }
   .boton:hover { transform: translateY(-2px); border-color: var(--suave); }
-  .boton.principal { background: var(--acento); color: #111; border-color: transparent; }
-  .comando { margin: 26px auto 0; width: min(680px, 100%); display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 18px; border-radius: 14px; background: #07070a; border: 1px solid var(--linea); font: 14px ui-monospace, SFMono-Regular, Menlo, monospace; text-align: left; position: relative; }
-  .comando code { flex: 1; overflow-x: auto; white-space: nowrap; color: #d8d6cf; } .comando code::before { content: "$ "; color: var(--verde); }
-  .comando button { border: 1px solid var(--linea); background: var(--panel); color: var(--texto); border-radius: 9px; padding: 7px 12px; font: 600 12px Inter; cursor: pointer; flex: none; }
-  .nota-req { margin-top: 12px; color: var(--suave); font-size: 13px; position: relative; }
-  .ventana { margin: 54px auto 0; width: min(1080px, 100%); border-radius: 16px; overflow: hidden; border: 1px solid var(--linea); box-shadow: 0 50px 120px -40px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03); position: relative; background: #000; }
-  .ventana .puntos { display: flex; gap: 7px; padding: 11px 14px; background: #15151c; border-bottom: 1px solid var(--linea); } .ventana .puntos i { width: 11px; height: 11px; border-radius: 50%; background: #3a3a46; }
-  .ventana .puntos i:nth-child(1) { background: #ff5f57; } .ventana .puntos i:nth-child(2) { background: #febc2e; } .ventana .puntos i:nth-child(3) { background: #28c840; }
-  .ventana img { display: block; width: 100%; height: auto; }
+  .boton.principal { background: var(--acento); color: #15130c; border-color: transparent; }
+  .comando { margin-top: 16px; width: 100%; display: flex; align-items: center; gap: 10px; padding: 11px 11px 11px 16px; border-radius: 14px; background: #08080b; border: 1px solid var(--linea); font: 13.5px ui-monospace, SFMono-Regular, Menlo, monospace; text-align: left; }
+  .comando code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; color: #dcdad3; scrollbar-width: none; } .comando code::before { content: "$ "; color: var(--verde); }
+  .comando button { border: 1px solid var(--linea); background: var(--panel); color: var(--texto); border-radius: 9px; padding: 7px 12px; font: 600 12px Inter, sans-serif; cursor: pointer; flex: none; }
+  .nota-req { margin: 12px 0 0; color: var(--suave); font-size: 13.5px; } .nota-req a { color: var(--acento); }
+
+  /* escena animada: cómo funciona */
+  .escena { margin-top: 46px; display: grid; grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr) 54px minmax(0, .82fr) 54px minmax(0, 1.12fr); align-items: stretch; }
+  .estacion { --brillo: transparent; position: relative; border-radius: 20px; border: 1px solid var(--linea); background: var(--fondo2); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 290px; box-shadow: 0 0 0 1px var(--brillo), 0 22px 60px -30px rgba(0,0,0,.8); animation: turno 12s linear infinite; }
+  .estacion.e2 { animation-delay: 3s; } .estacion.e3 { animation-delay: 6s; } .estacion.e4 { animation-delay: 9s; }
+  @keyframes turno { 0%, 24% { --brillo: color-mix(in srgb, var(--acento) 60%, transparent); border-color: color-mix(in srgb, var(--acento) 55%, var(--linea)); } 26%, 100% { --brillo: transparent; } }
+  @property --brillo { syntax: "<color>"; inherits: false; initial-value: transparent; }
+  .est-tit { display: flex; align-items: center; gap: 9px; font-family: var(--titulo); font-weight: 700; font-size: 17px; }
+  .est-tit .n { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--panel); border: 1px solid var(--linea); font: 700 12px Inter, sans-serif; }
+  .donde { align-self: flex-start; margin-top: auto; font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px; background: color-mix(in srgb, var(--verde) 15%, transparent); color: var(--verde); }
+  .donde.fuera { background: color-mix(in srgb, var(--acento) 16%, transparent); color: var(--acento); }
+  /* 1 · reunión */
+  .rec { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #ffb4a5; background: color-mix(in srgb, var(--acento2) 14%, transparent); padding: 3px 9px; border-radius: 999px; }
+  .rec i { width: 7px; height: 7px; border-radius: 50%; background: var(--acento2); animation: parpadeo 1.2s ease-in-out infinite; }
+  @keyframes parpadeo { 50% { opacity: .25; } }
+  .personas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .persona { background: var(--panel); border-radius: 14px; padding: 14px 8px 10px; display: grid; justify-items: center; gap: 8px; font-size: 12.5px; color: var(--suave); }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font: 700 15px Inter, sans-serif; color: #15130c; background: var(--acento); }
+  .persona.ana .avatar { background: #8fd3ff; }
+  .onda { display: flex; gap: 3px; height: 22px; align-items: center; }
+  .onda i { width: 4px; height: 100%; border-radius: 3px; background: currentColor; transform: scaleY(.2); animation: voz 0.9s ease-in-out infinite; }
+  .persona.yo .onda { color: var(--acento); } .persona.ana .onda { color: #8fd3ff; }
+  .onda i:nth-child(2) { animation-delay: -.3s; } .onda i:nth-child(3) { animation-delay: -.6s; } .onda i:nth-child(4) { animation-delay: -.15s; } .onda i:nth-child(5) { animation-delay: -.45s; }
+  .persona.ana .onda i { animation-duration: 1.1s; }
+  @keyframes voz { 50% { transform: scaleY(1); } }
+  /* 2 · transcripción */
+  .chip { align-self: flex-start; font-size: 11.5px; color: var(--suave); border: 1px solid var(--linea); padding: 2px 8px; border-radius: 999px; }
+  .linea { font-size: 13px; line-height: 1.45; color: #dad8d0; clip-path: inset(0 100% 0 0); animation: escribir 12s steps(24, end) infinite; }
+  .linea b { color: #8fd3ff; font-weight: 600; } .linea b.yo { color: var(--acento); }
+  .linea.l2 { animation-name: escribir2; } .linea.l3 { animation-name: escribir3; }
+  @keyframes escribir { 0%, 26% { clip-path: inset(0 100% 0 0); } 32%, 97% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(0 100% 0 0); } }
+  @keyframes escribir2 { 0%, 33% { clip-path: inset(0 100% 0 0); } 39%, 97% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(0 100% 0 0); } }
+  @keyframes escribir3 { 0%, 40% { clip-path: inset(0 100% 0 0); } 46%, 97% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(0 100% 0 0); } }
+  /* 3 · tu IA */
+  .estacion.e3 { background: radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--acento) 9%, var(--fondo2)), var(--fondo2)); border-style: dashed; }
+  .cerebro { margin: 6px auto 0; width: 104px; height: 104px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); border: 1px solid var(--linea); position: relative; animation: pensar 12s ease-in-out infinite; }
+  @keyframes pensar { 0%, 56% { box-shadow: 0 0 0 0 transparent; } 60% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--acento) 22%, transparent), 0 0 50px color-mix(in srgb, var(--acento) 35%, transparent); } 68%, 100% { box-shadow: 0 0 0 0 transparent; } }
+  .nombres { position: relative; height: 22px; width: 100%; text-align: center; font: 700 15px var(--titulo); }
+  .nombres span { position: absolute; inset: 0; opacity: 0; animation: nombre 12s infinite; }
+  .nombres span:nth-child(2) { animation-delay: 4s; } .nombres span:nth-child(3) { animation-delay: 8s; }
+  @keyframes nombre { 0% { opacity: 0; transform: translateY(6px); } 4%, 30% { opacity: 1; transform: none; } 34%, 100% { opacity: 0; transform: translateY(-6px); } }
+  .cerebro svg { width: 46px; height: 46px; color: var(--acento); }
+  .e3 p { margin: 0; text-align: center; font-size: 12.5px; color: var(--suave); }
+  /* conectores */
+  .conector { position: relative; display: grid; place-items: center; }
+  .conector::before { content: ""; position: absolute; left: 6px; right: 6px; top: 50%; border-top: 2px dashed var(--linea); }
+  .conector small { position: absolute; top: calc(50% + 10px); font-size: 11px; color: var(--suave); white-space: nowrap; }
+  .particula { position: absolute; left: 4px; top: calc(50% - 4px); width: 8px; height: 8px; border-radius: 50%; background: var(--acento); animation: sonido 1.4s linear infinite; }
+  .particula:nth-of-type(2) { animation-delay: -.47s; } .particula:nth-of-type(3) { animation-delay: -.94s; }
+  @keyframes sonido { from { transform: translateX(0); opacity: 0; } 20%, 80% { opacity: 1; } to { transform: translateX(38px); opacity: 0; } }
+  .paquete { position: absolute; left: 0; top: calc(50% - 12px); padding: 3px 7px; border-radius: 7px; background: var(--acento); color: #15130c; font: 700 10.5px Inter, sans-serif; opacity: 0; white-space: nowrap; animation: subir 12s ease-in-out infinite; }
+  .paquete.vuelta { animation-name: bajar; background: var(--papel); }
+  @keyframes subir { 0%, 48% { opacity: 0; transform: translateX(-30%); } 50% { opacity: 1; } 57% { opacity: 1; transform: translateX(40%); } 59%, 100% { opacity: 0; transform: translateX(40%); } }
+  @keyframes bajar { 0%, 64% { opacity: 0; transform: translateX(-30%); } 66% { opacity: 1; } 73% { opacity: 1; transform: translateX(40%); } 75%, 100% { opacity: 0; transform: translateX(40%); } }
+  /* 4 · nota (papel) */
+  .estacion.e4 { background: var(--papel); color: var(--tinta); border-color: transparent; }
+  .estacion.e4 .est-tit .n { background: var(--tinta); color: var(--papel); border-color: transparent; }
+  .nota-t { font-size: 12px; font-weight: 700; color: #6c6352; margin-top: 2px; }
+  .item { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.4; opacity: 0; animation: aparecer 12s infinite; }
+  .item .caja { width: 15px; height: 15px; flex: none; margin-top: 2px; border-radius: 4px; border: 1.5px solid #8b8170; }
+  .item.i1 { animation-delay: 0s; } .item.i2 { animation-name: aparecer2; } .item.i3 { animation-name: aparecer3; }
+  @keyframes aparecer { 0%, 76% { opacity: 0; transform: translateY(6px); } 79%, 97% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  @keyframes aparecer2 { 0%, 79% { opacity: 0; transform: translateY(6px); } 82%, 97% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  @keyframes aparecer3 { 0%, 82% { opacity: 0; transform: translateY(6px); } 85%, 97% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+  .barra-p { flex: 1; height: 7px; border-radius: 9px; background: #e3d9c4; overflow: hidden; margin-top: 6px; } .barra-p i { display: block; height: 100%; width: 80%; background: #2f9e62; transform-origin: left; transform: scaleX(0); animation: llenar 12s ease-out infinite; }
+  @keyframes llenar { 0%, 84% { transform: scaleX(0); } 90%, 97% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
+  .logro { position: absolute; right: 14px; bottom: 14px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 14px; background: #1d1b26; color: #fff; font-size: 12px; box-shadow: 0 14px 34px -10px rgba(0,0,0,.6); border: 1px solid color-mix(in srgb, var(--acento) 60%, transparent); opacity: 0; transform: scale(.6) rotate(-6deg); animation: logro 12s cubic-bezier(.2, 1.6, .4, 1) infinite; }
+  .logro > span { font-size: 20px; } .logro b { display: block; color: var(--acento); font-size: 11px; font-weight: 600; }
+  @keyframes logro { 0%, 88% { opacity: 0; transform: scale(.6) rotate(-6deg); } 91%, 97% { opacity: 1; transform: scale(1) rotate(-3deg); } 100% { opacity: 0; transform: scale(.9) rotate(-3deg); } }
+  .escena-pie { margin: 18px 0 0; text-align: center; color: var(--suave); font-size: 14.5px; } .escena-pie b { color: var(--texto); font-weight: 600; }
+  @media (max-width: 900px) {
+    .escena { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+    .estacion { min-height: 0; }
+    .conector { height: 46px; }
+    .conector::before { left: 50%; right: auto; top: 6px; bottom: 6px; border-top: 0; border-left: 2px dashed var(--linea); }
+    .conector small { top: 50%; transform: translateY(-50%); right: calc(50% + 14px); }
+    .particula { left: calc(50% - 4px); top: 2px; animation-name: sonidoV; }
+    .paquete { left: calc(50% + 12px); top: 0; animation-name: subirV; } .paquete.vuelta { animation-name: bajarV; }
+    .estacion.e4 { padding-bottom: 76px; }
+  }
+  @keyframes sonidoV { from { transform: translateY(0); opacity: 0; } 20%, 80% { opacity: 1; } to { transform: translateY(34px); opacity: 0; } }
+  @keyframes subirV { 0%, 48% { opacity: 0; transform: translateY(0); } 50% { opacity: 1; } 57% { opacity: 1; transform: translateY(22px); } 59%, 100% { opacity: 0; transform: translateY(22px); } }
+  @keyframes bajarV { 0%, 64% { opacity: 0; transform: translateY(0); } 66% { opacity: 1; } 73% { opacity: 1; transform: translateY(22px); } 75%, 100% { opacity: 0; transform: translateY(22px); } }
+  @media (prefers-reduced-motion: reduce) {
+    .escena *, .estacion { animation: none !important; }
+    .linea { clip-path: none; } .item { opacity: 1; } .barra-p i { transform: none; } .logro { opacity: 1; transform: rotate(-3deg); }
+    .nombres span:first-child { opacity: 1; } .particula, .paquete { display: none; } .onda i { transform: scaleY(.6); }
+  }
+
   /* secciones */
-  section { padding: 90px 0; } .sec-cab { max-width: 680px; margin-bottom: 40px; }
-  .sec-cab small { color: var(--acento); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; font-size: 12px; }
-  .sec-cab h2 { font-size: clamp(32px, 4.6vw, 52px); margin: 10px 0 12px; } .sec-cab p { color: var(--suave); font-size: 18px; margin: 0; }
-  .grilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+  section { padding: 96px 0; } .sec-cab { max-width: 700px; margin-bottom: 40px; }
+  .sec-cab h2 { font-size: clamp(32px, 4.4vw, 50px); margin-bottom: 14px; } .sec-cab p { color: var(--suave); font-size: 18px; margin: 0; }
+  .grilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
   .carta { padding: 22px; border-radius: var(--radio); background: var(--fondo2); border: 1px solid var(--linea); }
   .carta .ico { font-size: 26px; } .carta h3 { font-size: 20px; margin: 10px 0 6px; } .carta p { margin: 0; color: var(--suave); font-size: 15px; }
-  .duo { display: grid; grid-template-columns: 1.05fr 1fr; gap: 40px; align-items: center; } .duo.al-reves { grid-template-columns: 1fr 1.05fr; }
+  .duo { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 44px; align-items: center; } .duo.al-reves { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); }
   .duo.al-reves .duo-img { order: 2; }
-  @media (max-width: 860px) { .duo, .duo.al-reves { grid-template-columns: 1fr; } .duo.al-reves .duo-img { order: 0; } }
-  .duo-img img { width: 100%; border-radius: 14px; border: 1px solid var(--linea); box-shadow: 0 30px 80px -40px rgba(0,0,0,.9); display: block; }
-  .duo h3 { font-size: clamp(26px, 3.4vw, 38px); margin-bottom: 14px; } .duo p { color: var(--suave); font-size: 17px; }
+  @media (max-width: 860px) { .duo, .duo.al-reves { grid-template-columns: minmax(0, 1fr); } .duo.al-reves .duo-img { order: 0; } }
+  .duo-img img { width: 100%; border-radius: 14px; border: 1px solid var(--linea); box-shadow: 0 30px 80px -40px rgba(0,0,0,.9); display: block; height: auto; }
+  .duo h3 { font-size: clamp(26px, 3.2vw, 36px); margin-bottom: 14px; } .duo p { color: var(--suave); font-size: 17px; }
   .lista-ok { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 9px; } .lista-ok li { display: flex; gap: 10px; } .lista-ok li::before { content: "✓"; color: var(--verde); font-weight: 700; }
+
+  /* comparación */
+  .tabla { border: 1px solid var(--linea); border-radius: 20px; overflow: hidden; }
+  .fila { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1fr) minmax(0, 1fr); border-top: 1px solid var(--linea); }
+  .fila:first-child { border-top: 0; } .fila > div { padding: 15px 20px; font-size: 15px; }
+  .fila > div:first-child { color: var(--suave); } .fila > div:nth-child(2) { color: #c9c6d1; } .fila > div:last-child { background: color-mix(in srgb, var(--verde) 7%, transparent); }
+  .fila.cab > div { font-family: var(--titulo); font-weight: 700; font-size: 17px; color: var(--texto); } .fila.cab > div:last-child { color: var(--verde); }
+  @media (max-width: 720px) { .fila { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .fila > div:first-child { grid-column: 1 / -1; padding-bottom: 0; font-weight: 600; color: var(--texto); } .fila.cab > div:first-child { display: none; } .fila > div { padding: 12px 16px; font-size: 14px; } }
+
   /* privacidad */
-  .privacidad { background: linear-gradient(180deg, transparent, var(--fondo2) 30%, var(--fondo2) 70%, transparent); }
-  .flujo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 10px; }
-  .paso { padding: 20px; border: 1px solid var(--linea); background: var(--panel); position: relative; }
-  .paso:first-child { border-radius: 16px 0 0 16px; } .paso:last-child { border-radius: 0 16px 16px 0; }
-  .paso b { display: block; font-family: var(--titulo); font-size: 19px; margin: 6px 0 4px; } .paso p { margin: 0; color: var(--suave); font-size: 14px; }
-  .paso .donde { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: color-mix(in srgb, var(--verde) 18%, transparent); color: var(--verde); }
-  .paso .donde.fuera { background: color-mix(in srgb, var(--acento) 18%, transparent); color: var(--acento); }
-  @media (max-width: 860px) { .flujo { grid-template-columns: 1fr 1fr; } .paso { border-radius: 0 !important; } }
-  /* universos */
-  .universos { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
-  .uni { padding: 18px 16px; border-radius: 14px; min-height: 130px; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,.08); background: linear-gradient(150deg, var(--u2), var(--u1)); color: var(--ut); }
-  .uni .e { font-size: 30px; } .uni b { display: block; font-family: var(--titulo); font-size: 18px; margin-top: 8px; color: var(--ut); } .uni b::after { content: ""; display: block; width: 26px; height: 3px; border-radius: 2px; background: var(--ua); margin-top: 6px; }
-  .uni small { opacity: .75; font-size: 12.5px; } .uni .r { margin-top: 8px; font-size: 13px; letter-spacing: 2px; }
-  .uni .tag { position: absolute; top: 12px; right: 12px; font-size: 10.5px; font-weight: 700; padding: 3px 7px; border-radius: 999px; background: rgba(0,0,0,.35); color: #fff; }
-  /* instalar */
-  .instalar .grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); } @media (max-width: 720px) { .instalar .grilla { grid-template-columns: minmax(0, 1fr); } }
-  .instalar .carta h3 { display: flex; align-items: center; gap: 10px; } .instalar .carta .num { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--acento); color: #111; font-size: 14px; font-weight: 800; }
-  .instalar .carta .comando { margin: 14px 0 0; width: 100%; } .instalar .carta .boton { margin-top: 14px; }
-  .sistemas { display: inline-flex; gap: 4px; padding: 4px; border-radius: 14px; border: 1px solid var(--linea); background: var(--fondo2); margin-bottom: 18px; }
-  .sistemas button { border: 0; background: none; color: var(--suave); font: 600 14px Inter, system-ui, sans-serif; padding: 9px 16px; border-radius: 10px; cursor: pointer; }
-  .sistemas button[aria-selected="true"] { background: var(--panel); color: var(--texto); box-shadow: 0 1px 0 rgba(255,255,255,.06) inset; }
-  .instalar .grilla[hidden] { display: none; } .instalar .requisitos { grid-column: 1 / -1; margin-top: 4px; }
-  .carta code { font-size: 12.5px; background: #07070a; padding: 1px 5px; border-radius: 5px; }
-  .promesas { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 22px auto 0; position: relative; max-width: 760px; }
-  .promesas a { text-decoration: none; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--linea); background: color-mix(in srgb, var(--fondo2) 80%, transparent); color: var(--texto); font-size: 13.5px; transition: border-color .15s, transform .15s; }
-  .promesas a:hover { border-color: var(--verde); transform: translateY(-1px); }
-  .garantias { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 44px; }
+  .privacidad { background: linear-gradient(180deg, transparent, var(--fondo2) 25%, var(--fondo2) 75%, transparent); }
+  .garantias { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
   .garantia { padding: 22px; border-radius: var(--radio); background: var(--panel); border: 1px solid var(--linea); }
   .garantia .ico { font-size: 28px; } .garantia h3 { font-size: 19px; margin: 10px 0 6px; } .garantia p { margin: 0; color: var(--suave); font-size: 15px; } .garantia p b { color: var(--texto); font-weight: 600; }
   .garantia.destacada { grid-column: 1 / -1; display: flex; gap: 18px; align-items: center; border-color: color-mix(in srgb, var(--verde) 45%, var(--linea)); background: linear-gradient(120deg, color-mix(in srgb, var(--verde) 10%, var(--panel)), var(--panel)); }
   .garantia.destacada .txt { flex: 1; min-width: 0; } .garantia.destacada h3 { margin: 0 0 4px; } .garantia.destacada .boton { flex: none; }
   @media (max-width: 720px) { .garantia.destacada { flex-direction: column; align-items: flex-start; } }
-  .flujo-tit { color: var(--suave); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; margin: 0 0 12px; }
-  .necesitas { margin-top: 18px; padding: 24px; border-radius: var(--radio); border: 1px solid color-mix(in srgb, var(--acento) 40%, var(--linea)); background: var(--fondo2); }
-  .necesitas h3 { font-size: 20px; margin-bottom: 10px; } .necesitas ul { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--suave); } .necesitas b { color: var(--texto); }
-  .necesitas a { color: var(--acento); } .necesitas .pronto { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--linea); color: var(--suave); font-size: 14.5px; }
-  .requisitos { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; } .requisitos span { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--linea); color: var(--suave); font-size: 13.5px; }
+
+  /* tu IA */
+  .ias { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  @media (max-width: 860px) { .ias { grid-template-columns: minmax(0, 1fr); } }
+  .ia { padding: 24px; border-radius: 20px; border: 1px solid var(--linea); background: var(--fondo2); display: flex; flex-direction: column; gap: 10px; }
+  .ia .logo { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font: 800 20px var(--titulo); }
+  .ia h3 { font-size: 24px; } .ia h3 small { display: block; font: 500 14px Inter, sans-serif; color: var(--suave); margin-top: 4px; letter-spacing: 0; }
+  .ia p { margin: 0; color: var(--suave); font-size: 15px; } .ia p b { color: var(--texto); font-weight: 600; }
+  .ia a.guia { margin-top: auto; padding-top: 8px; color: var(--acento); font-weight: 600; font-size: 15px; text-decoration: none; } .ia a.guia:hover { text-decoration: underline; }
+  .beta { font: 700 11px Inter, sans-serif; padding: 2px 7px; border-radius: 999px; background: color-mix(in srgb, var(--acento2) 20%, transparent); color: #ffb4a5; vertical-align: 3px; margin-left: 6px; letter-spacing: 0; }
+  .razones { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 22px 28px; margin-top: 40px; }
+  .razones div b { display: block; font-family: var(--titulo); font-size: 18px; margin-bottom: 4px; } .razones div p { margin: 0; color: var(--suave); font-size: 15px; }
+  .ayuda-ia { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 16px 22px; align-items: center; padding: 22px 24px; border-radius: 20px; background: var(--papel); color: var(--tinta); }
+  .ayuda-ia p { margin: 0; flex: 1; min-width: 240px; font-size: 16px; } .ayuda-ia p b { font-family: var(--titulo); font-size: 19px; display: block; }
+  .ayuda-ia .boton { background: var(--tinta); color: var(--papel); border-color: transparent; }
+
+  /* universos */
+  .universos { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .uni { padding: 18px 16px; border-radius: 14px; min-height: 128px; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,.08); background: linear-gradient(150deg, var(--u2), var(--u1)); color: var(--ut); }
+  .uni .e { font-size: 30px; } .uni b { display: block; font-family: var(--titulo); font-size: 18px; margin-top: 8px; color: var(--ut); } .uni b::after { content: ""; display: block; width: 26px; height: 3px; border-radius: 2px; background: var(--ua); margin-top: 6px; }
+  .uni small { opacity: .75; font-size: 12.5px; } .uni .r { margin-top: 8px; font-size: 13px; letter-spacing: 2px; }
+  .uni .tag { position: absolute; top: 12px; right: 12px; font-size: 10.5px; font-weight: 700; padding: 3px 7px; border-radius: 999px; background: rgba(0,0,0,.35); color: #fff; }
+
+  /* comunidad */
+  .comunidad { background: radial-gradient(60% 70% at 50% 0%, color-mix(in srgb, var(--acento) 8%, transparent), transparent); }
+  .aportes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; } @media (max-width: 980px) { .aportes { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 640px) { .aportes { grid-template-columns: minmax(0, 1fr); } }
+  .aporte { display: flex; flex-direction: column; gap: 8px; padding: 22px; border-radius: var(--radio); background: var(--fondo2); border: 1px solid var(--linea); text-decoration: none; transition: border-color .15s, transform .15s; }
+  .aporte:hover { border-color: var(--acento); transform: translateY(-2px); }
+  .aporte .ico { font-size: 26px; } .aporte h3 { font-size: 19px; } .aporte p { margin: 0; color: var(--suave); font-size: 15px; } .aporte em { margin-top: auto; padding-top: 6px; font-style: normal; color: var(--acento); font-weight: 600; font-size: 14.5px; }
+
+  /* instalar */
+  .instalar .grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); } @media (max-width: 720px) { .instalar .grilla { grid-template-columns: minmax(0, 1fr); } }
+  .instalar .carta h3 { display: flex; align-items: center; gap: 10px; } .instalar .carta .num { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--acento); color: #111; font-size: 14px; font-weight: 800; flex: none; }
+  .instalar .carta .comando { margin: 14px 0 0; } .instalar .carta .boton { margin-top: 14px; }
+  .sistemas { display: inline-flex; gap: 4px; padding: 4px; border-radius: 14px; border: 1px solid var(--linea); background: var(--fondo2); margin-bottom: 18px; }
+  .sistemas button { border: 0; background: none; color: var(--suave); font: 600 14px Inter, system-ui, sans-serif; padding: 9px 16px; border-radius: 10px; cursor: pointer; }
+  .sistemas button[aria-selected="true"] { background: var(--panel); color: var(--texto); box-shadow: 0 1px 0 rgba(255,255,255,.06) inset; }
+  .instalar .grilla[hidden] { display: none; }
+  .requisitos { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; } .requisitos > span { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--linea); color: var(--suave); font-size: 13.5px; }
+  .requisitos a { color: var(--acento); }
+  .carta code { font-size: 12.5px; background: #08080b; padding: 1px 5px; border-radius: 5px; }
+
   /* preguntas */
   details { border-bottom: 1px solid var(--linea); padding: 16px 0; } summary { cursor: pointer; font-weight: 600; font-size: 17px; list-style: none; display: flex; justify-content: space-between; gap: 20px; }
+  summary::-webkit-details-marker { display: none; }
   summary::after { content: "+"; color: var(--acento); font-size: 22px; line-height: 1; } details[open] summary::after { content: "–"; }
-  details p { color: var(--suave); margin: 10px 0 0; max-width: 72ch; }
-  footer { padding: 50px 0 60px; border-top: 1px solid var(--linea); color: var(--suave); font-size: 14px; }
-  footer .ancho { display: flex; flex-wrap: wrap; gap: 18px; justify-content: space-between; } footer a { color: var(--texto); }
-  .revela { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; } .revela.visible { opacity: 1; transform: none; }
-  @media (prefers-reduced-motion: reduce) { .revela { opacity: 1; transform: none; transition: none; } .marca i { animation: none; } }
+  details p { color: var(--suave); margin: 10px 0 0; max-width: 72ch; } details p a { color: var(--acento); }
+
+  /* cierre */
+  .cierre { padding: 40px 0 100px; }
+  .cierre .caja { border-radius: 28px; padding: clamp(28px, 5vw, 56px); background: var(--acento); color: #15130c; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: center; }
+  .cierre h2 { font-size: clamp(30px, 4vw, 48px); max-width: 18ch; } .cierre p { margin: 12px 0 0; font-size: 17px; max-width: 52ch; }
+  .cierre .boton { background: #15130c; color: var(--acento); border-color: transparent; }
+  .cierre .boton.claro { background: transparent; color: #15130c; border-color: rgba(0,0,0,.25); }
+  .cierre .acciones { justify-content: flex-end; }
+  @media (max-width: 760px) { .cierre .caja { grid-template-columns: minmax(0, 1fr); } .cierre .acciones { justify-content: flex-start; } }
+  footer { padding: 44px 0 56px; border-top: 1px solid var(--linea); color: var(--suave); font-size: 14px; }
+  footer .ancho { display: flex; flex-wrap: wrap; gap: 14px 18px; justify-content: space-between; } footer a { color: var(--texto); }
+  footer nav { display: flex; flex-wrap: wrap; gap: 8px 18px; }
   [data-en] { display: none; } html[lang="en"] [data-es] { display: none; } html[lang="en"] [data-en] { display: revert; }
 </style>
 </head>
 <body>
 <header class="barra"><div class="ancho">
   <a class="marca" href="#"><i></i>Minuta</a>
-  <nav><a href="#privacidad"><span data-es>Privacidad</span><span data-en>Privacy</span></a><a href="#ia"><span data-es>Tu IA</span><span data-en>Your AI</span></a><a href="#que-hace"><span data-es>Qué hace</span><span data-en>Features</span></a><a href="#universos"><span data-es>Universos</span><span data-en>Universes</span></a><a href="#instalar"><span data-es>Instalar</span><span data-en>Install</span></a><a href="https://github.com/minuta-app/minuta">GitHub</a></nav>
+  <nav><a href="#como"><span data-es>Cómo funciona</span><span data-en>How it works</span></a><a href="#privacidad"><span data-es>Privacidad</span><span data-en>Privacy</span></a><a href="#ia"><span data-es>Tu IA</span><span data-en>Your AI</span></a><a href="#universos"><span data-es>Universos</span><span data-en>Universes</span></a><a href="#comunidad"><span data-es>Comunidad</span><span data-en>Community</span></a><a href="#instalar"><span data-es>Instalar</span><span data-en>Install</span></a></nav>
+  <a class="estrellas" href="https://github.com/minuta-app/minuta" aria-label="GitHub">★ GitHub <b id="n-estrellas" hidden></b></a>
   <button class="idioma" id="idioma" aria-label="Cambiar idioma / Change language">EN</button>
 </div></header>
 
 <main>
-<section class="heroe"><div class="ancho">
-  <span class="etiqueta"><b>●</b> <span data-es>Privado de verdad · Código abierto · Gratis</span><span data-en>Truly private · Open source · Free</span></span>
-  <h1><span data-es>Comunícate mejor, <em>jugando</em></span><span data-en>Communicate better, <em>while playing</em></span></h1>
-  <p class="lema"><span data-es>Minuta convierte cada reunión en notas, compromisos y un coach que te ayuda a mejorar con rangos, logros y el universo que más te guste. Todo se queda en tu computador y en tu propio Git: nadie más lo ve.</span><span data-en>Minuta turns every meeting into notes, commitments and a coach that helps you improve with ranks, achievements and the universe you love. Everything stays on your computer and in your own Git: no one else sees it.</span></p>
-  <div class="acciones">
-    <a class="boton principal" id="descarga" href="https://github.com/minuta-app/minuta/releases/latest/download/Minuta-macOS.zip"> <span data-es>Descargar para <b class="so-nombre">Mac</b></span><span data-en>Download for <b class="so-nombre">Mac</b></span></a>
-    <a class="boton" href="https://github.com/minuta-app/minuta">★ <span data-es>Ver en GitHub</span><span data-en>View on GitHub</span></a>
+<section class="heroe" id="como"><div class="ancho">
+  <div class="heroe-cab">
+    <h1><span data-es>Sal de cada reunión con las notas listas y sabiendo cómo mejorar</span><span data-en>Leave every meeting with your notes done and knowing how to get better</span></h1>
+    <div>
+      <p class="lema"><span data-es>Minuta graba tus reuniones, las transcribe <b>en tu computador</b> y le pide a <b>tu IA</b> (Claude, ChatGPT o Gemini, con tu propia cuenta) las notas, los compromisos y un feedback honesto sobre cómo te comunicaste. Mejoras subiendo de rango en tu saga favorita. Gratis, de código abierto y sin servidores.</span><span data-en>Minuta records your meetings, transcribes them <b>on your computer</b> and asks <b>your AI</b> (Claude, ChatGPT or Gemini, with your own account) for the notes, the commitments and honest feedback on how you communicated. You improve by ranking up in your favorite saga. Free, open source and serverless.</span></p>
+    </div>
+    <div>
+      <div class="acciones">
+        <a class="boton principal" id="descarga" href="https://github.com/minuta-app/minuta/releases/latest/download/Minuta-macOS.zip"><span data-es>Descargar para <b class="so-nombre">Mac</b></span><span data-en>Download for <b class="so-nombre">Mac</b></span></a>
+        <a class="boton" href="#instalar"><span data-es>Otros sistemas</span><span data-en>Other systems</span></a>
+      </div>
+      <div class="comando"><code id="cmd">curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh | bash</code><button data-copiar="cmd"><span data-es>Copiar</span><span data-en>Copy</span></button></div>
+      <p class="nota-req"><span id="req"><span data-es>Mac con chip Apple y macOS 15 o posterior.</span><span data-en>Apple silicon Mac with macOS 15 or later.</span></span> <span data-es>Necesitas Claude, ChatGPT o Gemini: <a href="ia.html">te explicamos cómo</a>.</span><span data-en>You need Claude, ChatGPT or Gemini: <a href="ia.html">here's how</a>.</span></p>
+    </div>
   </div>
-  <div class="comando"><code id="cmd">curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh | bash</code><button data-copiar="cmd"><span data-es>Copiar</span><span data-en>Copy</span></button></div>
-  <p class="nota-req" id="req"><span data-es>Mac con chip Apple · macOS 15 o posterior · tu cuenta de Claude</span><span data-en>Apple silicon Mac · macOS 15 or later · your Claude account</span></p>
-  <div class="promesas">
-    <a href="#privacidad">🔒 <span data-es>Sin servidores ni cuentas</span><span data-en>No servers, no accounts</span></a>
-    <a href="#privacidad">🗂️ <span data-es>Tus notas en tu Git</span><span data-en>Your notes in your Git</span></a>
-    <a href="https://github.com/minuta-app/minuta">🧾 <span data-es>Código abierto (MIT)</span><span data-en>Open source (MIT)</span></a>
-    <a href="#universos">🎮 <span data-es>Mejora jugando</span><span data-en>Improve while playing</span></a>
+
+  <div class="escena" role="img" aria-label="Cómo funciona Minuta: graba la reunión, la transcribe en tu computador, tu IA escribe las notas con solo el texto y recibes notas, feedback y logros. / How Minuta works: it records the meeting, transcribes it on your computer, your AI writes the notes from the text only, and you get notes, feedback and achievements.">
+    <div class="estacion e1" aria-hidden="true">
+      <div class="est-tit"><span class="n">1</span><span data-es>Graba</span><span data-en>Record</span></div>
+      <span class="rec"><i></i><span data-es>Grabando 12:04</span><span data-en>Recording 12:04</span></span>
+      <div class="personas">
+        <div class="persona yo"><span class="avatar"><span data-es>Tú</span><span data-en>You</span></span><span class="onda"><i></i><i></i><i></i><i></i><i></i></span></div>
+        <div class="persona ana"><span class="avatar">AP</span><span class="onda"><i></i><i></i><i></i><i></i><i></i></span></div>
+      </div>
+      <span class="donde"><span data-es>en tu computador</span><span data-en>on your computer</span></span>
+    </div>
+    <div class="conector" aria-hidden="true"><span class="particula"></span><span class="particula"></span><span class="particula"></span><small><span data-es>audio</span><span data-en>audio</span></small></div>
+    <div class="estacion e2" aria-hidden="true">
+      <div class="est-tit"><span class="n">2</span><span data-es>Transcribe</span><span data-en>Transcribe</span></div>
+      <span class="chip"><span data-es>sin internet</span><span data-en>offline</span></span>
+      <div class="linea l1"><b>Ana</b> <span data-es>¿Lo cerramos el viernes?</span><span data-en>Shall we close it Friday?</span></div>
+      <div class="linea l2"><b class="yo"><span data-es>Tú</span><span data-en>You</span></b> <span data-es>Sí. Envío la propuesta el jueves.</span><span data-en>Yes. I'll send the proposal Thursday.</span></div>
+      <div class="linea l3"><b>Ana</b> <span data-es>Perfecto, yo reviso los precios.</span><span data-en>Great, I'll review pricing.</span></div>
+      <span class="donde"><span data-es>en tu computador</span><span data-en>on your computer</span></span>
+    </div>
+    <div class="conector" aria-hidden="true"><small><span data-es>solo texto</span><span data-en>text only</span></small><span class="paquete"><span data-es>texto</span><span data-en>text</span></span></div>
+    <div class="estacion e3" aria-hidden="true">
+      <div class="est-tit"><span class="n">3</span><span data-es>Tu IA escribe</span><span data-en>Your AI writes</span></div>
+      <div class="cerebro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3.2"/></svg></div>
+      <div class="nombres"><span>Claude</span><span>ChatGPT</span><span>Gemini</span></div>
+      <p><span data-es>con tu propia cuenta</span><span data-en>with your own account</span></p>
+      <span class="donde fuera"><span data-es>tu cuenta</span><span data-en>your account</span></span>
+    </div>
+    <div class="conector" aria-hidden="true"><small><span data-es>notas</span><span data-en>notes</span></small><span class="paquete vuelta">✓</span></div>
+    <div class="estacion e4" aria-hidden="true">
+      <div class="est-tit"><span class="n">4</span><span data-es>Notas y coach</span><span data-en>Notes and coach</span></div>
+      <div class="nota-t"><span data-es>Próximos pasos</span><span data-en>Next steps</span></div>
+      <div class="item i1"><span class="caja"></span><span><span data-es><b>Tú:</b> enviar propuesta (jueves)</span><span data-en><b>You:</b> send proposal (Thursday)</span></span></div>
+      <div class="item i2"><span class="caja"></span><span><span data-es><b>Ana:</b> revisar precios</span><span data-en><b>Ana:</b> review pricing</span></span></div>
+      <div class="item i3"><span>🎯</span><span style="flex:1"><span data-es>Claridad 8/10. Cerraste con fecha y responsable.</span><span data-en>Clarity 8/10. You closed with a date and owner.</span><span class="barra-p" style="display:block"><i></i></span></span></div>
+      <div class="logro"><span>🏅</span><div><b><span data-es>Logro desbloqueado</span><span data-en>Achievement unlocked</span></b><span data-es>Cierre con fecha</span><span data-en>Closed with a date</span></div></div>
+    </div>
   </div>
-  <p class="nota-req"><a href="#instalar"><span data-es>Otros sistemas: Mac · Windows · Linux</span><span data-en>Other systems: Mac · Windows · Linux</span></a></p>
-  <div class="ventana"><div class="puntos"><i></i><i></i><i></i></div><img src="img/notas.jpg" alt="Notas de una reunión en Minuta con el universo Star Wars" width="2560" height="1600"></div>
+  <p class="escena-pie"><span data-es><b>El audio nunca sale de tu computador.</b> Solo el texto viaja a tu IA, con tu cuenta, y las notas vuelven a tu carpeta.</span><span data-en><b>Audio never leaves your computer.</b> Only the text goes to your AI, with your account, and the notes come back to your folder.</span></p>
+</div></section>
+
+<section id="distinto"><div class="ancho">
+  <div class="sec-cab"><h2><span data-es>Por qué Minuta y no otra app de notas</span><span data-en>Why Minuta and not another notes app</span></h2>
+    <p><span data-es>La mayoría de los tomadores de notas con IA funcionan en la nube de alguien más. Minuta funciona al revés.</span><span data-en>Most AI note-takers run on someone else's cloud. Minuta works the other way around.</span></p></div>
+  <div class="tabla">
+    <div class="fila cab"><div></div><div><span data-es>Lo habitual</span><span data-en>The usual</span></div><div>Minuta</div></div>
+    <div class="fila"><div><span data-es>¿Entra un bot a la llamada?</span><span data-en>Does a bot join the call?</span></div><div><span data-es>Sí, un participante extra</span><span data-en>Yes, an extra participant</span></div><div><span data-es>No, escucha tu computador</span><span data-en>No, it listens to your computer</span></div></div>
+    <div class="fila"><div><span data-es>¿Dónde queda el audio?</span><span data-en>Where does the audio go?</span></div><div><span data-es>En sus servidores</span><span data-en>Their servers</span></div><div><span data-es>Nunca sale de tu equipo</span><span data-en>It never leaves your machine</span></div></div>
+    <div class="fila"><div><span data-es>¿Quién guarda tus notas?</span><span data-en>Who keeps your notes?</span></div><div><span data-es>Su base de datos</span><span data-en>Their database</span></div><div><span data-es>Tus archivos y tu Git</span><span data-en>Your files and your Git</span></div></div>
+    <div class="fila"><div><span data-es>¿Cuánto pagas?</span><span data-en>What do you pay?</span></div><div><span data-es>Otra suscripción mensual</span><span data-en>Another monthly subscription</span></div><div><span data-es>Nada: usas la IA que ya tienes</span><span data-en>Nothing: you use the AI you already have</span></div></div>
+    <div class="fila"><div><span data-es>¿Te ayuda a mejorar?</span><span data-en>Does it help you improve?</span></div><div><span data-es>Resume la reunión</span><span data-en>It summarizes the meeting</span></div><div><span data-es>Además: feedback con citas y un hábito por reunión</span><span data-en>Plus: feedback with quotes and one habit per meeting</span></div></div>
+    <div class="fila"><div><span data-es>¿Puedes revisar el código?</span><span data-en>Can you read the code?</span></div><div><span data-es>No</span><span data-en>No</span></div><div><span data-es>Sí, es abierto (MIT)</span><span data-en>Yes, it's open (MIT)</span></div></div>
+  </div>
 </div></section>
 
 <section id="privacidad" class="privacidad"><div class="ancho">
-  <div class="sec-cab revela"><small><span data-es>Privacidad</span><span data-en>Privacy</span></small>
-    <h2><span data-es>Tus reuniones no son nuestro negocio</span><span data-en>Your meetings are not our business</span></h2>
-    <p><span data-es>Lo que se habla en una reunión es tuyo y de quienes estaban ahí. Por eso Minuta no tiene servidores, ni cuentas, ni base de datos: no hay dónde guardar tus cosas aunque quisiéramos.</span><span data-en>What's said in a meeting belongs to you and the people who were there. That's why Minuta has no servers, no accounts and no database: there's nowhere to keep your things even if we wanted to.</span></p></div>
+  <div class="sec-cab"><h2><span data-es>Tus reuniones no son nuestro negocio</span><span data-en>Your meetings are not our business</span></h2>
+    <p><span data-es>Lo que se habla en una reunión es tuyo y de quienes estaban ahí. Minuta no tiene servidores, ni cuentas, ni base de datos: no hay dónde guardar tus cosas aunque quisiéramos.</span><span data-en>What's said in a meeting belongs to you and the people who were there. Minuta has no servers, no accounts and no database: there's nowhere to keep your things even if we wanted to.</span></p></div>
   <div class="garantias">
-    <div class="garantia revela"><div class="ico">🏠</div><h3><span data-es>Todo en tu computador</span><span data-en>Everything on your computer</span></h3><p><span data-es>El audio nunca sale de tu equipo. La transcripción y la separación de voces corren ahí mismo, sin internet.</span><span data-en>Audio never leaves your machine. Transcription and speaker separation run right there, offline.</span></p></div>
-    <div class="garantia revela"><div class="ico">🗂️</div><h3><span data-es>Tus notas, en tu Git</span><span data-en>Your notes, in your Git</span></h3><p><span data-es>Archivos Markdown en tu carpeta y, si quieres, respaldados en un repositorio <b>privado de tu propia cuenta</b> de GitHub o GitLab. El token queda cifrado en tu llavero; nunca pasa por nosotros.</span><span data-en>Markdown files in your folder and, if you want, backed up to a <b>private repository in your own</b> GitHub or GitLab account. The token stays encrypted in your keychain; it never goes through us.</span></p></div>
-    <div class="garantia revela"><div class="ico">🙅</div><h3><span data-es>Nada se comparte</span><span data-en>Nothing is shared</span></h3><p><span data-es>Sin telemetría, sin analítica, sin publicidad. Tu feedback es solo para ti: el resumen para los demás sale únicamente cuando tú lo envías, y nunca lo incluye.</span><span data-en>No telemetry, no analytics, no ads. Your feedback is only for you: the summary for others goes out only when you send it, and never includes it.</span></p></div>
-    <div class="garantia revela"><div class="ico">🤖</div><h3><span data-es>Tu IA, tu cuenta</span><span data-en>Your AI, your account</span></h3><p><span data-es>Solo el texto de la reunión va a la IA que elijas, con tu propia suscripción. Minuta no ve ni guarda nada en el camino.</span><span data-en>Only the meeting text goes to the AI you choose, with your own subscription. Minuta sees and stores nothing along the way.</span></p></div>
-    <div class="garantia revela destacada"><div class="ico">🧾</div><div class="txt"><h3><span data-es>Código abierto: no nos creas, revísalo</span><span data-en>Open source: don't trust us, check it</span></h3><p><span data-es>Todo el código es público (licencia MIT). Cualquiera puede leer qué hace Minuta, auditarlo o mejorarlo.</span><span data-en>All the code is public (MIT license). Anyone can read what Minuta does, audit it or improve it.</span></p></div>
-      <a class="boton" href="https://github.com/minuta-app/minuta">★ <span data-es>Ver el código</span><span data-en>See the code</span></a></div>
-  </div>
-  <p class="flujo-tit revela"><span data-es>El camino de una reunión</span><span data-en>The path of a meeting</span></p>
-  <div class="flujo revela">
-    <div class="paso"><span class="donde"><span data-es>en tu equipo</span><span data-en>on your computer</span></span><b><span data-es>Graba</span><span data-en>Record</span></b><p><span data-es>Tu micrófono y el audio de la llamada.</span><span data-en>Your mic and the call audio.</span></p></div>
-    <div class="paso"><span class="donde"><span data-es>en tu equipo</span><span data-en>on your computer</span></span><b><span data-es>Transcribe</span><span data-en>Transcribe</span></b><p><span data-es>Whisper y separación de voces, en tu propio computador.</span><span data-en>Whisper and speaker separation, on your own computer.</span></p></div>
-    <div class="paso"><span class="donde fuera"><span data-es>tu IA</span><span data-en>your AI</span></span><b><span data-es>Escribe</span><span data-en>Write</span></b><p><span data-es>Solo el texto va a Claude, con tu suscripción.</span><span data-en>Only text goes to Claude, with your subscription.</span></p></div>
-    <div class="paso"><span class="donde"><span data-es>tuyo</span><span data-en>yours</span></span><b><span data-es>Guarda</span><span data-en>Save</span></b><p><span data-es>Archivos Markdown en tu carpeta y, si quieres, en tu repo privado de GitHub o GitLab.</span><span data-en>Markdown files in your folder and, if you want, your private GitHub or GitLab repo.</span></p></div>
+    <div class="garantia"><div class="ico">🏠</div><h3><span data-es>Todo en tu computador</span><span data-en>Everything on your computer</span></h3><p><span data-es>La transcripción y la separación de voces corren en tu equipo, sin internet.</span><span data-en>Transcription and speaker separation run on your machine, offline.</span></p></div>
+    <div class="garantia"><div class="ico">🗂️</div><h3><span data-es>Tus notas, en tu Git</span><span data-en>Your notes, in your Git</span></h3><p><span data-es>Archivos Markdown en tu carpeta (funcionan con Obsidian) y, si quieres, en un repositorio <b>privado de tu propia cuenta</b> de GitHub o GitLab.</span><span data-en>Markdown files in your folder (they work with Obsidian) and, if you want, in a <b>private repository in your own</b> GitHub or GitLab account.</span></p></div>
+    <div class="garantia"><div class="ico">🙅</div><h3><span data-es>Nada se comparte</span><span data-en>Nothing is shared</span></h3><p><span data-es>Sin telemetría, analítica ni publicidad. Tu feedback es solo para ti: el resumen para los demás sale cuando tú lo envías, y nunca lo incluye.</span><span data-en>No telemetry, analytics or ads. Your feedback is only for you: the summary for others goes out when you send it, and never includes it.</span></p></div>
+    <div class="garantia"><div class="ico">🔑</div><h3><span data-es>Tu IA, tu cuenta</span><span data-en>Your AI, your account</span></h3><p><span data-es>Solo el texto de la reunión va a la IA que elegiste, directo y con tu suscripción. Minuta no ve nada en el camino.</span><span data-en>Only the meeting text goes to the AI you chose, directly and with your subscription. Minuta sees nothing along the way.</span></p></div>
+    <div class="garantia destacada"><div class="ico">🧾</div><div class="txt"><h3><span data-es>No nos creas: revisa el código</span><span data-en>Don't trust us: check the code</span></h3><p><span data-es>Todo el código es público (licencia MIT). Cualquiera puede leer qué hace Minuta, auditarlo o mejorarlo.</span><span data-en>All the code is public (MIT license). Anyone can read what Minuta does, audit it or improve it.</span></p></div>
+      <a class="boton" href="https://github.com/minuta-app/minuta"><span data-es>Ver el código</span><span data-en>See the code</span></a></div>
   </div>
 </div></section>
 
 <section id="ia"><div class="ancho">
-  <div class="sec-cab revela"><small><span data-es>Tu IA</span><span data-en>Your AI</span></small>
-    <h2><span data-es>Usa la IA que ya tienes, no una más</span><span data-en>Use the AI you already have, not one more</span></h2>
-    <p><span data-es>Minuta no trae su propia IA ni te pide otra suscripción: le pide a la tuya que escriba las notas y el feedback.</span><span data-en>Minuta doesn't bring its own AI or ask for another subscription: it asks yours to write the notes and feedback.</span></p></div>
-  <div class="grilla">
-    <div class="carta revela"><div class="ico">💸</div><h3><span data-es>Sin pagar dos veces</span><span data-en>No paying twice</span></h3><p><span data-es>Ya pagas una IA. Minuta usa esa misma suscripción, así que no suma otro cobro mensual.</span><span data-en>You already pay for an AI. Minuta uses that same subscription, so there's no extra monthly fee.</span></p></div>
-    <div class="carta revela"><div class="ico">🤝</div><h3><span data-es>Sin intermediarios</span><span data-en>No middlemen</span></h3><p><span data-es>El texto va directo de tu computador a tu proveedor de IA, bajo el acuerdo que ya tienes con él. No pasa por servidores de Minuta ni de terceros.</span><span data-en>Text goes straight from your computer to your AI provider, under the agreement you already have with them. It doesn't go through Minuta's servers or anyone else's.</span></p></div>
-    <div class="carta revela"><div class="ico">🧠</div><h3><span data-es>Los mejores modelos</span><span data-en>The best models</span></h3><p><span data-es>Tus notas las escribe el mismo modelo que usas a diario, no uno más barato elegido para ahorrar costos.</span><span data-en>Your notes are written by the same model you use every day, not a cheaper one picked to save costs.</span></p></div>
-    <div class="carta revela"><div class="ico">🔓</div><h3><span data-es>Tú decides</span><span data-en>You decide</span></h3><p><span data-es>Sin cuentas nuevas ni contraseñas que entregar. Cambias de IA cuando quieras y tus notas siguen siendo tuyas.</span><span data-en>No new accounts or passwords to hand over. Switch AI whenever you want and your notes stay yours.</span></p></div>
+  <div class="sec-cab"><h2><span data-es>Usa la IA que ya tienes, no una más</span><span data-en>Use the AI you already have, not one more</span></h2>
+    <p><span data-es>Minuta no trae su propia IA ni te cobra una suscripción: le pide a la tuya que escriba. Elige la que ya usas.</span><span data-en>Minuta doesn't bring its own AI or charge a subscription: it asks yours to write. Pick the one you already use.</span></p></div>
+  <div class="ias">
+    <div class="ia"><span class="logo" style="background:#3a2a24;color:#f0a385">✳</span><h3>Claude<small><span data-es>con Claude Code</span><span data-en>with Claude Code</span></small></h3>
+      <p><span data-es>Necesitas <b>Claude Pro o Max</b> (o una cuenta de empresa). Es la que mejor conoce Minuta.</span><span data-en>You need <b>Claude Pro or Max</b> (or a work account). It's the one Minuta knows best.</span></p>
+      <a class="guia" href="ia.html#claude"><span data-es>Cómo instalarla</span><span data-en>How to install it</span></a></div>
+    <div class="ia"><span class="logo" style="background:#20302a;color:#7fe0b4">◎</span><h3>ChatGPT<small><span data-es>con Codex</span><span data-en>with Codex</span></small></h3>
+      <p><span data-es>Funciona con <b>cualquier cuenta de ChatGPT</b>, incluso la gratis (con límites de uso).</span><span data-en>Works with <b>any ChatGPT account</b>, even the free one (with usage limits).</span></p>
+      <a class="guia" href="ia.html#codex"><span data-es>Cómo instalarla</span><span data-en>How to install it</span></a></div>
+    <div class="ia"><span class="logo" style="background:#222b40;color:#9bb8ff">✦</span><h3>Gemini <span class="beta">beta</span><small><span data-es>con Antigravity CLI</span><span data-en>with Antigravity CLI</span></small></h3>
+      <p><span data-es>Con tu <b>cuenta de Google</b>. Es nueva (Google la lanzó en 2026), así que aún la estamos puliendo.</span><span data-en>With your <b>Google account</b>. It's new (Google launched it in 2026), so we're still polishing it.</span></p>
+      <a class="guia" href="ia.html#gemini"><span data-es>Cómo instalarla</span><span data-en>How to install it</span></a></div>
   </div>
-  <div class="necesitas revela">
-    <h3><span data-es>Qué necesitas</span><span data-en>What you need</span></h3>
-    <ul>
-      <li><b>Claude Pro o Max</b><span data-es> (tu cuenta de Claude) con </span><span data-en> (your Claude account) with </span><a href="https://docs.claude.com/en/docs/claude-code/setup">Claude Code</a><span data-es> instalado. El asistente de bienvenida lo detecta y lo prueba.</span><span data-en> installed. The welcome assistant detects and tests it.</span></li>
-      <li><span data-es>Un computador: Mac con chip Apple (macOS 15+), Windows 10/11 de 64 bits o Linux x86_64. Unos 1 GB libres.</span><span data-en>A computer: Apple silicon Mac (macOS 15+), 64-bit Windows 10/11 or x86_64 Linux. About 1 GB free.</span></li>
-      <li><span data-es>Opcional: una cuenta de GitHub o GitLab para respaldar tus notas en un repositorio privado tuyo.</span><span data-en>Optional: a GitHub or GitLab account to back up your notes in a private repository of yours.</span></li>
-    </ul>
-    <p class="pronto"><span data-es>🔜 <b>ChatGPT (Codex) y Gemini:</b> en camino. La app ya está preparada para que elijas tu IA; por ahora funciona con Claude.</span><span data-en>🔜 <b>ChatGPT (Codex) and Gemini:</b> coming. The app is already built to let you choose your AI; for now it works with Claude.</span></p>
+  <div class="razones">
+    <div><b><span data-es>Sin pagar dos veces</span><span data-en>No paying twice</span></b><p><span data-es>Ya pagas (o usas gratis) una IA. Minuta no suma otro cobro.</span><span data-en>You already pay for (or use for free) an AI. Minuta adds no other charge.</span></p></div>
+    <div><b><span data-es>Sin intermediarios</span><span data-en>No middlemen</span></b><p><span data-es>El texto va directo de tu computador a tu proveedor, bajo el acuerdo que ya tienes con él.</span><span data-en>Text goes straight from your computer to your provider, under the agreement you already have.</span></p></div>
+    <div><b><span data-es>Los mejores modelos</span><span data-en>The best models</span></b><p><span data-es>Tus notas las escribe el modelo que usas a diario, no uno barato elegido para ahorrar.</span><span data-en>Your notes are written by the model you use daily, not a cheap one picked to save costs.</span></p></div>
+    <div><b><span data-es>Cambias cuando quieras</span><span data-en>Switch anytime</span></b><p><span data-es>Sin contraseñas que entregar. Si cambias de IA, tus notas siguen siendo tuyas.</span><span data-en>No passwords to hand over. If you switch AI, your notes stay yours.</span></p></div>
   </div>
+  <div class="ayuda-ia"><p><b><span data-es>¿Claude Code, Codex, terminal…? Tranquilo.</span><span data-en>Claude Code, Codex, terminal…? Relax.</span></b><span data-es>Preparamos una guía sin tecnicismos: qué es cada una, cuál te conviene y cómo dejarla lista en cinco minutos, paso a paso.</span><span data-en>We wrote a jargon-free guide: what each one is, which one suits you and how to set it up in five minutes, step by step.</span></p>
+    <a class="boton" href="ia.html"><span data-es>Abrir la guía</span><span data-en>Open the guide</span></a></div>
 </div></section>
 
 <section id="que-hace"><div class="ancho">
-  <div class="sec-cab revela"><small><span data-es>Qué hace</span><span data-en>What it does</span></small>
-    <h2><span data-es>Como tener un asistente y un coach en cada reunión</span><span data-en>Like having an assistant and a coach in every meeting</span></h2>
+  <div class="sec-cab"><h2><span data-es>Un asistente y un coach en cada reunión</span><span data-en>An assistant and a coach in every meeting</span></h2>
     <p><span data-es>Sin bots que entren a la llamada: Minuta escucha tu micrófono y el audio del computador.</span><span data-en>No bots joining the call: Minuta listens to your mic and your computer's audio.</span></p></div>
-  <div class="grilla">
-    <div class="carta revela"><div class="ico">🔔</div><h3><span data-es>Detecta tus reuniones</span><span data-en>Detects your meetings</span></h3><p><span data-es>Teams, Zoom, Meet, Slack… Te avisa al empezar: un clic y graba. Al terminar te pregunta si cortar.</span><span data-en>Teams, Zoom, Meet, Slack… It alerts you when one starts: one click to record. When it ends, it asks before stopping.</span></p></div>
-    <div class="carta revela"><div class="ico">📝</div><h3><span data-es>Notas que sí sirven</span><span data-en>Notes that actually help</span></h3><p><span data-es>Temas, decisiones, pendientes y próximos pasos con responsable y fecha. Quién dijo qué, con las voces separadas.</span><span data-en>Topics, decisions, open items and next steps with owner and date. Who said what, with voices separated.</span></p></div>
-    <div class="carta revela"><div class="ico">🎯</div><h3><span data-es>Feedback concreto</span><span data-en>Concrete feedback</span></h3><p><span data-es>Citas exactas de lo que dijiste, qué te costó y qué frase probar la próxima vez. Puntajes y un hábito por reunión.</span><span data-en>Exact quotes of what you said, what cost you and what to try next time. Scores and one habit per meeting.</span></p></div>
-    <div class="carta revela"><div class="ico">⏱️</div><h3><span data-es>Coach en vivo</span><span data-en>Live coach</span></h3><p><span data-es>Mientras hablas: cuánto llevas hablando, tu % de habla y si cortaste a alguien. Sin enviar audio a ninguna parte.</span><span data-en>While you talk: your current streak, talk share and whether you cut someone off. No audio sent anywhere.</span></p></div>
-    <div class="carta revela"><div class="ico">📅</div><h3><span data-es>Agenda y personas</span><span data-en>Agenda and people</span></h3><p><span data-es>Antes de cada reunión: qué quedó pendiente, los compromisos abiertos y qué le importa a cada persona.</span><span data-en>Before every meeting: what was left open, open commitments and what each person cares about.</span></p></div>
-    <div class="carta revela"><div class="ico">🥊</div><h3><span data-es>Gimnasio por voz</span><span data-en>Voice gym</span></h3><p><span data-es>Ensaya una negociación o una demo hablando: la IA hace de la otra persona y al final te evalúa.</span><span data-en>Rehearse a negotiation or a demo out loud: the AI plays the other person and evaluates you at the end.</span></p></div>
-    <div class="carta revela"><div class="ico">✦</div><h3><span data-es>Pregúntale a tus reuniones</span><span data-en>Ask your meetings</span></h3><p><span data-es>"¿Qué compromisos tengo con Matías?" — responde citando la reunión y el minuto exacto.</span><span data-en>"What do I owe Matías?" — it answers citing the meeting and exact minute.</span></p></div>
-    <div class="carta revela"><div class="ico">✉️</div><h3><span data-es>Resumen para enviar</span><span data-en>Summary to send</span></h3><p><span data-es>Un correo o mensaje listo para Outlook, Gmail, Teams o WhatsApp, redactado solo con los hechos: nunca tu feedback privado.</span><span data-en>An email or message ready for Outlook, Gmail, Teams or WhatsApp, written with just the facts: never your private feedback.</span></p></div>
-  </div>
-</div></section>
-
-<section><div class="ancho">
-  <div class="duo revela"><div class="duo-img"><img src="img/desempeno.jpg" alt="Tu desempeño en una reunión" loading="lazy"></div>
+  <div class="duo"><div class="duo-img"><img src="img/notas.jpg" alt="Notas de una reunión en Minuta" loading="lazy" width="2560" height="1600"></div>
+    <div><h3><span data-es>Notas que sí sirven</span><span data-en>Notes that actually help</span></h3>
+      <p><span data-es>Temas, decisiones, pendientes y próximos pasos con responsable y fecha. Quién dijo qué, con las voces separadas. Y un mensaje listo para enviar a los participantes, solo con los hechos.</span><span data-en>Topics, decisions, open items and next steps with owner and date. Who said what, with voices separated. And a message ready to send to participants, with just the facts.</span></p>
+      <ul class="lista-ok"><li><span data-es>Detecta Teams, Zoom, Meet o Slack y te ofrece grabar</span><span data-en>Detects Teams, Zoom, Meet or Slack and offers to record</span></li><li><span data-es>Pregúntale a tus reuniones: responde citando el minuto exacto</span><span data-en>Ask your meetings: it answers citing the exact minute</span></li><li><span data-es>Agenda con compromisos y fichas de cada persona</span><span data-en>Agenda with commitments and a card for each person</span></li></ul></div></div>
+  <div class="duo al-reves" style="margin-top:72px"><div class="duo-img"><img src="img/desempeno.jpg" alt="Tu desempeño en una reunión" loading="lazy"></div>
     <div><h3><span data-es>Mejora reunión a reunión</span><span data-en>Improve meeting by meeting</span></h3>
       <p><span data-es>Cada reunión te deja un veredicto en una frase, lo que te costó con la cita exacta y un solo hábito para la próxima. Minuta revisa si lo cumpliste.</span><span data-en>Each meeting leaves you a one-line verdict, what cost you with the exact quote and a single habit for next time. Minuta checks whether you kept it.</span></p>
-      <ul class="lista-ok"><li><span data-es>Claridad, escucha, preguntas y cierre</span><span data-en>Clarity, listening, questions and closing</span></li><li><span data-es>Muletillas, monólogos e interrupciones medidos del audio</span><span data-en>Fillers, monologues and interruptions measured from audio</span></li><li><span data-es>Tu foco: dónde está tu mayor oportunidad ahora</span><span data-en>Your focus: where your biggest opportunity is right now</span></li></ul></div></div>
-  <div class="duo al-reves revela" style="margin-top:70px"><div class="duo-img"><img src="img/agenda.jpg" alt="Agenda con preparación de reuniones" loading="lazy"></div>
-    <div><h3><span data-es>Llega preparado</span><span data-en>Walk in prepared</span></h3>
-      <p><span data-es>Minuta lee tu calendario y te prepara cada reunión: lo que pasó la última vez, lo que quedó pendiente y una pregunta para abrir. Los compromisos se marcan una vez y quedan al día en todas tus notas.</span><span data-en>Minuta reads your calendar and preps each meeting: what happened last time, what was left open and a question to open with. Commitments are checked once and stay in sync across all your notes.</span></p></div></div>
+      <ul class="lista-ok"><li><span data-es>Claridad, escucha, preguntas y cierre</span><span data-en>Clarity, listening, questions and closing</span></li><li><span data-es>Muletillas, monólogos e interrupciones medidos del audio</span><span data-en>Fillers, monologues and interruptions measured from audio</span></li><li><span data-es>Coach en vivo y gimnasio para ensayar por voz</span><span data-en>Live coach and a gym to rehearse out loud</span></li></ul></div></div>
 </div></section>
 
-
 <section id="universos"><div class="ancho">
-  <div class="sec-cab revela"><small><span data-es>Mejora jugando</span><span data-en>Improve while playing</span></small>
-    <h2><span data-es>Mejorar no tiene por qué ser aburrido</span><span data-en>Getting better doesn't have to be boring</span></h2>
-    <p><span data-es>Subes de rango, desbloqueas logros y los personajes de tu universo favorito te dicen cómo te fue. Cuatro vienen incluidos; el resto se descarga gratis del catálogo abierto, o crea el tuyo.</span><span data-en>You rank up, unlock achievements and characters from your favorite universe tell you how you did. Four are included; the rest are free downloads from the open catalog, or create your own.</span></p></div>
-  <div class="universos revela" id="universos-lista"></div>
-  <div class="duo al-reves revela" style="margin-top:56px"><div class="duo-img"><img src="img/logro.jpg" alt="Logro desbloqueado" loading="lazy"></div>
+  <div class="sec-cab"><h2><span data-es>Mejorar no tiene por qué ser aburrido</span><span data-en>Getting better doesn't have to be boring</span></h2>
+    <p><span data-es>Subes de rango, desbloqueas logros y los personajes de tu universo favorito te dicen cómo te fue. Cuatro vienen incluidos; el resto se descarga gratis del catálogo de la comunidad, o crea el tuyo.</span><span data-en>You rank up, unlock achievements and characters from your favorite universe tell you how you did. Four are included; the rest are free downloads from the community catalog, or create your own.</span></p></div>
+  <div class="universos" id="universos-lista"></div>
+  <div class="duo al-reves" style="margin-top:56px"><div class="duo-img"><img src="img/logro.jpg" alt="Logro desbloqueado" loading="lazy"></div>
     <div><h3><span data-es>Logros que premian lo que importa</span><span data-en>Achievements that reward what matters</span></h3>
       <p><span data-es>No por asistir: por cerrar con fecha, dejar terminar a los demás o cumplir tu hábito tres reuniones seguidas. Cada universo lo celebra a su manera.</span><span data-en>Not for showing up: for closing with a date, letting others finish or keeping your habit three meetings in a row. Each universe celebrates its own way.</span></p></div></div>
 </div></section>
 
-<section id="instalar" class="instalar"><div class="ancho">
-  <div class="sec-cab revela"><small><span data-es>Instalar</span><span data-en>Install</span></small>
-    <h2><span data-es>Listo en dos minutos</span><span data-en>Ready in two minutes</span></h2>
-    <p><span data-es>Al abrirla, un asistente te pregunta lo necesario: quién eres, tu IA, el modelo de transcripción y dónde guardar tus notas.</span><span data-en>When you open it, a short welcome asks what it needs: who you are, your AI, the transcription model and where to keep your notes.</span></p></div>
-  <div class="sistemas revela" role="tablist">
-    <button data-so="mac" role="tab">🍎 Mac</button><button data-so="windows" role="tab">🪟 Windows</button><button data-so="linux" role="tab">🐧 Linux</button>
-  </div>
-  <div class="grilla" data-panel="mac">
-    <div class="carta"><h3><span class="num">1</span><span data-es>Con un comando</span><span data-en>With one command</span></h3><p><span data-es>Abre la Terminal y pega esto. Descarga la última versión, verifica su huella y la abre.</span><span data-en>Open Terminal and paste this. It downloads the latest version, verifies it and opens it.</span></p>
-      <div class="comando"><code id="cmd-mac">curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh | bash</code><button data-copiar="cmd-mac"><span data-es>Copiar</span><span data-en>Copy</span></button></div></div>
-    <div class="carta"><h3><span class="num">2</span><span data-es>Descargando la app</span><span data-en>By downloading</span></h3><p><span data-es>Descomprime, arrastra Minuta a Aplicaciones y ábrela con clic derecho → Abrir la primera vez (aún no está firmada por Apple).</span><span data-en>Unzip, drag Minuta to Applications and open it with right-click → Open the first time (it isn't signed by Apple yet).</span></p>
-      <a class="boton principal" href="https://github.com/minuta-app/minuta/releases/latest/download/Minuta-macOS.zip"> <span data-es>Descargar para Mac</span><span data-en>Download for Mac</span></a></div>
-    <div class="requisitos"><span>🍎 <span data-es>Chip Apple (M1 o posterior)</span><span data-en>Apple silicon (M1 or later)</span></span><span>🖥️ macOS 15+</span><span>🤖 <span data-es>Claude Pro o Max con Claude Code</span><span data-en>Claude Pro or Max with Claude Code</span></span><span>💾 <span data-es>~1 GB libre</span><span data-en>~1 GB free</span></span></div>
-  </div>
-  <div class="grilla" data-panel="windows" hidden>
-    <div class="carta"><h3><span class="num">1</span><span data-es>Con un comando</span><span data-en>With one command</span></h3><p><span data-es>Abre PowerShell (tecla Windows → «PowerShell») y pega esto. Descarga, verifica la huella e instala solo para tu usuario.</span><span data-en>Open PowerShell (Windows key → “PowerShell”) and paste this. It downloads, verifies and installs just for your user.</span></p>
-      <div class="comando"><code id="cmd-windows">irm https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.ps1 | iex</code><button data-copiar="cmd-windows"><span data-es>Copiar</span><span data-en>Copy</span></button></div></div>
-    <div class="carta"><h3><span class="num">2</span><span data-es>Descargando el instalador</span><span data-en>By downloading the installer</span></h3><p><span data-es>Ábrelo y listo. Como aún no está firmado, Windows puede mostrar «Windows protegió tu PC»: toca «Más información» → «Ejecutar de todas formas».</span><span data-en>Open it and you're done. Since it isn't signed yet, Windows may show “Windows protected your PC”: click “More info” → “Run anyway”.</span></p>
-      <a class="boton principal" href="https://github.com/minuta-app/minuta/releases/latest/download/Minuta-Windows.exe"> <span data-es>Descargar para Windows</span><span data-en>Download for Windows</span></a></div>
-    <div class="requisitos"><span>🪟 <span data-es>Windows 10 u 11 (64 bits)</span><span data-en>Windows 10 or 11 (64-bit)</span></span><span>🤖 <span data-es>Claude Pro o Max con Claude Code</span><span data-en>Claude Pro or Max with Claude Code</span></span><span>💾 <span data-es>~1 GB libre</span><span data-en>~1 GB free</span></span><span>🔁 <span data-es>Git, solo si respaldas en GitHub/GitLab</span><span data-en>Git, only for GitHub/GitLab backup</span></span></div>
-  </div>
-  <div class="grilla" data-panel="linux" hidden>
-    <div class="carta"><h3><span class="num">1</span><span data-es>Con un comando</span><span data-en>With one command</span></h3><p><span data-es>En una terminal. Se instala en tu usuario (sin sudo), con su ícono en el menú de aplicaciones.</span><span data-en>In a terminal. It installs for your user (no sudo), with its icon in the app menu.</span></p>
-      <div class="comando"><code id="cmd-linux">curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh | bash</code><button data-copiar="cmd-linux"><span data-es>Copiar</span><span data-en>Copy</span></button></div></div>
-    <div class="carta"><h3><span class="num">2</span><span data-es>AppImage</span><span data-en>AppImage</span></h3><p><span data-es>Un solo archivo: dale permiso de ejecución y ábrelo. Necesita FUSE (en Ubuntu 22.04+: <code>sudo apt install libfuse2</code>).</span><span data-en>A single file: make it executable and open it. Needs FUSE (on Ubuntu 22.04+: <code>sudo apt install libfuse2</code>).</span></p>
-      <a class="boton principal" href="https://github.com/minuta-app/minuta/releases/latest/download/Minuta-Linux.AppImage"> <span data-es>Descargar AppImage</span><span data-en>Download AppImage</span></a></div>
-    <div class="requisitos"><span>🐧 <span data-es>x86_64 · Ubuntu 18.04+, Fedora, Debian…</span><span data-en>x86_64 · Ubuntu 18.04+, Fedora, Debian…</span></span><span>🔊 <span data-es>PulseAudio o PipeWire</span><span data-en>PulseAudio or PipeWire</span></span><span>🤖 <span data-es>Claude Pro o Max con Claude Code</span><span data-en>Claude Pro or Max with Claude Code</span></span><span>💾 <span data-es>~1 GB libre</span><span data-en>~1 GB free</span></span></div>
+<section id="comunidad" class="comunidad"><div class="ancho">
+  <div class="sec-cab"><h2><span data-es>Minuta la hacemos entre todos</span><span data-en>We build Minuta together</span></h2>
+    <p><span data-es>Es gratis y abierta porque creemos que comunicarse mejor no debería tener precio. Si te sirve, hay muchas formas de sumarte, y ninguna exige saber programar.</span><span data-en>It's free and open because we think communicating better shouldn't have a price. If it helps you, there are many ways to join in, and none require coding.</span></p></div>
+  <div class="aportes">
+    <a class="aporte" href="https://github.com/minuta-app/minuta"><span class="ico">⭐</span><h3><span data-es>Dale una estrella</span><span data-en>Give it a star</span></h3><p><span data-es>Es gratis, toma un segundo y ayuda a que más gente la encuentre.</span><span data-en>It's free, takes a second and helps more people find it.</span></p><em><span data-es>Ir a GitHub</span><span data-en>Go to GitHub</span></em></a>
+    <a class="aporte" href="https://github.com/minuta-app/minuta-catalogo/issues?q=is%3Aissue+is%3Aopen+label%3Avotos"><span class="ico">🗳️</span><h3><span data-es>Vota los universos</span><span data-en>Vote on universes</span></h3><p><span data-es>Tus 👍 deciden cuáles aparecen primero en la galería de la app.</span><span data-en>Your 👍 decide which ones show first in the app's gallery.</span></p><em><span data-es>Votar</span><span data-en>Vote</span></em></a>
+    <a class="aporte" href="https://github.com/minuta-app/minuta-catalogo"><span class="ico">🌌</span><h3><span data-es>Crea un universo</span><span data-en>Create a universe</span></h3><p><span data-es>En la app, describe tu saga favorita y tu IA arma rangos y logros. Si queda bueno, compártelo en el catálogo.</span><span data-en>In the app, describe your favorite saga and your AI builds ranks and achievements. If it turns out great, share it in the catalog.</span></p><em><span data-es>Ver el catálogo</span><span data-en>See the catalog</span></em></a>
+    <a class="aporte" href="https://github.com/minuta-app/minuta-catalogo/tree/main/idiomas"><span class="ico">🌍</span><h3><span data-es>Tradúcela a tu idioma</span><span data-en>Translate it</span></h3><p><span data-es>Hoy habla español, inglés, francés y portugués. Ayúdanos a revisar o sumar el tuyo.</span><span data-en>Today it speaks Spanish, English, French and Portuguese. Help review or add yours.</span></p><em><span data-es>Ver idiomas</span><span data-en>See languages</span></em></a>
+    <a class="aporte" href="https://github.com/minuta-app/minuta/issues/new"><span class="ico">💬</span><h3><span data-es>Cuéntanos qué mejorar</span><span data-en>Tell us what to improve</span></h3><p><span data-es>¿Algo falló o se te ocurrió una idea? Cuéntalo, con tus palabras, y lo vemos juntos.</span><span data-en>Something broke or you have an idea? Tell us in your own words and we'll look at it together.</span></p><em><span data-es>Escribir</span><span data-en>Write to us</span></em></a>
+    <a class="aporte" href="https://github.com/minuta-app/minuta#desarrollo"><span class="ico">🛠️</span><h3><span data-es>Programa con nosotros</span><span data-en>Code with us</span></h3><p><span data-es>Swift, Electron, Python y una interfaz web. El repo trae guías para trabajar con tu IA desde el primer día.</span><span data-en>Swift, Electron, Python and a web UI. The repo ships guides to work with your AI from day one.</span></p><em><span data-es>Empezar</span><span data-en>Get started</span></em></a>
   </div>
 </div></section>
 
-<section><div class="ancho" style="max-width:860px">
-  <div class="sec-cab revela"><small><span data-es>Preguntas</span><span data-en>Questions</span></small><h2><span data-es>Preguntas frecuentes</span><span data-en>FAQ</span></h2></div>
-  <details><summary><span data-es>¿Cuánto cuesta?</span><span data-en>How much does it cost?</span></summary><p><span data-es>Nada. Minuta es gratis y open source (MIT). Usa la suscripción de IA que ya tienes.</span><span data-en>Nothing. Minuta is free and open source (MIT). It uses the AI subscription you already have.</span></p></details>
-  <details><summary><span data-es>¿Alguien más puede leer mis notas?</span><span data-en>Can anyone else read my notes?</span></summary><p><span data-es>No. Minuta no tiene servidores ni cuentas, así que no hay una copia en ninguna parte salvo tu computador y, si lo activas, tu propio repositorio privado. Ni los creadores de Minuta pueden verlas.</span><span data-en>No. Minuta has no servers or accounts, so there's no copy anywhere except your computer and, if you turn it on, your own private repository. Not even Minuta's creators can see them.</span></p></details>
-  <details><summary><span data-es>¿Minuta recopila datos de uso?</span><span data-en>Does Minuta collect usage data?</span></summary><p><span data-es>No. No hay telemetría ni analítica. Lo único que consulta en internet es si hay una versión nueva y el catálogo público de universos e idiomas. Como el código es abierto, cualquiera puede comprobarlo.</span><span data-en>No. There's no telemetry or analytics. The only things it checks online are whether there's a new version and the public catalog of universes and languages. Since the code is open, anyone can verify it.</span></p></details>
-  <details><summary><span data-es>¿Dónde quedan mis notas?</span><span data-en>Where do my notes live?</span></summary><p><span data-es>En una carpeta tuya, como archivos Markdown (funcionan con Obsidian). Si quieres, Minuta crea un repositorio privado en tu propia cuenta de GitHub o GitLab y respalda cada reunión.</span><span data-en>In a folder of yours, as Markdown files (they work with Obsidian). If you want, Minuta creates a private repository in your own GitHub or GitLab account and backs up every meeting.</span></p></details>
-  <details><summary><span data-es>¿Qué se envía a internet?</span><span data-en>What gets sent to the internet?</span></summary><p><span data-es>El audio nunca sale de tu computador. Solo el texto de la transcripción va a la IA que elegiste, con tu cuenta. Minuta no tiene servidores.</span><span data-en>Audio never leaves your computer. Only the transcript text goes to the AI you chose, with your account. Minuta has no servers.</span></p></details>
-  <details><summary><span data-es>¿Funciona con ChatGPT o Gemini?</span><span data-en>Does it work with ChatGPT or Gemini?</span></summary><p><span data-es>Todavía no: hoy funciona solo con Claude (Pro o Max, con Claude Code). ChatGPT (Codex) y Gemini vienen pronto; la app ya está preparada para que elijas tu IA.</span><span data-en>Not yet: today it works only with Claude (Pro or Max, with Claude Code). ChatGPT (Codex) and Gemini are coming soon; the app is already built to let you choose your AI.</span></p></details>
+<section id="instalar" class="instalar"><div class="ancho">
+  <div class="sec-cab"><h2><span data-es>Listo en dos minutos</span><span data-en>Ready in two minutes</span></h2>
+    <p><span data-es>Al abrirla, un asistente te pregunta lo necesario: quién eres, tu IA, el modelo de transcripción y dónde guardar tus notas.</span><span data-en>When you open it, a short welcome asks what it needs: who you are, your AI, the transcription model and where to keep your notes.</span></p></div>
+  <div class="sistemas" role="tablist">
+    <button data-so="mac" role="tab">🍎 Mac</button><button data-so="windows" role="tab">🪟 Windows</button><button data-so="linux" role="tab">🐧 Linux</button>
+  </div>
+  <div class="grilla" data-panel="mac">
+    <div class="carta"><h3><span class="num">1</span><span data-es>Con un comando</span><span data-en>With one command</span></h3><p><span data-es>Abre la Terminal (⌘ Espacio, escribe «Terminal») y pega esto. Descarga la última versión, verifica su huella y la abre.</span><span data-en>Open Terminal (⌘ Space, type “Terminal”) and paste this. It downloads the latest version, verifies it and opens it.</span></p>
+      <div class="comando"><code id="cmd-mac">curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh | bash</code><button data-copiar="cmd-mac"><span data-es>Copiar</span><span data-en>Copy</span></button></div></div>
+    <div class="carta"><h3><span class="num">2</span><span data-es>O descargando la app</span><span data-en>Or by downloading</span></h3><p><span data-es>Descomprime, arrastra Minuta a Aplicaciones y ábrela con clic derecho → Abrir la primera vez (aún no está firmada por Apple).</span><span data-en>Unzip, drag Minuta to Applications and open it with right-click → Open the first time (it isn't signed by Apple yet).</span></p>
+      <a class="boton principal" href="https://github.com/minuta-app/minuta/releases/latest/download/Minuta-macOS.zip"><span data-es>Descargar para Mac</span><span data-en>Download for Mac</span></a></div>
+    <div class="requisitos"><span>🍎 <span data-es>Chip Apple (M1 o posterior)</span><span data-en>Apple silicon (M1 or later)</span></span><span>🖥️ macOS 15+</span><span>💾 <span data-es>~1 GB libre</span><span data-en>~1 GB free</span></span><span>🤖 <a href="ia.html"><span data-es>Claude, ChatGPT o Gemini</span><span data-en>Claude, ChatGPT or Gemini</span></a></span></div>
+  </div>
+  <div class="grilla" data-panel="windows" hidden>
+    <div class="carta"><h3><span class="num">1</span><span data-es>Con un comando</span><span data-en>With one command</span></h3><p><span data-es>Abre PowerShell (tecla Windows, escribe «PowerShell») y pega esto. Descarga, verifica la huella e instala solo para tu usuario.</span><span data-en>Open PowerShell (Windows key, type “PowerShell”) and paste this. It downloads, verifies and installs just for your user.</span></p>
+      <div class="comando"><code id="cmd-windows">irm https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.ps1 | iex</code><button data-copiar="cmd-windows"><span data-es>Copiar</span><span data-en>Copy</span></button></div></div>
+    <div class="carta"><h3><span class="num">2</span><span data-es>O con el instalador</span><span data-en>Or with the installer</span></h3><p><span data-es>Ábrelo y listo. Como aún no está firmado, Windows puede mostrar «Windows protegió tu PC»: toca «Más información» → «Ejecutar de todas formas».</span><span data-en>Open it and you're done. Since it isn't signed yet, Windows may show “Windows protected your PC”: click “More info” → “Run anyway”.</span></p>
+      <a class="boton principal" href="https://github.com/minuta-app/minuta/releases/latest/download/Minuta-Windows.exe"><span data-es>Descargar para Windows</span><span data-en>Download for Windows</span></a></div>
+    <div class="requisitos"><span>🪟 <span data-es>Windows 10 u 11 (64 bits)</span><span data-en>Windows 10 or 11 (64-bit)</span></span><span>💾 <span data-es>~1 GB libre</span><span data-en>~1 GB free</span></span><span>🔁 <span data-es>Git, solo si respaldas en GitHub/GitLab</span><span data-en>Git, only for GitHub/GitLab backup</span></span><span>🤖 <a href="ia.html"><span data-es>Claude, ChatGPT o Gemini</span><span data-en>Claude, ChatGPT or Gemini</span></a></span></div>
+  </div>
+  <div class="grilla" data-panel="linux" hidden>
+    <div class="carta"><h3><span class="num">1</span><span data-es>Con un comando</span><span data-en>With one command</span></h3><p><span data-es>En una terminal (Ctrl+Alt+T en Ubuntu). Se instala en tu usuario, sin sudo, con su ícono en el menú de aplicaciones.</span><span data-en>In a terminal (Ctrl+Alt+T on Ubuntu). It installs for your user, no sudo, with its icon in the app menu.</span></p>
+      <div class="comando"><code id="cmd-linux">curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh | bash</code><button data-copiar="cmd-linux"><span data-es>Copiar</span><span data-en>Copy</span></button></div></div>
+    <div class="carta"><h3><span class="num">2</span><span data-es>O con el AppImage</span><span data-en>Or with the AppImage</span></h3><p><span data-es>Un solo archivo: dale permiso de ejecución y ábrelo. Necesita FUSE (en Ubuntu 22.04+: <code>sudo apt install libfuse2</code>).</span><span data-en>A single file: make it executable and open it. Needs FUSE (on Ubuntu 22.04+: <code>sudo apt install libfuse2</code>).</span></p>
+      <a class="boton principal" href="https://github.com/minuta-app/minuta/releases/latest/download/Minuta-Linux.AppImage"><span data-es>Descargar AppImage</span><span data-en>Download AppImage</span></a></div>
+    <div class="requisitos"><span>🐧 <span data-es>x86_64: Ubuntu, Fedora, Debian…</span><span data-en>x86_64: Ubuntu, Fedora, Debian…</span></span><span>🔊 <span data-es>PulseAudio o PipeWire</span><span data-en>PulseAudio or PipeWire</span></span><span>💾 <span data-es>~1 GB libre</span><span data-en>~1 GB free</span></span><span>🤖 <a href="ia.html"><span data-es>Claude, ChatGPT o Gemini</span><span data-en>Claude, ChatGPT or Gemini</span></a></span></div>
+  </div>
+</div></section>
+
+<section id="preguntas"><div class="ancho" style="max-width:860px">
+  <div class="sec-cab"><h2><span data-es>Preguntas frecuentes</span><span data-en>FAQ</span></h2></div>
+  <details><summary><span data-es>¿Cuánto cuesta?</span><span data-en>How much does it cost?</span></summary><p><span data-es>Nada. Minuta es gratis y de código abierto (MIT). Usa la IA que ya tienes; con ChatGPT incluso sirve la cuenta gratis.</span><span data-en>Nothing. Minuta is free and open source (MIT). It uses the AI you already have; with ChatGPT even the free account works.</span></p></details>
+  <details><summary><span data-es>¿Necesito saber programar?</span><span data-en>Do I need to know how to code?</span></summary><p><span data-es>No. Lo único "técnico" es instalar tu IA una vez, copiando un par de comandos. <a href="ia.html">La guía</a> te lleva de la mano y el asistente de Minuta comprueba que quedó funcionando.</span><span data-en>No. The only "technical" bit is installing your AI once by copying a couple of commands. <a href="ia.html">The guide</a> walks you through it and Minuta's welcome checks it works.</span></p></details>
+  <details><summary><span data-es>¿Funciona con ChatGPT o Gemini?</span><span data-en>Does it work with ChatGPT or Gemini?</span></summary><p><span data-es>Sí. Puedes elegir Claude (con Claude Code), ChatGPT (con Codex) o Gemini (con Antigravity CLI, todavía en beta). Lo eliges en el asistente de bienvenida y lo puedes cambiar después. <a href="ia.html">Cómo instalar cada una</a>.</span><span data-en>Yes. You can pick Claude (with Claude Code), ChatGPT (with Codex) or Gemini (with Antigravity CLI, still in beta). You choose it in the welcome and can change it later. <a href="ia.html">How to install each one</a>.</span></p></details>
+  <details><summary><span data-es>¿Alguien más puede leer mis notas?</span><span data-en>Can anyone else read my notes?</span></summary><p><span data-es>No. Minuta no tiene servidores ni cuentas, así que no hay copia en ninguna parte salvo tu computador y, si lo activas, tu propio repositorio privado. Ni los creadores de Minuta pueden verlas.</span><span data-en>No. Minuta has no servers or accounts, so there's no copy anywhere except your computer and, if you turn it on, your own private repository. Not even Minuta's creators can see them.</span></p></details>
+  <details><summary><span data-es>¿Qué se envía a internet?</span><span data-en>What gets sent to the internet?</span></summary><p><span data-es>El audio nunca sale de tu computador. Solo el texto de la transcripción va a la IA que elegiste, con tu cuenta. Además, Minuta consulta si hay una versión nueva y el catálogo público de universos e idiomas. Sin telemetría ni analítica.</span><span data-en>Audio never leaves your computer. Only the transcript text goes to the AI you chose, with your account. Minuta also checks for new versions and the public catalog of universes and languages. No telemetry or analytics.</span></p></details>
   <details><summary><span data-es>¿Funciona en Windows y Linux?</span><span data-en>Does it work on Windows and Linux?</span></summary><p><span data-es>Sí: es la misma app, con las mismas notas, universos y coach. En Windows y Linux la transcripción usa el procesador (en Mac, el chip gráfico), así que es algo más lenta; el modelo «Liviano» va bien en casi cualquier computador. El calendario se conecta pegando la dirección iCal de Google Calendar u Outlook.</span><span data-en>Yes: it's the same app, with the same notes, universes and coach. On Windows and Linux transcription runs on the CPU (on Mac, the GPU), so it's a bit slower; the “Light” model runs well on almost any computer. The calendar connects by pasting your Google Calendar or Outlook iCal address.</span></p></details>
   <details><summary><span data-es>¿Está bien grabar a otras personas?</span><span data-en>Is it OK to record other people?</span></summary><p><span data-es>Depende de tu país y del contexto. Avisa a los participantes y pide su consentimiento antes de grabar: es lo correcto y en muchos lugares es obligatorio.</span><span data-en>It depends on your country and context. Tell participants and ask for consent before recording: it's the right thing to do and required in many places.</span></p></details>
   <details><summary><span data-es>¿Cómo se actualiza?</span><span data-en>How does it update?</span></summary><p><span data-es>Minuta revisa sola si hay una versión nueva y te ofrece actualizar con un clic. Tus notas, perfil y universos no se tocan.</span><span data-en>Minuta checks for new versions on its own and offers a one-click update. Your notes, profile and universes are never touched.</span></p></details>
 </div></section>
+
+<section class="cierre"><div class="ancho"><div class="caja">
+  <div><h2><span data-es>Tu próxima reunión puede ser la primera con notas listas</span><span data-en>Your next meeting can be the first with notes done</span></h2>
+    <p><span data-es>Gratis, privada y tuya. Instálala hoy y, si te gusta, cuéntaselo a tu equipo.</span><span data-en>Free, private and yours. Install it today and, if you like it, tell your team.</span></p></div>
+  <div class="acciones"><a class="boton" id="descarga2" href="https://github.com/minuta-app/minuta/releases/latest/download/Minuta-macOS.zip"><span data-es>Descargar para <b class="so-nombre">Mac</b></span><span data-en>Download for <b class="so-nombre">Mac</b></span></a>
+    <button class="boton claro" id="compartir"><span data-es>Compartir Minuta</span><span data-en>Share Minuta</span></button></div>
+</div></div></section>
 </main>
 
 <footer><div class="ancho">
   <span>Minuta · <span data-es>Licencia MIT</span><span data-en>MIT License</span></span>
-  <span><a href="https://github.com/minuta-app/minuta">GitHub</a> · <a href="https://github.com/minuta-app/minuta-catalogo"><span data-es>Catálogo de universos e idiomas</span><span data-en>Universe and language catalog</span></a> · <a href="https://github.com/minuta-app/minuta-catalogo/issues/new"><span data-es>Enviar comentarios</span><span data-en>Send feedback</span></a></span>
+  <nav><a href="ia.html"><span data-es>Guía de tu IA</span><span data-en>Your AI guide</span></a><a href="https://github.com/minuta-app/minuta">GitHub</a><a href="https://github.com/minuta-app/minuta-catalogo"><span data-es>Catálogo de universos e idiomas</span><span data-en>Universe and language catalog</span></a><a href="https://github.com/minuta-app/minuta/issues/new"><span data-es>Enviar comentarios</span><span data-en>Send feedback</span></a></nav>
 </div></footer>
 
 <script>
   // Idioma: según el navegador, recordado si el visitante lo cambia.
   const html = document.documentElement, boton = document.getElementById("idioma");
+  const TITULOS = { es: "Minuta — notas de reuniones y un coach para comunicarte mejor", en: "Minuta — meeting notes and a coach to communicate better" };
   let guardado = null; try { guardado = localStorage.getItem("minuta-idioma"); } catch (e) {}
-  const poner = (l) => { html.lang = l; boton.textContent = l === "es" ? "EN" : "ES"; document.title = l === "es" ? "Minuta — notas de reuniones y coach de comunicación en tu Mac" : "Minuta — meeting notes and a communication coach on your Mac"; };
-  poner(guardado || (navigator.language || "es").toLowerCase().startsWith("es") ? (guardado || "es") : "en");
+  const poner = (l) => { html.lang = l; boton.textContent = l === "es" ? "EN" : "ES"; document.title = TITULOS[l]; };
+  poner(guardado || ((navigator.language || "es").toLowerCase().startsWith("es") ? "es" : "en"));
   boton.onclick = () => { const l = html.lang === "es" ? "en" : "es"; poner(l); try { localStorage.setItem("minuta-idioma", l); } catch (e) {} };
   // Sistema del visitante: elige la pestaña de instalación, el botón de descarga y el comando del inicio.
-  const SO = /Windows/i.test(navigator.userAgent) ? "windows" : /Linux|X11/i.test(navigator.userAgent) && !/Android/i.test(navigator.userAgent) ? "linux" : "mac";
+  const ua = navigator.userAgent;
+  const SO = /Windows/i.test(ua) ? "windows" : /Linux|X11/i.test(ua) && !/Android/i.test(ua) ? "linux" : "mac";
   const DESCARGAS = { mac: "Minuta-macOS.zip", windows: "Minuta-Windows.exe", linux: "Minuta-Linux.AppImage" };
   const NOMBRES = { mac: "Mac", windows: "Windows", linux: "Linux" };
-  const REQ = { mac: ["Mac con chip Apple · macOS 15 o posterior · tu cuenta de Claude", "Apple silicon Mac · macOS 15 or later · your Claude account"],
-    windows: ["Windows 10 u 11 de 64 bits · tu cuenta de Claude", "64-bit Windows 10 or 11 · your Claude account"],
-    linux: ["Linux x86_64 con PulseAudio o PipeWire · tu cuenta de Claude", "x86_64 Linux with PulseAudio or PipeWire · your Claude account"] };
+  const REQ = { mac: ["Mac con chip Apple y macOS 15 o posterior.", "Apple silicon Mac with macOS 15 or later."],
+    windows: ["Windows 10 u 11 de 64 bits.", "64-bit Windows 10 or 11."],
+    linux: ["Linux x86_64 con PulseAudio o PipeWire.", "x86_64 Linux with PulseAudio or PipeWire."] };
   const elegirSO = (so) => {
     document.querySelectorAll("[data-so]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.so === so)));
     document.querySelectorAll("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== so));
   };
   document.querySelectorAll("[data-so]").forEach((b) => (b.onclick = () => elegirSO(b.dataset.so)));
   elegirSO(SO);
-  document.getElementById("descarga").href = `https://github.com/minuta-app/minuta/releases/latest/download/${DESCARGAS[SO]}`;
+  ["descarga", "descarga2"].forEach((id) => (document.getElementById(id).href = `https://github.com/minuta-app/minuta/releases/latest/download/${DESCARGAS[SO]}`));
   document.querySelectorAll(".so-nombre").forEach((b) => (b.textContent = NOMBRES[SO]));
   document.getElementById("cmd").textContent = document.getElementById(`cmd-${SO}`).textContent;
   const req = document.getElementById("req").children; req[0].textContent = REQ[SO][0]; req[1].textContent = REQ[SO][1];
-  // Copiar el comando
+  // Copiar
+  const avisar = (b, es, en) => { const antes = b.innerHTML; b.textContent = html.lang === "es" ? es : en; setTimeout(() => (b.innerHTML = antes), 1600); };
   document.querySelectorAll("[data-copiar]").forEach((b) => b.onclick = async () => {
-    const t = document.getElementById(b.dataset.copiar).textContent;
-    try { await navigator.clipboard.writeText(t); } catch (e) {}
-    const antes = b.innerHTML; b.textContent = html.lang === "es" ? "¡Copiado!" : "Copied!"; setTimeout(() => (b.innerHTML = antes), 1600);
+    try { await navigator.clipboard.writeText(document.getElementById(b.dataset.copiar).textContent); } catch (e) {}
+    avisar(b, "¡Copiado!", "Copied!");
   });
-  // Aparición al hacer scroll
-  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("visible"); io.unobserve(e.target); } }), { threshold: .12 });
-  document.querySelectorAll(".revela").forEach((el) => io.observe(el));
+  // Compartir: hoja nativa si existe; si no, copia el enlace.
+  document.getElementById("compartir").onclick = async (ev) => {
+    const datos = { title: "Minuta", text: html.lang === "es" ? "Notas de reuniones y un coach para comunicarte mejor. Gratis, privado y de código abierto." : "Meeting notes and a coach to communicate better. Free, private and open source.", url: "https://minuta-app.github.io/minuta/" };
+    try { if (navigator.share) return await navigator.share(datos); await navigator.clipboard.writeText(datos.url); avisar(ev.currentTarget, "Enlace copiado", "Link copied"); } catch (e) {}
+  };
+  // Estrellas reales del repo (si GitHub responde).
+  fetch("https://api.github.com/repos/minuta-app/minuta").then((r) => r.json()).then((d) => {
+    if (typeof d.stargazers_count === "number" && d.stargazers_count > 0) { const n = document.getElementById("n-estrellas"); n.textContent = d.stargazers_count; n.hidden = false; }
+  }).catch(() => {});
   // Universos en vivo desde el catálogo abierto
   const INCLUIDOS = ["cine", "starwars", "harrypotter", "marvel"];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -305,7 +480,7 @@
     document.getElementById("universos-lista").innerHTML = lista.map((u) => {
       const e = u.estilo || {};
       return `<div class="uni" style="--u1:${esc(e.fondo)};--u2:${esc(e.fondo2)};--ut:${esc(e.texto)};--ua:${esc(e.acento)}">
-        <span class="tag">${INCLUIDOS.includes(u.id) ? (html.lang === "es" ? "incluido" : "included") : "⬇"}</span>
+        <span class="tag"><span data-es>${INCLUIDOS.includes(u.id) ? "incluido" : "⬇ gratis"}</span><span data-en>${INCLUIDOS.includes(u.id) ? "included" : "⬇ free"}</span></span>
         <div class="e">${esc(u.emoji)}</div><b>${esc(u.nombre)}</b><small>XP: ${esc(u.xp)}</small><div class="r">${(u.muestra?.iconos_rangos || []).slice(0, 6).map(esc).join(" ")}</div></div>`;
     }).join("");
   }).catch(() => {});

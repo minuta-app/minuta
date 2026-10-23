@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="es" data-so="mac">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tu IA para Minuta — guía sin tecnicismos</title>
+<meta name="description" content="Qué son Claude Code, Codex y Antigravity CLI (Gemini), cuál te conviene y cómo instalarlos paso a paso en Mac, Windows o Linux para usar Minuta.">
+<meta property="og:title" content="Tu IA para Minuta, explicada sin tecnicismos">
+<meta property="og:image" content="https://minuta-app.github.io/minuta/img/notas.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --titulo: "Bricolage Grotesque", Inter, system-ui, -apple-system, sans-serif; --fondo: #0d0c12; --fondo2: #14131b; --panel: #1b1a24; --linea: #2c2b38; --texto: #f3f1ec; --suave: #a7a4b2; --acento: #ffd23f; --acento2: #ff6b4a; --verde: #3ddc84; --papel: #f7f1e3; --tinta: #23201a; }
+  * { box-sizing: border-box; } html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 16.5px/1.65 Inter, system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  a { color: var(--acento); } :focus-visible { outline: 2px solid var(--acento); outline-offset: 3px; border-radius: 6px; }
+  .ancho { width: min(860px, 100% - 32px); margin: 0 auto; }
+  h1, h2, h3 { font-family: var(--titulo); letter-spacing: -.02em; line-height: 1.08; margin: 0; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; background: #08080b; border: 1px solid var(--linea); padding: 1px 6px; border-radius: 6px; }
+  p code, li code, .nota code { overflow-wrap: anywhere; }
+  kbd { font: 600 .85em Inter, sans-serif; padding: 1px 7px; border-radius: 6px; border: 1px solid var(--linea); border-bottom-width: 2px; background: var(--panel); }
+  .barra { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px); background: color-mix(in srgb, var(--fondo) 80%, transparent); border-bottom: 1px solid var(--linea); }
+  .barra .ancho { width: min(1140px, 100% - 32px); display: flex; align-items: center; gap: 14px; height: 60px; }
+  .marca { display: flex; align-items: center; gap: 9px; font-family: var(--titulo); font-weight: 800; font-size: 20px; text-decoration: none; color: var(--texto); }
+  .marca i { width: 12px; height: 12px; border-radius: 50%; background: var(--acento2); box-shadow: 0 0 0 5px color-mix(in srgb, var(--acento2) 25%, transparent); }
+  .barra nav { display: flex; gap: 18px; margin-left: auto; font-size: 14px; } .barra nav a { color: var(--suave); text-decoration: none; } .barra nav a:hover { color: var(--texto); }
+  .idioma { border: 1px solid var(--linea); background: none; color: var(--texto); border-radius: 999px; padding: 5px 11px; font: 600 12px Inter, sans-serif; cursor: pointer; }
+  @media (max-width: 720px) { .barra nav { display: none; } .idioma { margin-left: auto; } }
+
+  .cab { padding: 64px 0 24px; }
+  .cab h1 { font-size: clamp(36px, 5.4vw, 60px); font-weight: 800; max-width: 17ch; }
+  .cab p { font-size: 19px; color: var(--suave); margin: 18px 0 0; max-width: 60ch; }
+  .cab p b { color: var(--texto); font-weight: 600; }
+  section { padding: 44px 0; }
+  h2 { font-size: clamp(28px, 3.6vw, 38px); margin-bottom: 14px; }
+  .ancho > p, section p { color: #d3d0da; } section p.suave { color: var(--suave); }
+
+  /* explicación */
+  .analogia { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 14px; align-items: center; margin-top: 22px; }
+  .analogia > div { padding: 18px; border-radius: 16px; background: var(--fondo2); border: 1px solid var(--linea); }
+  .analogia b { display: block; font-family: var(--titulo); font-size: 18px; margin-bottom: 4px; } .analogia span.t { color: var(--suave); font-size: 15px; }
+  .analogia .igual { font: 800 22px var(--titulo); color: var(--acento); text-align: center; }
+  @media (max-width: 640px) { .analogia { grid-template-columns: minmax(0, 1fr); } .analogia .igual { transform: rotate(90deg); } }
+  .tranqui { margin-top: 18px; padding: 16px 18px; border-radius: 14px; background: color-mix(in srgb, var(--verde) 9%, var(--fondo2)); border: 1px solid color-mix(in srgb, var(--verde) 35%, var(--linea)); font-size: 15.5px; }
+
+  /* elegir */
+  .elegir { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 20px; }
+  @media (max-width: 760px) { .elegir { grid-template-columns: minmax(0, 1fr); } }
+  .opcion { display: flex; flex-direction: column; gap: 6px; padding: 20px; border-radius: 18px; background: var(--fondo2); border: 1px solid var(--linea); text-decoration: none; color: var(--texto); transition: border-color .15s, transform .15s; }
+  .opcion:hover { border-color: var(--acento); transform: translateY(-2px); }
+  .opcion small { color: var(--suave); font-size: 14px; } .opcion strong { font-family: var(--titulo); font-size: 22px; line-height: 1.1; } .opcion span { color: var(--suave); font-size: 14.5px; } .opcion em { margin-top: auto; padding-top: 8px; font-style: normal; color: var(--acento); font-weight: 600; font-size: 14.5px; }
+  .beta { font: 700 11px Inter, sans-serif; padding: 2px 7px; border-radius: 999px; background: color-mix(in srgb, var(--acento2) 20%, transparent); color: #ffb4a5; vertical-align: 4px; margin-left: 6px; letter-spacing: 0; }
+  .ninguna { margin-top: 14px; color: var(--suave); font-size: 15.5px; } .ninguna b { color: var(--texto); }
+
+  /* sistema */
+  .sistemas-caja { position: sticky; top: 60px; z-index: 10; padding: 12px 0; background: color-mix(in srgb, var(--fondo) 92%, transparent); backdrop-filter: blur(10px); }
+  .sistemas-caja .ancho { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+  .sistemas-caja span.l { color: var(--suave); font-size: 14px; }
+  .sistemas { display: inline-flex; gap: 4px; padding: 4px; border-radius: 14px; border: 1px solid var(--linea); background: var(--fondo2); }
+  .sistemas button { border: 0; background: none; color: var(--suave); font: 600 14px Inter, system-ui, sans-serif; padding: 8px 14px; border-radius: 10px; cursor: pointer; }
+  .sistemas button[aria-pressed="true"] { background: var(--panel); color: var(--texto); box-shadow: 0 1px 0 rgba(255,255,255,.06) inset; }
+  html[data-so="mac"] [data-solo]:not([data-solo~="mac"]), html[data-so="windows"] [data-solo]:not([data-solo~="windows"]), html[data-so="linux"] [data-solo]:not([data-solo~="linux"]) { display: none !important; }
+
+  /* pasos */
+  .ia { border-top: 1px solid var(--linea); }
+  .ia-cab { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+  .ia-cab .logo { width: 48px; height: 48px; flex: none; border-radius: 14px; display: grid; place-items: center; font: 800 22px var(--titulo); }
+  .ia-cab h2 { margin: 0; } .ia-cab small { display: block; color: var(--suave); font: 500 15px Inter, sans-serif; margin-top: 4px; }
+  ol.pasos { list-style: none; counter-reset: paso; padding: 0; margin: 24px 0 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+  ol.pasos > li { counter-increment: paso; position: relative; padding: 0 0 26px 52px; }
+  ol.pasos > li::before { content: counter(paso); position: absolute; left: 0; top: 0; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--acento); color: #15130c; font: 800 15px Inter, sans-serif; }
+  ol.pasos > li::after { content: ""; position: absolute; left: 15px; top: 38px; bottom: 6px; border-left: 2px dashed var(--linea); }
+  ol.pasos > li:last-child::after { display: none; }
+  ol.pasos h3 { font-size: 20px; margin: 3px 0 6px; } ol.pasos p { margin: 6px 0 0; }
+  .comando { margin-top: 10px; display: flex; align-items: center; gap: 10px; padding: 11px 11px 11px 16px; border-radius: 14px; background: #08080b; border: 1px solid var(--linea); }
+  .comando code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; border: 0; background: none; padding: 0; color: #dcdad3; font-size: 13.5px; scrollbar-width: thin; }
+  .comando code::before { content: "$ "; color: var(--verde); } .comando.ps code::before { content: "> "; }
+  .comando button { border: 1px solid var(--linea); background: var(--panel); color: var(--texto); border-radius: 9px; padding: 7px 12px; font: 600 12px Inter, sans-serif; cursor: pointer; flex: none; }
+  .otras { margin-top: 10px; } .otras summary { cursor: pointer; color: var(--suave); font-size: 14.5px; } .otras ul { margin: 8px 0 0; padding-left: 20px; color: var(--suave); font-size: 14.5px; display: grid; gap: 6px; }
+  .nota { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--fondo2); border: 1px solid var(--linea); color: var(--suave); font-size: 14.5px; } .nota b { color: var(--texto); }
+  .listo { margin-top: 8px; padding: 18px 20px; border-radius: 16px; background: var(--papel); color: var(--tinta); }
+  .listo h3 { font-size: 20px; margin-bottom: 4px; } .listo p { color: var(--tinta); margin: 0; }
+
+  /* problemas */
+  details.p { border-bottom: 1px solid var(--linea); padding: 15px 0; } details.p summary { cursor: pointer; font-weight: 600; font-size: 16.5px; list-style: none; display: flex; justify-content: space-between; gap: 20px; }
+  details.p summary::-webkit-details-marker { display: none; } details.p summary::after { content: "+"; color: var(--acento); font-size: 22px; line-height: 1; } details.p[open] summary::after { content: "–"; }
+  details.p p, details.p ul { color: var(--suave); margin: 10px 0 0; } details.p ul { padding-left: 20px; display: grid; gap: 6px; }
+  .final { margin: 30px 0 90px; padding: 26px; border-radius: 22px; background: var(--acento); color: #15130c; display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; }
+  .final p { margin: 0; flex: 1; min-width: 240px; color: #15130c; font-size: 16px; } .final p b { display: block; font: 800 22px var(--titulo); margin-bottom: 2px; }
+  .final a { display: inline-flex; padding: 12px 18px; border-radius: 12px; background: #15130c; color: var(--acento); font-weight: 600; text-decoration: none; }
+  footer { padding: 36px 0 50px; border-top: 1px solid var(--linea); color: var(--suave); font-size: 14px; }
+  footer .ancho { width: min(1140px, 100% - 32px); display: flex; flex-wrap: wrap; gap: 12px 18px; justify-content: space-between; } footer a { color: var(--texto); }
+  [data-en] { display: none; } html[lang="en"] [data-es] { display: none; } html[lang="en"] [data-en] { display: revert; }
+</style>
+</head>
+<body>
+<header class="barra"><div class="ancho">
+  <a class="marca" href="./"><i></i>Minuta</a>
+  <nav><a href="#que-es"><span data-es>Qué es</span><span data-en>What it is</span></a><a href="#elegir"><span data-es>Cuál elijo</span><span data-en>Which one</span></a><a href="#claude">Claude</a><a href="#codex">ChatGPT</a><a href="#gemini">Gemini</a><a href="#problemas"><span data-es>Problemas</span><span data-en>Troubleshooting</span></a></nav>
+  <button class="idioma" id="idioma" aria-label="Cambiar idioma / Change language">EN</button>
+</div></header>
+
+<main>
+<div class="ancho cab">
+  <h1><span data-es>Tu IA, explicada sin tecnicismos</span><span data-en>Your AI, explained without jargon</span></h1>
+  <p><span data-es>Minuta no trae una IA propia: usa la que tú ya tienes, con tu cuenta. Para eso necesita una pequeña herramienta que se instala <b>una sola vez</b>. Aquí te explicamos qué es, cuál elegir y cómo dejarla lista en unos cinco minutos. No necesitas saber programar.</span><span data-en>Minuta doesn't bring its own AI: it uses the one you already have, with your account. For that it needs a small tool you install <b>just once</b>. Here's what it is, which one to pick and how to set it up in about five minutes. No coding required.</span></p>
+</div>
+
+<section id="que-es"><div class="ancho">
+  <h2><span data-es>¿Qué son Claude Code, Codex y Antigravity CLI?</span><span data-en>What are Claude Code, Codex and Antigravity CLI?</span></h2>
+  <p><span data-es>Seguro conoces Claude, ChatGPT o Gemini como un chat en el navegador o en el teléfono. Estas herramientas son <b>el mismo asistente, en versión para el computador</b>: en vez de una página web, funcionan desde la terminal (esa ventana donde se escriben comandos). Gracias a eso, Minuta puede pedirle a tu IA que escriba las notas en segundo plano, sin abrir nada.</span><span data-en>You probably know Claude, ChatGPT or Gemini as a chat in your browser or phone. These tools are <b>the same assistant, in a version for your computer</b>: instead of a web page, they run from the terminal (that window where you type commands). That lets Minuta ask your AI to write your notes in the background, without opening anything.</span></p>
+  <div class="analogia">
+    <div><b><span data-es>El chat que ya usas</span><span data-en>The chat you already use</span></b><span class="t"><span data-es>claude.ai, chatgpt.com, gemini.google.com</span><span data-en>claude.ai, chatgpt.com, gemini.google.com</span></span></div>
+    <div class="igual">=</div>
+    <div><b><span data-es>Su versión de terminal</span><span data-en>Its terminal version</span></b><span class="t">Claude Code, Codex, Antigravity CLI</span></div>
+  </div>
+  <p class="tranqui"><span data-es>🙌 <b>Después de instalarla, no tienes que volver a la terminal.</b> Minuta la usa por ti. Tu contraseña la escribes solo en la página oficial de tu proveedor: Minuta nunca la ve.</span><span data-en>🙌 <b>Once it's installed, you never have to go back to the terminal.</b> Minuta uses it for you. You type your password only on your provider's official page: Minuta never sees it.</span></p>
+</div></section>
+
+<section id="elegir"><div class="ancho">
+  <h2><span data-es>¿Cuál elijo?</span><span data-en>Which one should I pick?</span></h2>
+  <p class="suave"><span data-es>La que ya usas. Si tienes varias, cualquiera sirve, y puedes cambiar después.</span><span data-en>The one you already use. If you have several, any works, and you can switch later.</span></p>
+  <div class="elegir">
+    <a class="opcion" href="#claude"><small><span data-es>Pago Claude Pro o Max</span><span data-en>I pay for Claude Pro or Max</span></small><strong>Claude Code</strong><span><span data-es>La que Minuta mejor conoce.</span><span data-en>The one Minuta knows best.</span></span><em><span data-es>Ver pasos</span><span data-en>See steps</span></em></a>
+    <a class="opcion" href="#codex"><small><span data-es>Uso ChatGPT, gratis o de pago</span><span data-en>I use ChatGPT, free or paid</span></small><strong>Codex</strong><span><span data-es>Funciona incluso con la cuenta gratis (con límites).</span><span data-en>Works even with the free account (with limits).</span></span><em><span data-es>Ver pasos</span><span data-en>See steps</span></em></a>
+    <a class="opcion" href="#gemini"><small><span data-es>Uso Gemini o tengo cuenta de Google</span><span data-en>I use Gemini or have a Google account</span></small><strong>Antigravity CLI <span class="beta">beta</span></strong><span><span data-es>El reemplazo de Google para Gemini CLI.</span><span data-en>Google's replacement for Gemini CLI.</span></span><em><span data-es>Ver pasos</span><span data-en>See steps</span></em></a>
+  </div>
+  <p class="ninguna"><span data-es><b>¿No usas ninguna?</b> Lo más simple para empezar sin pagar es ChatGPT con Codex: creas una cuenta gratis en chatgpt.com y sigues los pasos de abajo.</span><span data-en><b>Don't use any?</b> The simplest free start is ChatGPT with Codex: create a free account at chatgpt.com and follow the steps below.</span></p>
+</div></section>
+
+<div class="sistemas-caja"><div class="ancho"><span class="l"><span data-es>Mostrar los pasos para:</span><span data-en>Show steps for:</span></span>
+  <div class="sistemas"><button data-so="mac">🍎 Mac</button><button data-so="windows">🪟 Windows</button><button data-so="linux">🐧 Linux</button></div></div></div>
+
+<section id="terminal"><div class="ancho">
+  <h2><span data-es>Antes de empezar: abre la terminal</span><span data-en>Before you start: open the terminal</span></h2>
+  <p data-solo="mac"><span data-es>Aprieta <kbd>⌘</kbd> + <kbd>Espacio</kbd>, escribe <b>Terminal</b> y aprieta <kbd>Enter</kbd>. Se abre una ventana con texto: ahí vas a pegar los comandos con <kbd>⌘</kbd> + <kbd>V</kbd> y apretar <kbd>Enter</kbd>.</span><span data-en>Press <kbd>⌘</kbd> + <kbd>Space</kbd>, type <b>Terminal</b> and press <kbd>Enter</kbd>. A window with text opens: that's where you'll paste commands with <kbd>⌘</kbd> + <kbd>V</kbd> and press <kbd>Enter</kbd>.</span></p>
+  <p data-solo="windows"><span data-es>Aprieta la tecla <kbd>Windows</kbd>, escribe <b>PowerShell</b> y aprieta <kbd>Enter</kbd> (no hace falta abrirlo como administrador). Pega los comandos con <kbd>Ctrl</kbd> + <kbd>V</kbd> o clic derecho, y aprieta <kbd>Enter</kbd>.</span><span data-en>Press the <kbd>Windows</kbd> key, type <b>PowerShell</b> and press <kbd>Enter</kbd> (no need to run it as administrator). Paste commands with <kbd>Ctrl</kbd> + <kbd>V</kbd> or right-click, and press <kbd>Enter</kbd>.</span></p>
+  <p data-solo="linux"><span data-es>En Ubuntu y la mayoría de las distribuciones: <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>T</kbd>. Pega los comandos con <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd> y aprieta <kbd>Enter</kbd>.</span><span data-en>On Ubuntu and most distributions: <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>T</kbd>. Paste commands with <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd> and press <kbd>Enter</kbd>.</span></p>
+  <p class="suave"><span data-es>Cada comando de esta guía tiene un botón <b>Copiar</b>. No tienes que escribir nada a mano.</span><span data-en>Every command in this guide has a <b>Copy</b> button. You don't have to type anything by hand.</span></p>
+</div></section>
+
+<section id="claude" class="ia"><div class="ancho">
+  <div class="ia-cab"><span class="logo" style="background:#3a2a24;color:#f0a385">✳</span><div><h2>Claude Code</h2><small><span data-es>Para quienes usan Claude</span><span data-en>For Claude users</span></small></div></div>
+  <ol class="pasos">
+    <li><h3><span data-es>Ten tu cuenta lista</span><span data-en>Have your account ready</span></h3>
+      <p><span data-es>Necesitas <b>Claude Pro o Max</b>, o una cuenta de trabajo (Team o Enterprise). El plan gratis de Claude no incluye Claude Code.</span><span data-en>You need <b>Claude Pro or Max</b>, or a work account (Team or Enterprise). Claude's free plan doesn't include Claude Code.</span></p></li>
+    <li><h3><span data-es>Instálalo</span><span data-en>Install it</span></h3>
+      <div class="comando" data-solo="mac linux"><code id="c-claude-unix">curl -fsSL https://claude.ai/install.sh | bash</code><button data-copiar="c-claude-unix"><span data-es>Copiar</span><span data-en>Copy</span></button></div>
+      <div class="comando ps" data-solo="windows"><code id="c-claude-win">irm https://claude.ai/install.ps1 | iex</code><button data-copiar="c-claude-win"><span data-es>Copiar</span><span data-en>Copy</span></button></div>
+      <details class="otras"><summary><span data-es>Otras formas de instalarlo</span><span data-en>Other ways to install it</span></summary><ul>
+        <li data-solo="mac"><span data-es>Con Homebrew:</span><span data-en>With Homebrew:</span> <code>brew install --cask claude-code</code></li>
+        <li data-solo="windows"><span data-es>Con WinGet:</span><span data-en>With WinGet:</span> <code>winget install Anthropic.ClaudeCode</code></li>
+        <li><span data-es>Con npm (necesita Node.js):</span><span data-en>With npm (needs Node.js):</span> <code>npm install -g @anthropic-ai/claude-code</code></li>
+      </ul></details></li>
+    <li><h3><span data-es>Inicia sesión</span><span data-en>Sign in</span></h3>
+      <p><span data-es>Cierra la terminal, ábrela de nuevo y escribe <code>claude</code> + <kbd>Enter</kbd>. Se abrirá tu navegador para entrar con tu cuenta de Claude. Cuando termine, vuelve a la terminal y sal con <kbd>Ctrl</kbd> + <kbd>C</kbd> dos veces.</span><span data-en>Close the terminal, open it again and type <code>claude</code> + <kbd>Enter</kbd>. Your browser will open so you can sign in with your Claude account. When it's done, go back to the terminal and exit with <kbd>Ctrl</kbd> + <kbd>C</kbd> twice.</span></p>
+      <div class="comando"><code id="c-claude-login">claude</code><button data-copiar="c-claude-login"><span data-es>Copiar</span><span data-en>Copy</span></button></div></li>
+    <li><h3><span data-es>Comprueba que quedó bien</span><span data-en>Check it worked</span></h3>
+      <p><span data-es>Debería mostrar un número de versión. Si algo no anda, <code>claude doctor</code> te dice qué revisar.</span><span data-en>It should print a version number. If something's off, <code>claude doctor</code> tells you what to check.</span></p>
+      <div class="comando"><code id="c-claude-ver">claude --version</code><button data-copiar="c-claude-ver"><span data-es>Copiar</span><span data-en>Copy</span></button></div></li>
+    <li><div class="listo"><h3><span data-es>Listo: vuelve a Minuta</span><span data-en>Done: go back to Minuta</span></h3><p><span data-es>En el paso «Tu IA» toca <b>Ya la instalé</b> y luego <b>Probar</b> junto a Claude. Cuando diga ✓ Funciona, sigue adelante.</span><span data-en>In the “Your AI” step click <b>I installed it</b> and then <b>Test</b> next to Claude. When it says ✓ Works, move on.</span></p></div></li>
+  </ol>
+</div></section>
+
+<section id="codex" class="ia"><div class="ancho">
+  <div class="ia-cab"><span class="logo" style="background:#20302a;color:#7fe0b4">◎</span><div><h2>Codex</h2><small><span data-es>Para quienes usan ChatGPT</span><span data-en>For ChatGPT users</span></small></div></div>
+  <ol class="pasos">
+    <li><h3><span data-es>Ten tu cuenta lista</span><span data-en>Have your account ready</span></h3>
+      <p><span data-es>Sirve <b>cualquier cuenta de ChatGPT</b>: la gratis (con límites de uso más bajos) o una de pago (Plus, Pro, Business…). Si no tienes, créala en chatgpt.com.</span><span data-en><b>Any ChatGPT account</b> works: the free one (with lower usage limits) or a paid one (Plus, Pro, Business…). If you don't have one, create it at chatgpt.com.</span></p></li>
+    <li><h3><span data-es>Instálalo</span><span data-en>Install it</span></h3>
+      <div class="comando" data-solo="mac linux"><code id="c-codex-unix">curl -fsSL https://chatgpt.com/codex/install.sh | sh</code><button data-copiar="c-codex-unix"><span data-es>Copiar</span><span data-en>Copy</span></button></div>
+      <div class="comando ps" data-solo="windows"><code id="c-codex-win">powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"</code><button data-copiar="c-codex-win"><span data-es>Copiar</span><span data-en>Copy</span></button></div>
+      <details class="otras"><summary><span data-es>Otras formas de instalarlo</span><span data-en>Other ways to install it</span></summary><ul>
+        <li data-solo="mac"><span data-es>Con Homebrew:</span><span data-en>With Homebrew:</span> <code>brew install --cask codex</code></li>
+        <li><span data-es>Con npm (necesita Node.js):</span><span data-en>With npm (needs Node.js):</span> <code>npm install -g @openai/codex</code></li>
+      </ul></details></li>
+    <li><h3><span data-es>Inicia sesión</span><span data-en>Sign in</span></h3>
+      <p><span data-es>Cierra y vuelve a abrir la terminal, escribe <code>codex</code> + <kbd>Enter</kbd> y elige <b>Sign in with ChatGPT</b>. Se abre el navegador: entra con tu cuenta y confirma. Después puedes cerrar la terminal.</span><span data-en>Close and reopen the terminal, type <code>codex</code> + <kbd>Enter</kbd> and choose <b>Sign in with ChatGPT</b>. Your browser opens: sign in and confirm. Then you can close the terminal.</span></p>
+      <div class="comando"><code id="c-codex-login">codex</code><button data-copiar="c-codex-login"><span data-es>Copiar</span><span data-en>Copy</span></button></div></li>
+    <li><h3><span data-es>Comprueba que quedó bien</span><span data-en>Check it worked</span></h3>
+      <p><span data-es>Este comando te dice si la sesión está iniciada.</span><span data-en>This command tells you whether you're signed in.</span></p>
+      <div class="comando"><code id="c-codex-ver">codex login status</code><button data-copiar="c-codex-ver"><span data-es>Copiar</span><span data-en>Copy</span></button></div></li>
+    <li><div class="listo"><h3><span data-es>Listo: vuelve a Minuta</span><span data-en>Done: go back to Minuta</span></h3><p><span data-es>En «Tu IA» toca <b>Ya la instalé</b> y luego <b>Probar</b> junto a ChatGPT (Codex).</span><span data-en>In “Your AI” click <b>I installed it</b> and then <b>Test</b> next to ChatGPT (Codex).</span></p></div></li>
+  </ol>
+</div></section>
+
+<section id="gemini" class="ia"><div class="ancho">
+  <div class="ia-cab"><span class="logo" style="background:#222b40;color:#9bb8ff">✦</span><div><h2>Antigravity CLI <span class="beta">beta</span></h2><small><span data-es>Para quienes usan Gemini</span><span data-en>For Gemini users</span></small></div></div>
+  <p class="nota"><span data-es><b>Un cambio reciente:</b> en junio de 2026 Google dejó de ofrecer Gemini CLI para cuentas personales y lo reemplazó por Antigravity CLI (el comando <code>agy</code>). Minuta usa Antigravity si lo tienes; si ya usabas Gemini CLI con una clave de API de pago, también funciona. Como es nuevo, el soporte de Minuta está en beta: si algo falla, <a href="https://github.com/minuta-app/minuta/issues/new">cuéntanos</a>.</span><span data-en><b>A recent change:</b> in June 2026 Google stopped offering Gemini CLI to personal accounts and replaced it with Antigravity CLI (the <code>agy</code> command). Minuta uses Antigravity if you have it; if you already used Gemini CLI with a paid API key, that works too. Since it's new, Minuta's support is in beta: if something breaks, <a href="https://github.com/minuta-app/minuta/issues/new">let us know</a>.</span></p>
+  <ol class="pasos">
+    <li><h3><span data-es>Ten tu cuenta lista</span><span data-en>Have your account ready</span></h3>
+      <p><span data-es>Una <b>cuenta de Google</b>. Google ofrece un uso sin costo con límites que pueden cambiar; con Google AI Pro o Ultra tienes más.</span><span data-en>A <b>Google account</b>. Google offers free usage with limits that may change; Google AI Pro or Ultra gives you more.</span></p></li>
+    <li><h3><span data-es>Instálalo</span><span data-en>Install it</span></h3>
+      <div class="comando" data-solo="mac linux"><code id="c-agy-unix">curl -fsSL https://antigravity.google/cli/install.sh | bash</code><button data-copiar="c-agy-unix"><span data-es>Copiar</span><span data-en>Copy</span></button></div>
+      <div class="comando ps" data-solo="windows"><code id="c-agy-win">irm https://antigravity.google/cli/install.ps1 | iex</code><button data-copiar="c-agy-win"><span data-es>Copiar</span><span data-en>Copy</span></button></div></li>
+    <li><h3><span data-es>Inicia sesión</span><span data-en>Sign in</span></h3>
+      <p><span data-es>Cierra y vuelve a abrir la terminal y pídele algo cualquiera. La primera vez se abre el navegador para entrar con tu cuenta de Google.</span><span data-en>Close and reopen the terminal and ask it anything. The first time, your browser opens so you can sign in with your Google account.</span></p>
+      <div class="comando"><code id="c-agy-login">agy -p "hola"</code><button data-copiar="c-agy-login"><span data-es>Copiar</span><span data-en>Copy</span></button></div></li>
+    <li><h3><span data-es>Comprueba que quedó bien</span><span data-en>Check it worked</span></h3>
+      <div class="comando"><code id="c-agy-ver">agy --version</code><button data-copiar="c-agy-ver"><span data-es>Copiar</span><span data-en>Copy</span></button></div></li>
+    <li><div class="listo"><h3><span data-es>Listo: vuelve a Minuta</span><span data-en>Done: go back to Minuta</span></h3><p><span data-es>En «Tu IA» toca <b>Ya la instalé</b> y luego <b>Probar</b> junto a Gemini.</span><span data-en>In “Your AI” click <b>I installed it</b> and then <b>Test</b> next to Gemini.</span></p></div></li>
+  </ol>
+</div></section>
+
+<section id="privacidad" class="ia"><div class="ancho">
+  <h2><span data-es>¿Qué recibe tu IA?</span><span data-en>What does your AI receive?</span></h2>
+  <p><span data-es>Solo el <b>texto</b> de la reunión (la transcripción) y las instrucciones para escribir las notas. Nunca el audio. Va directo de tu computador a tu proveedor, con tu cuenta, igual que si lo pegaras en su chat.</span><span data-en>Only the meeting <b>text</b> (the transcript) and the instructions to write the notes. Never the audio. It goes straight from your computer to your provider, with your account, just as if you pasted it into their chat.</span></p>
+  <p class="suave"><span data-es>Un consejo: revisa la configuración de privacidad de tu cuenta de IA (por ejemplo, si permites que usen tus conversaciones para entrenar sus modelos) y elige lo que te acomode. Y recuerda avisar a los demás que estás grabando.</span><span data-en>A tip: check your AI account's privacy settings (for example, whether your conversations may be used to train their models) and choose what suits you. And remember to tell others you're recording.</span></p>
+</div></section>
+
+<section id="problemas" class="ia"><div class="ancho">
+  <h2><span data-es>Si algo no funciona</span><span data-en>If something doesn't work</span></h2>
+  <details class="p"><summary><span data-es>Dice «command not found» o «no se reconoce como comando»</span><span data-en>It says “command not found” or “is not recognized”</span></summary>
+    <ul><li><span data-es>Cierra la terminal y ábrela de nuevo: la terminal que estaba abierta no ve lo recién instalado.</span><span data-en>Close the terminal and open it again: the one that was open can't see what you just installed.</span></li>
+      <li><span data-es>Si el instalador mostró un mensaje para agregar una carpeta (por ejemplo <code>~/.local/bin</code>) a tu PATH, copia y ejecuta el comando que te indicó.</span><span data-en>If the installer showed a message about adding a folder (for example <code>~/.local/bin</code>) to your PATH, copy and run the command it showed.</span></li>
+      <li><span data-es>Igual prueba en Minuta: busca en las carpetas habituales, así que a veces la encuentra aunque la terminal no. Toca <b>Ya la instalé</b>.</span><span data-en>Try in Minuta anyway: it looks in the usual folders, so it sometimes finds it even when the terminal doesn't. Click <b>I installed it</b>.</span></li></ul></details>
+  <details class="p"><summary><span data-es>Minuta dice que no has iniciado sesión</span><span data-en>Minuta says you're not signed in</span></summary>
+    <p><span data-es>Abre la terminal, escribe el nombre de tu IA (<code>claude</code>, <code>codex</code> o <code>agy -p "hola"</code>) y completa el inicio de sesión en el navegador. Después vuelve a tocar <b>Probar</b>.</span><span data-en>Open the terminal, type your AI's name (<code>claude</code>, <code>codex</code> or <code>agy -p "hello"</code>) and finish signing in in the browser. Then click <b>Test</b> again.</span></p></details>
+  <details class="p" data-solo="windows"><summary><span data-es>Windows dice que la ejecución de scripts está deshabilitada</span><span data-en>Windows says running scripts is disabled</span></summary>
+    <p><span data-es>Antepón <code>powershell -ExecutionPolicy ByPass -c</code> y pon el comando entre comillas, así: <code>powershell -ExecutionPolicy ByPass -c "irm https://claude.ai/install.ps1 | iex"</code>. Solo afecta a ese comando.</span><span data-en>Prefix it with <code>powershell -ExecutionPolicy ByPass -c</code> and put the command in quotes, like this: <code>powershell -ExecutionPolicy ByPass -c "irm https://claude.ai/install.ps1 | iex"</code>. It only affects that command.</span></p></details>
+  <details class="p"><summary><span data-es>Usé npm y salió un error de permisos (EACCES)</span><span data-en>I used npm and got a permissions error (EACCES)</span></summary>
+    <p><span data-es>Usa mejor el instalador de un comando de arriba: no necesita Node.js ni permisos de administrador. Evita <code>sudo npm install</code>.</span><span data-en>Use the one-command installer above instead: it needs neither Node.js nor admin rights. Avoid <code>sudo npm install</code>.</span></p></details>
+  <details class="p"><summary><span data-es>Funciona, pero se acabó mi límite de uso</span><span data-en>It works, but I ran out of usage</span></summary>
+    <p><span data-es>Cada proveedor tiene límites según tu plan. Espera a que se renueven o cambia de IA en Minuta: Preferencias → abrir el asistente de bienvenida → Tu IA.</span><span data-en>Each provider has limits based on your plan. Wait for them to reset or switch AI in Minuta: Preferences → open the welcome assistant → Your AI.</span></p></details>
+  <details class="p"><summary><span data-es>Mi empresa no me deja instalar programas</span><span data-en>My company doesn't let me install software</span></summary>
+    <p><span data-es>Estos instaladores no piden permisos de administrador, pero algunas empresas los bloquean igual. Pregúntale a tu equipo de TI, o instala Minuta y tu IA en un computador personal.</span><span data-en>These installers don't ask for admin rights, but some companies block them anyway. Ask your IT team, or install Minuta and your AI on a personal computer.</span></p></details>
+  <div class="final"><p><b><span data-es>¿Sigues con dudas?</span><span data-en>Still stuck?</span></b><span data-es>Cuéntanos qué pasó, con tus palabras. Respondemos y, de paso, mejoramos esta guía.</span><span data-en>Tell us what happened, in your own words. We'll reply and improve this guide along the way.</span></p>
+    <a href="https://github.com/minuta-app/minuta/issues/new"><span data-es>Pedir ayuda</span><span data-en>Ask for help</span></a></div>
+</div></section>
+</main>
+
+<footer><div class="ancho">
+  <span><a href="./">Minuta</a> · <span data-es>Licencia MIT</span><span data-en>MIT License</span></span>
+  <span><span data-es>Las marcas Claude, ChatGPT, Codex, Gemini y Antigravity son de sus dueños. Minuta es un proyecto independiente.</span><span data-en>Claude, ChatGPT, Codex, Gemini and Antigravity are trademarks of their owners. Minuta is an independent project.</span></span>
+</div></footer>
+
+<script>
+  const html = document.documentElement, boton = document.getElementById("idioma");
+  const TITULOS = { es: "Tu IA para Minuta — guía sin tecnicismos", en: "Your AI for Minuta — a jargon-free guide" };
+  let guardado = null; try { guardado = localStorage.getItem("minuta-idioma"); } catch (e) {}
+  const poner = (l) => { html.lang = l; boton.textContent = l === "es" ? "EN" : "ES"; document.title = TITULOS[l]; };
+  poner(guardado || ((navigator.language || "es").toLowerCase().startsWith("es") ? "es" : "en"));
+  boton.onclick = () => { const l = html.lang === "es" ? "en" : "es"; poner(l); try { localStorage.setItem("minuta-idioma", l); } catch (e) {} };
+  // Sistema: detectado, cambiable y recordado.
+  const ua = navigator.userAgent;
+  let so = /Windows/i.test(ua) ? "windows" : /Linux|X11/i.test(ua) && !/Android/i.test(ua) ? "linux" : "mac";
+  try { so = localStorage.getItem("minuta-so") || so; } catch (e) {}
+  const elegirSO = (s) => { html.dataset.so = s; document.querySelectorAll("[data-so]").forEach((b) => b.tagName === "BUTTON" && b.setAttribute("aria-pressed", String(b.dataset.so === s))); };
+  document.querySelectorAll("button[data-so]").forEach((b) => (b.onclick = () => { elegirSO(b.dataset.so); try { localStorage.setItem("minuta-so", b.dataset.so); } catch (e) {} }));
+  elegirSO(so);
+  document.querySelectorAll("[data-copiar]").forEach((b) => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(document.getElementById(b.dataset.copiar).textContent); } catch (e) {}
+    const antes = b.innerHTML; b.textContent = html.lang === "es" ? "¡Copiado!" : "Copied!"; setTimeout(() => (b.innerHTML = antes), 1600);
+  });
+</script>
+</body>
+</html>
