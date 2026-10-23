@@ -161,5 +161,6 @@ El Mac se maneja con las herramientas `mcp__remote-devices__*` (osascript con `d
 
 Si usas **Claude Code**, en `.claude/agents/` hay agentes especializados: `minuta-mac` (Swift y sistema), `minuta-escritorio` (Windows/Linux, Electron),
 `minuta-pipeline` (Python, prompts y métricas), `minuta-interfaz` (UI web e idiomas), `minuta-catalogo` (universos e idiomas descargables),
-`minuta-despliegue` (instalar en el Mac sin romper una grabación) y `minuta-privacidad` (auditoría antes de commitear o publicar).
+`minuta-despliegue` (instalar en el Mac sin romper una grabación), `minuta-privacidad` (auditoría antes de commitear o publicar)
+y `minuta-revisor` (revisar pull requests de la comunidad: seguridad, pruebas, universos e idiomas; nunca junta sin aprobación).
 Con otra IA, cada uno es un buen resumen del área: léelo como guía. El despliegue y la privacidad son obligatorios al cerrar un cambio.
