@@ -3,6 +3,11 @@
  "nombre": "Star Wars",
  "emoji": "🌌",
  "xp": "midiclorianos",
+ "categorias": [
+  "Películas",
+  "Ciencia ficción",
+  "Clásicos"
+ ],
  "personaje_por_defecto": "Solo personajes canónicos de las películas de Star Wars (Episodios I al IX).",
  "elogios": [
   "Fuerte es la Fuerza en ti, joven padawan.",

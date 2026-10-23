@@ -992,26 +992,40 @@
     if (!E.votosU) setTimeout(pedirVotos, 0);
     pedirCuenta();
     const instalados = new Set(E.temas.map((t) => t.id));
-    const porBajar = E.catU.lista.filter((u) => !instalados.has(u.id)).sort((a, b) => puntajeVotos(b.id) - puntajeVotos(a.id));
+    // Categorías: las del archivo o, en universos bajados antes de que existieran, las del catálogo.
+    const catDe = (u) => u.categorias || E.catU.lista.find((x) => x.id === u.id)?.categorias || [];
+    const q = norm(E.uBusca || ""), cat = E.uCat || "";
+    const calza = (u) => (!cat || catDe(u).includes(cat)) && (!q || norm([u.nombre, u.id, u.xp, u.descripcion, ...catDe(u), ...catDe(u).map(tr)].join(" ")).includes(q));
+    const todasCats = [...new Set([...E.temas, ...E.catU.lista].flatMap(catDe))].sort((a, b) => tr(a).localeCompare(tr(b)));
+    const propios = E.temas.filter(calza);
+    const porBajar = E.catU.lista.filter((u) => !instalados.has(u.id) && calza(u)).sort((a, b) => puntajeVotos(b.id) - puntajeVotos(a.id));
+    const sinNada = (q || cat) && !propios.length && !porBajar.length && E.catU.estado !== "cargando";
     const prev = E.previa && E.catU.lista.find((u) => u.id === E.previa);
     return `<div class="galeria" data-accion="cerrar-galeria"><div class="galeria-caja" role="dialog" aria-label="Elige tu universo">
       <div class="galeria-cab"><div><h2>Elige tu universo</h2><p>Cambia colores, formas, personajes, rangos y logros.</p></div><button class="boton" data-accion="cerrar-galeria" title="Cerrar (Esc)">✕</button></div>
       ${forja()}
-      <div class="u-sub">Tus universos</div>
-      <div class="galeria-grid">${E.temas.map((t) => {
+      <div class="u-filtros">
+        <label class="u-buscador"><span aria-hidden="true">⌕</span><input id="u-busca" type="search" value="${esc(E.uBusca || "")}" placeholder="Buscar universo: Naruto, autos, anime…" autocomplete="off" aria-label="Buscar universo"></label>
+        ${todasCats.length ? `<div class="u-cats" role="group" aria-label="Categorías"><button class="u-cat${cat ? "" : " activa"}" data-u-cat="">Todas</button>${todasCats.map((c) => `<button class="u-cat${cat === c ? " activa" : ""}" data-u-cat="${esc(c)}">${esc(c)}</button>`).join("")}</div>` : ""}
+      </div>
+      ${sinNada ? `<div class="u-nada"><div class="u-nada-emoji">🌌</div><b>${q ? `Aún no existe nada de «${esc((E.uBusca || "").trim())}»` : `Aún no hay universos de ${esc(cat)}`}</b>
+        <p>${q ? "¿Quieres crearlo? Tu IA lo arma en unos minutos, con sus personajes, rangos y logros." : "¿Creas el primero? Tu IA lo arma en unos minutos."}</p>
+        <button class="boton-txt aplicar" data-crear-desde="${esc(q ? (E.uBusca || "").trim() : "")}">⚒️ ${q ? "Crearlo" : "Crear un universo"}</button></div>` : ""}
+      ${propios.length || !(q || cat) ? `<div class="u-sub">Tus universos</div>
+      <div class="galeria-grid">${propios.map((t) => {
         const borrable = !t.incluido && t.id !== "cine";
         return `<div class="u-celda"><button class="universo${t.id === E.temaId ? " elegido" : ""}" data-tema="${t.id}" style="${varsUniverso(t.estilo)}">
           <span class="u-emoji">${t.emoji}</span><span class="u-nombre">${esc(t.nombre)}</span><span class="u-xp">XP: ${esc(t.xp)}${t.creado ? "" : chipVotos(t.id)}</span>
           <span class="u-iconos">${(t.iconos_rangos || []).slice(0, 7).join(" ")}</span>${t.id === E.temaId ? '<span class="u-check">✓</span>' : ""}${t.creado ? '<span class="u-creado">⚒️ creado</span>' : t.incluido ? "" : '<span class="u-creado">⬇ descargado</span>'}</button>
           ${borrable ? `<button class="boton-mini u-quitar" data-forja="borrar-u" data-id="${esc(t.id)}" title="Quitar este universo">🗑</button>` : ""}
           ${t.creado ? `<button class="boton-mini u-proponer" data-proponer-u="${esc(t.id)}" title="Proponerlo al catálogo para que otros lo usen">📤</button>` : ""}</div>`;
-      }).join("")}<button class="universo u-nuevo" data-forja="abrir"><span class="u-emoji">＋</span><span class="u-nombre">Crear universo</span><span class="u-xp">Con tu IA, en ~5 min</span></button></div>
-      <div class="u-sub">Más universos para descargar ${E.catU.estado === "cargando" ? `<small>cargando…</small>` : E.catU.error && !E.catU.lista.length ? `<small>sin conexión al catálogo</small>` : `<small>${porBajar.length} disponibles · gratis</small>`}</div>
+      }).join("")}${q || cat ? "" : `<button class="universo u-nuevo" data-forja="abrir"><span class="u-emoji">＋</span><span class="u-nombre">Crear universo</span><span class="u-xp">Con tu IA, en ~5 min</span></button>`}</div>` : ""}
+      ${porBajar.length || !(q || cat) ? `<div class="u-sub">Más universos para descargar ${E.catU.estado === "cargando" ? `<small>cargando…</small>` : E.catU.error && !E.catU.lista.length ? `<small>sin conexión al catálogo</small>` : `<small>${porBajar.length} disponibles · gratis</small>`}</div>
       ${porBajar.length ? `<div class="galeria-grid">${porBajar.map((u) => `<div class="u-celda"><button class="universo u-catalogo" data-previa="${esc(u.id)}" style="${varsUniverso(u.estilo)}" title="Ver cómo es">
           <span class="u-emoji">${u.emoji}</span><span class="u-nombre">${esc(u.nombre)}</span><span class="u-xp">XP: ${esc(u.xp)}${chipVotos(u.id)}</span>
           <span class="u-iconos">${(u.muestra?.iconos_rangos || []).slice(0, 7).join(" ")}</span><span class="u-creado">👁 ver</span></button>
           <button class="boton-mini u-bajar" data-bajar-u="${esc(u.id)}" title="Descargar">${E.catU.bajando === u.id ? "…" : "⬇"}</button></div>`).join("")}</div>`
-        : E.catU.estado === "listo" ? `<p class="cat-ayuda">Ya tienes todos los universos del catálogo. 🎉</p>` : ""}
+        : E.catU.estado === "listo" ? `<p class="cat-ayuda">Ya tienes todos los universos del catálogo. 🎉</p>` : ""}` : ""}
       ${prev ? previaUniverso(prev) : ""}
     </div></div>`;
   }
@@ -2514,7 +2528,7 @@
     if ($(".lista")) $(".lista").scrollTo({ top: scrollLista, behavior: "instant" });
     contar(app);
     const chat = document.getElementById("gym-chat"); if (chat) chat.scrollTop = chat.scrollHeight;
-    if (foco && /^(buscar|corr-de|corr-a|voto-txt|forja-nombre|forja-notas|busca-persona|preg-txt|gym-txt|gym-propio|env-para|env-asunto|env-cuerpo|env-indic|ics-url)$/.test(foco)) { const b = document.getElementById(foco); if (b) { b.focus(); try { b.setSelectionRange(b.value.length, b.value.length); } catch {} } }
+    if (foco && /^(buscar|corr-de|corr-a|voto-txt|forja-nombre|forja-notas|busca-persona|u-busca|preg-txt|gym-txt|gym-propio|env-para|env-asunto|env-cuerpo|env-indic|ics-url)$/.test(foco)) { const b = document.getElementById(foco); if (b) { b.focus(); try { b.setSelectionRange(b.value.length, b.value.length); } catch {} } }
   }
 
   // ───────────────────────── Eventos ─────────────────────────
@@ -2710,6 +2724,10 @@
     if (au) { if (E.plataforma === "web") window.open(au.dataset.bvUrl, "_blank"); else host.enviar("abrirURL", { url: au.dataset.bvUrl }); return; }
     const vu = ev.target.closest("[data-votar-u]");
     if (vu) { abrirVoto(vu.dataset.votarU, vu.dataset.voto); return; }
+    const uc = ev.target.closest("[data-u-cat]");
+    if (uc) { E.uCat = uc.dataset.uCat; render({ mantenerScroll: true }); return; }
+    const cd = ev.target.closest("[data-crear-desde]");
+    if (cd) { const nb = cd.dataset.crearDesde; E.forja = { nombre: nb.charAt(0).toUpperCase() + nb.slice(1), notas: "", estado: "" }; E.uBusca = ""; E.uCat = ""; render({ mantenerScroll: false }); setTimeout(() => { const f = $("#forja-nombre"); f?.scrollIntoView({ block: "center" }); (cd.dataset.crearDesde ? $("#forja-notas") : f)?.focus(); }, 40); return; }
     const cu = ev.target.closest("[data-comentar-u],[data-proponer-u]");
     if (cu) {
       const id = cu.dataset.comentarU || cu.dataset.proponerU;
@@ -2962,7 +2980,7 @@
   const TIPOS_COMENT = [["error", "🐞 Algo falla"], ["idea", "💡 Una idea"], ["universo", "🌌 Un universo"], ["otro", "💬 Otro"]];
   /** Universo listo para el catálogo: solo los campos de datos (nada de la máquina de la persona). */
   function universoParaCatalogo(u) {
-    const CAMPOS = ["id", "nombre", "emoji", "xp", "personaje_por_defecto", "elogios", "apartados", "rangos", "logros", "iconos_logros", "iconos_apartados", "iconos_rangos", "estilo", "idioma", "descripcion"];
+    const CAMPOS = ["id", "nombre", "emoji", "xp", "categorias", "personaje_por_defecto", "elogios", "apartados", "rangos", "logros", "iconos_logros", "iconos_apartados", "iconos_rangos", "estilo", "idioma", "descripcion"];
     return JSON.stringify(Object.fromEntries(CAMPOS.filter((k) => u[k] !== undefined).map((k) => [k, u[k]])), null, 2);
   }
   function overlayComentarios() {
@@ -3055,6 +3073,7 @@
     if (ev.target.id === "gym-propio" && E.gym) { E.gym.propio = ev.target.value; return; }
     if (ev.target.id === "preg-txt") { E.preg.borrador = ev.target.value; return; }
     if (ev.target.id === "busca-persona") { E.buscaPersona = ev.target.value; render({ mantenerScroll: true }); return; }
+    if (ev.target.id === "u-busca") { E.uBusca = ev.target.value; render({ mantenerScroll: true }); return; }
     if (ev.target.id === "forja-nombre" && E.forja) { E.forja.nombre = ev.target.value; return; }
     if (ev.target.id === "forja-notas" && E.forja) { E.forja.notas = ev.target.value; return; }
     const campo = ev.target.closest?.("[data-campo]");

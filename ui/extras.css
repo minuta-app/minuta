@@ -358,3 +358,17 @@
 .acerca p { margin: 4px 0 0; color: var(--suave); font-size: 13.5px; }
 .acerca-enlaces { display: flex; flex-wrap: wrap; gap: 8px; } .acerca-enlaces .boton-mini { width: auto; padding: 5px 11px; margin: 0; }
 .acerca-creditos { font-size: 12.5px !important; } .acerca-creditos b { color: var(--texto); font-weight: 600; }
+/* Galería: buscador y categorías */
+.u-filtros { display: grid; gap: 10px; margin: 4px 0 14px; }
+.u-buscador { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--linea); border-radius: var(--radio-c, 10px); background: var(--fondo2); }
+.u-buscador span { color: var(--suave); } .u-buscador input { flex: 1; min-width: 0; border: 0; background: none; color: var(--texto); font: inherit; padding: 10px 0; outline: none; }
+.u-buscador:focus-within { border-color: var(--acento); }
+.u-cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.u-cat { border: 1px solid var(--linea); background: transparent; color: var(--suave); border-radius: 999px; padding: 4px 11px; font: 600 12.5px var(--fuente-ui, inherit); cursor: pointer; }
+.u-cat:hover { color: var(--texto); border-color: var(--suave); }
+.u-cat.activa { background: var(--acento); color: var(--sobre-acento); border-color: transparent; }
+.u-nada { text-align: center; padding: 28px 16px; border: 1px dashed var(--linea); border-radius: var(--radio, 14px); margin: 8px 0 16px; }
+.u-nada-emoji { font-size: 40px; animation: u-nada 2.4s ease-in-out infinite; } @keyframes u-nada { 50% { transform: translateY(-6px) rotate(8deg); } }
+.u-nada b { display: block; font-size: 17px; margin: 6px 0 4px; } .u-nada p { margin: 0 0 14px; color: var(--suave); font-size: 14px; }
+.u-nada .boton-txt { width: auto; height: auto; min-height: 38px; padding: 9px 24px; display: inline-flex; align-items: center; font-size: 15px; }
+@media (prefers-reduced-motion: reduce) { .u-nada-emoji { animation: none; } }

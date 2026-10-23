@@ -3,6 +3,10 @@
  "nombre": "Marvel (Vengadores)",
  "emoji": "🛡️",
  "xp": "energía del reactor Arc",
+ "categorias": [
+  "Películas",
+  "Superhéroes"
+ ],
  "personaje_por_defecto": "Solo personajes canónicos del Universo Cinematográfico de Marvel ligados a los Vengadores.",
  "elogios": [
   "¡Nivel Vengador, con Mjolnir y todo!",

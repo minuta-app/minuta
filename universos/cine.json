@@ -3,6 +3,10 @@
  "nombre": "Cine variado",
  "emoji": "🎬",
  "xp": "XP",
+ "categorias": [
+  "Películas",
+  "Clásicos"
+ ],
  "personaje_por_defecto": "cualquier personaje de película conocida",
  "elogios": [
   "¡Óscar a la mejor reunión!",

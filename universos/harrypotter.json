@@ -3,6 +3,11 @@
  "nombre": "Harry Potter",
  "emoji": "⚡",
  "xp": "puntos para tu casa",
+ "categorias": [
+  "Películas",
+  "Fantasía",
+  "Libros"
+ ],
  "personaje_por_defecto": "Solo personajes canónicos de los siete libros y ocho películas de Harry Potter.",
  "elogios": [
   "¡Cincuenta puntos para tu casa!",

@@ -62,6 +62,11 @@ KITS = {
 }
 
 
+
+#: Las mismas del catálogo (herramientas/generar_indice.py en minuta-catalogo): ordenan y filtran la galería.
+CATEGORIAS = ["Películas", "Series", "Anime", "Animación", "Superhéroes", "Fantasía", "Ciencia ficción", "Clásicos",
+              "Aventura", "Comedia", "Videojuegos", "Autos", "Deportes", "Música", "Libros"]
+
 def slug(texto):
     t = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode().lower()
     return re.sub(r"[^a-z0-9]+", "", t)[:24] or "universo"
@@ -98,6 +103,7 @@ Todo en {IDIOMA} ({HUMOR} y suave). Usa SOLO personajes y obras reales de ese un
 
 Devuelve SOLO un objeto JSON válido (sin markdown, sin comentarios) con exactamente estas claves:
 - "nombre": nombre corto del universo; "emoji": 1 emoji; "xp": nombre gracioso de los puntos de experiencia (ej. "midiclorianos").
+- "categorias": lista de 1 a 4 categorías que le calcen, SOLO de esta lista: {json.dumps(CATEGORIAS, ensure_ascii=False)}.
 - "personaje_por_defecto": regla corta de qué personajes valen (ej. "Solo personajes canónicos de las películas de …").
 - "elogios": 4 frases cortas, de la mejor reunión a la peor, en la voz del universo.
 - "apartados": objeto con "claridad", "escucha", "preguntas", "cierre"; cada uno una lista de EXACTAMENTE 10 arquetipos
@@ -139,6 +145,7 @@ HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
 def validar(u):
+    u["categorias"] = [c for c in (u.get("categorias") or []) if c in CATEGORIAS][:4] or ["Películas"]
     for k in ["nombre", "emoji", "xp", "elogios", "apartados", "rangos", "logros", "estilo"]:
         if k not in u:
             raise ValueError(f"falta la clave '{k}'")
