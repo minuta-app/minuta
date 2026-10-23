@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Minuta — notas de reuniones y coach de comunicación en tu Mac</title>
-<meta name="description" content="Graba tus reuniones, transcribe en tu Mac y recibe notas, compromisos y feedback concreto para comunicarte mejor. Gratis, open source y privado.">
+<meta name="description" content="Notas de reuniones y un coach para comunicarte mejor, jugando. Todo queda en tu computador y en tu propio Git: sin servidores, sin cuentas. Gratis y de código abierto.">
 <meta property="og:title" content="Minuta — tus reuniones, tu Mac, tus notas">
-<meta property="og:description" content="Notas, compromisos y un coach de comunicación que vive en tu Mac. Gratis y open source.">
+<meta property="og:description" content="Comunícate mejor, jugando. Tus notas quedan en tu computador y en tu propio Git: sin servidores ni cuentas. Gratis y de código abierto.">
 <meta property="og:image" content="img/notas.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -76,7 +76,7 @@
   .uni small { opacity: .75; font-size: 12.5px; } .uni .r { margin-top: 8px; font-size: 13px; letter-spacing: 2px; }
   .uni .tag { position: absolute; top: 12px; right: 12px; font-size: 10.5px; font-weight: 700; padding: 3px 7px; border-radius: 999px; background: rgba(0,0,0,.35); color: #fff; }
   /* instalar */
-  .instalar .grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); } @media (max-width: 720px) { .instalar .grilla { grid-template-columns: 1fr; } }
+  .instalar .grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); } @media (max-width: 720px) { .instalar .grilla { grid-template-columns: minmax(0, 1fr); } }
   .instalar .carta h3 { display: flex; align-items: center; gap: 10px; } .instalar .carta .num { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--acento); color: #111; font-size: 14px; font-weight: 800; }
   .instalar .carta .comando { margin: 14px 0 0; width: 100%; } .instalar .carta .boton { margin-top: 14px; }
   .sistemas { display: inline-flex; gap: 4px; padding: 4px; border-radius: 14px; border: 1px solid var(--linea); background: var(--fondo2); margin-bottom: 18px; }
@@ -84,6 +84,16 @@
   .sistemas button[aria-selected="true"] { background: var(--panel); color: var(--texto); box-shadow: 0 1px 0 rgba(255,255,255,.06) inset; }
   .instalar .grilla[hidden] { display: none; } .instalar .requisitos { grid-column: 1 / -1; margin-top: 4px; }
   .carta code { font-size: 12.5px; background: #07070a; padding: 1px 5px; border-radius: 5px; }
+  .promesas { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 22px auto 0; position: relative; max-width: 760px; }
+  .promesas a { text-decoration: none; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--linea); background: color-mix(in srgb, var(--fondo2) 80%, transparent); color: var(--texto); font-size: 13.5px; transition: border-color .15s, transform .15s; }
+  .promesas a:hover { border-color: var(--verde); transform: translateY(-1px); }
+  .garantias { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 44px; }
+  .garantia { padding: 22px; border-radius: var(--radio); background: var(--panel); border: 1px solid var(--linea); }
+  .garantia .ico { font-size: 28px; } .garantia h3 { font-size: 19px; margin: 10px 0 6px; } .garantia p { margin: 0; color: var(--suave); font-size: 15px; } .garantia p b { color: var(--texto); font-weight: 600; }
+  .garantia.destacada { grid-column: 1 / -1; display: flex; gap: 18px; align-items: center; border-color: color-mix(in srgb, var(--verde) 45%, var(--linea)); background: linear-gradient(120deg, color-mix(in srgb, var(--verde) 10%, var(--panel)), var(--panel)); }
+  .garantia.destacada .txt { flex: 1; min-width: 0; } .garantia.destacada h3 { margin: 0 0 4px; } .garantia.destacada .boton { flex: none; }
+  @media (max-width: 720px) { .garantia.destacada { flex-direction: column; align-items: flex-start; } }
+  .flujo-tit { color: var(--suave); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; margin: 0 0 12px; }
   .requisitos { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; } .requisitos span { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--linea); color: var(--suave); font-size: 13.5px; }
   /* preguntas */
   details { border-bottom: 1px solid var(--linea); padding: 16px 0; } summary { cursor: pointer; font-weight: 600; font-size: 17px; list-style: none; display: flex; justify-content: space-between; gap: 20px; }
@@ -99,23 +109,50 @@
 <body>
 <header class="barra"><div class="ancho">
   <a class="marca" href="#"><i></i>Minuta</a>
-  <nav><a href="#que-hace"><span data-es>Qué hace</span><span data-en>Features</span></a><a href="#privacidad"><span data-es>Privacidad</span><span data-en>Privacy</span></a><a href="#universos"><span data-es>Universos</span><span data-en>Universes</span></a><a href="#instalar"><span data-es>Instalar</span><span data-en>Install</span></a><a href="https://github.com/minuta-app/minuta">GitHub</a></nav>
+  <nav><a href="#privacidad"><span data-es>Privacidad</span><span data-en>Privacy</span></a><a href="#que-hace"><span data-es>Qué hace</span><span data-en>Features</span></a><a href="#universos"><span data-es>Universos</span><span data-en>Universes</span></a><a href="#instalar"><span data-es>Instalar</span><span data-en>Install</span></a><a href="https://github.com/minuta-app/minuta">GitHub</a></nav>
   <button class="idioma" id="idioma" aria-label="Cambiar idioma / Change language">EN</button>
 </div></header>
 
 <main>
 <section class="heroe"><div class="ancho">
-  <span class="etiqueta"><b>●</b> <span data-es>Gratis · Open source · Mac, Windows y Linux</span><span data-en>Free · Open source · Mac, Windows and Linux</span></span>
-  <h1><span data-es>Tus reuniones, <em>mejor contadas</em></span><span data-en>Your meetings, <em>better told</em></span></h1>
-  <p class="lema"><span data-es>Minuta graba tus reuniones, las transcribe en tu propio computador y te deja notas, compromisos y un feedback honesto para que cada reunión te salga mejor que la anterior.</span><span data-en>Minuta records your meetings, transcribes them on your own computer and gives you notes, commitments and honest feedback so every meeting goes better than the last.</span></p>
+  <span class="etiqueta"><b>●</b> <span data-es>Privado de verdad · Código abierto · Gratis</span><span data-en>Truly private · Open source · Free</span></span>
+  <h1><span data-es>Comunícate mejor, <em>jugando</em></span><span data-en>Communicate better, <em>while playing</em></span></h1>
+  <p class="lema"><span data-es>Minuta convierte cada reunión en notas, compromisos y un coach que te ayuda a mejorar con rangos, logros y el universo que más te guste. Todo se queda en tu computador y en tu propio Git: nadie más lo ve.</span><span data-en>Minuta turns every meeting into notes, commitments and a coach that helps you improve with ranks, achievements and the universe you love. Everything stays on your computer and in your own Git: no one else sees it.</span></p>
   <div class="acciones">
     <a class="boton principal" id="descarga" href="https://github.com/minuta-app/minuta/releases/latest/download/Minuta-macOS.zip"> <span data-es>Descargar para <b class="so-nombre">Mac</b></span><span data-en>Download for <b class="so-nombre">Mac</b></span></a>
     <a class="boton" href="https://github.com/minuta-app/minuta">★ <span data-es>Ver en GitHub</span><span data-en>View on GitHub</span></a>
   </div>
   <div class="comando"><code id="cmd">curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh | bash</code><button data-copiar="cmd"><span data-es>Copiar</span><span data-en>Copy</span></button></div>
   <p class="nota-req" id="req"><span data-es>Mac con chip Apple · macOS 15 o posterior · tu cuenta de Claude</span><span data-en>Apple silicon Mac · macOS 15 or later · your Claude account</span></p>
+  <div class="promesas">
+    <a href="#privacidad">🔒 <span data-es>Sin servidores ni cuentas</span><span data-en>No servers, no accounts</span></a>
+    <a href="#privacidad">🗂️ <span data-es>Tus notas en tu Git</span><span data-en>Your notes in your Git</span></a>
+    <a href="https://github.com/minuta-app/minuta">🧾 <span data-es>Código abierto (MIT)</span><span data-en>Open source (MIT)</span></a>
+    <a href="#universos">🎮 <span data-es>Mejora jugando</span><span data-en>Improve while playing</span></a>
+  </div>
   <p class="nota-req"><a href="#instalar"><span data-es>Otros sistemas: Mac · Windows · Linux</span><span data-en>Other systems: Mac · Windows · Linux</span></a></p>
   <div class="ventana"><div class="puntos"><i></i><i></i><i></i></div><img src="img/notas.jpg" alt="Notas de una reunión en Minuta con el universo Star Wars" width="2560" height="1600"></div>
+</div></section>
+
+<section id="privacidad" class="privacidad"><div class="ancho">
+  <div class="sec-cab revela"><small><span data-es>Privacidad</span><span data-en>Privacy</span></small>
+    <h2><span data-es>Tus reuniones no son nuestro negocio</span><span data-en>Your meetings are not our business</span></h2>
+    <p><span data-es>Lo que se habla en una reunión es tuyo y de quienes estaban ahí. Por eso Minuta no tiene servidores, ni cuentas, ni base de datos: no hay dónde guardar tus cosas aunque quisiéramos.</span><span data-en>What's said in a meeting belongs to you and the people who were there. That's why Minuta has no servers, no accounts and no database: there's nowhere to keep your things even if we wanted to.</span></p></div>
+  <div class="garantias">
+    <div class="garantia revela"><div class="ico">🏠</div><h3><span data-es>Todo en tu computador</span><span data-en>Everything on your computer</span></h3><p><span data-es>El audio nunca sale de tu equipo. La transcripción y la separación de voces corren ahí mismo, sin internet.</span><span data-en>Audio never leaves your machine. Transcription and speaker separation run right there, offline.</span></p></div>
+    <div class="garantia revela"><div class="ico">🗂️</div><h3><span data-es>Tus notas, en tu Git</span><span data-en>Your notes, in your Git</span></h3><p><span data-es>Archivos Markdown en tu carpeta y, si quieres, respaldados en un repositorio <b>privado de tu propia cuenta</b> de GitHub o GitLab. El token queda cifrado en tu llavero; nunca pasa por nosotros.</span><span data-en>Markdown files in your folder and, if you want, backed up to a <b>private repository in your own</b> GitHub or GitLab account. The token stays encrypted in your keychain; it never goes through us.</span></p></div>
+    <div class="garantia revela"><div class="ico">🙅</div><h3><span data-es>Nada se comparte</span><span data-en>Nothing is shared</span></h3><p><span data-es>Sin telemetría, sin analítica, sin publicidad. Tu feedback es solo para ti: el resumen para los demás sale únicamente cuando tú lo envías, y nunca lo incluye.</span><span data-en>No telemetry, no analytics, no ads. Your feedback is only for you: the summary for others goes out only when you send it, and never includes it.</span></p></div>
+    <div class="garantia revela"><div class="ico">🤖</div><h3><span data-es>Tu IA, tu cuenta</span><span data-en>Your AI, your account</span></h3><p><span data-es>Solo el texto de la reunión va a la IA que elijas, con tu propia suscripción. Minuta no ve ni guarda nada en el camino.</span><span data-en>Only the meeting text goes to the AI you choose, with your own subscription. Minuta sees and stores nothing along the way.</span></p></div>
+    <div class="garantia revela destacada"><div class="ico">🧾</div><div class="txt"><h3><span data-es>Código abierto: no nos creas, revísalo</span><span data-en>Open source: don't trust us, check it</span></h3><p><span data-es>Todo el código es público (licencia MIT). Cualquiera puede leer qué hace Minuta, auditarlo o mejorarlo.</span><span data-en>All the code is public (MIT license). Anyone can read what Minuta does, audit it or improve it.</span></p></div>
+      <a class="boton" href="https://github.com/minuta-app/minuta">★ <span data-es>Ver el código</span><span data-en>See the code</span></a></div>
+  </div>
+  <p class="flujo-tit revela"><span data-es>El camino de una reunión</span><span data-en>The path of a meeting</span></p>
+  <div class="flujo revela">
+    <div class="paso"><span class="donde"><span data-es>en tu equipo</span><span data-en>on your computer</span></span><b><span data-es>Graba</span><span data-en>Record</span></b><p><span data-es>Tu micrófono y el audio de la llamada.</span><span data-en>Your mic and the call audio.</span></p></div>
+    <div class="paso"><span class="donde"><span data-es>en tu equipo</span><span data-en>on your computer</span></span><b><span data-es>Transcribe</span><span data-en>Transcribe</span></b><p><span data-es>Whisper y separación de voces, en tu propio computador.</span><span data-en>Whisper and speaker separation, on your own computer.</span></p></div>
+    <div class="paso"><span class="donde fuera"><span data-es>tu IA</span><span data-en>your AI</span></span><b><span data-es>Escribe</span><span data-en>Write</span></b><p><span data-es>Solo el texto va a Claude, con tu suscripción.</span><span data-en>Only text goes to Claude, with your subscription.</span></p></div>
+    <div class="paso"><span class="donde"><span data-es>tuyo</span><span data-en>yours</span></span><b><span data-es>Guarda</span><span data-en>Save</span></b><p><span data-es>Archivos Markdown en tu carpeta y, si quieres, en tu repo privado de GitHub o GitLab.</span><span data-en>Markdown files in your folder and, if you want, your private GitHub or GitLab repo.</span></p></div>
+  </div>
 </div></section>
 
 <section id="que-hace"><div class="ancho">
@@ -144,22 +181,11 @@
       <p><span data-es>Minuta lee tu calendario y te prepara cada reunión: lo que pasó la última vez, lo que quedó pendiente y una pregunta para abrir. Los compromisos se marcan una vez y quedan al día en todas tus notas.</span><span data-en>Minuta reads your calendar and preps each meeting: what happened last time, what was left open and a question to open with. Commitments are checked once and stay in sync across all your notes.</span></p></div></div>
 </div></section>
 
-<section id="privacidad" class="privacidad"><div class="ancho">
-  <div class="sec-cab revela"><small><span data-es>Privacidad</span><span data-en>Privacy</span></small>
-    <h2><span data-es>Todo es tuyo. Siempre.</span><span data-en>Everything is yours. Always.</span></h2>
-    <p><span data-es>Sin cuentas de Minuta, sin servidores, sin base de datos. Solo el texto de la reunión va a la IA que tú eliges, con tu propia cuenta.</span><span data-en>No Minuta accounts, no servers, no database. Only the meeting text goes to the AI you choose, with your own account.</span></p></div>
-  <div class="flujo revela">
-    <div class="paso"><span class="donde"><span data-es>en tu equipo</span><span data-en>on your computer</span></span><b><span data-es>Graba</span><span data-en>Record</span></b><p><span data-es>Tu micrófono y el audio de la llamada.</span><span data-en>Your mic and the call audio.</span></p></div>
-    <div class="paso"><span class="donde"><span data-es>en tu equipo</span><span data-en>on your computer</span></span><b><span data-es>Transcribe</span><span data-en>Transcribe</span></b><p><span data-es>Whisper y separación de voces, en tu propio computador.</span><span data-en>Whisper and speaker separation, on your own computer.</span></p></div>
-    <div class="paso"><span class="donde fuera"><span data-es>tu IA</span><span data-en>your AI</span></span><b><span data-es>Escribe</span><span data-en>Write</span></b><p><span data-es>Solo el texto va a Claude, con tu suscripción.</span><span data-en>Only text goes to Claude, with your subscription.</span></p></div>
-    <div class="paso"><span class="donde"><span data-es>tuyo</span><span data-en>yours</span></span><b><span data-es>Guarda</span><span data-en>Save</span></b><p><span data-es>Archivos Markdown en tu carpeta y, si quieres, en tu repo privado de GitHub o GitLab.</span><span data-en>Markdown files in your folder and, if you want, your private GitHub or GitLab repo.</span></p></div>
-  </div>
-</div></section>
 
 <section id="universos"><div class="ancho">
-  <div class="sec-cab revela"><small><span data-es>Universos</span><span data-en>Universes</span></small>
-    <h2><span data-es>Tu progreso, con la estética que te guste</span><span data-en>Your progress, in the style you love</span></h2>
-    <p><span data-es>Rangos, logros y personajes que cambian con el universo que elijas. Cuatro vienen incluidos; el resto se descarga gratis del catálogo abierto, o crea el tuyo.</span><span data-en>Ranks, achievements and characters that change with the universe you pick. Four are included; the rest are free downloads from the open catalog, or create your own.</span></p></div>
+  <div class="sec-cab revela"><small><span data-es>Mejora jugando</span><span data-en>Improve while playing</span></small>
+    <h2><span data-es>Mejorar no tiene por qué ser aburrido</span><span data-en>Getting better doesn't have to be boring</span></h2>
+    <p><span data-es>Subes de rango, desbloqueas logros y los personajes de tu universo favorito te dicen cómo te fue. Cuatro vienen incluidos; el resto se descarga gratis del catálogo abierto, o crea el tuyo.</span><span data-en>You rank up, unlock achievements and characters from your favorite universe tell you how you did. Four are included; the rest are free downloads from the open catalog, or create your own.</span></p></div>
   <div class="universos revela" id="universos-lista"></div>
   <div class="duo al-reves revela" style="margin-top:56px"><div class="duo-img"><img src="img/logro.jpg" alt="Logro desbloqueado" loading="lazy"></div>
     <div><h3><span data-es>Logros que premian lo que importa</span><span data-en>Achievements that reward what matters</span></h3>
@@ -199,6 +225,8 @@
 <section><div class="ancho" style="max-width:860px">
   <div class="sec-cab revela"><small><span data-es>Preguntas</span><span data-en>Questions</span></small><h2><span data-es>Preguntas frecuentes</span><span data-en>FAQ</span></h2></div>
   <details><summary><span data-es>¿Cuánto cuesta?</span><span data-en>How much does it cost?</span></summary><p><span data-es>Nada. Minuta es gratis y open source (MIT). Usa la suscripción de IA que ya tienes.</span><span data-en>Nothing. Minuta is free and open source (MIT). It uses the AI subscription you already have.</span></p></details>
+  <details><summary><span data-es>¿Alguien más puede leer mis notas?</span><span data-en>Can anyone else read my notes?</span></summary><p><span data-es>No. Minuta no tiene servidores ni cuentas, así que no hay una copia en ninguna parte salvo tu computador y, si lo activas, tu propio repositorio privado. Ni los creadores de Minuta pueden verlas.</span><span data-en>No. Minuta has no servers or accounts, so there's no copy anywhere except your computer and, if you turn it on, your own private repository. Not even Minuta's creators can see them.</span></p></details>
+  <details><summary><span data-es>¿Minuta recopila datos de uso?</span><span data-en>Does Minuta collect usage data?</span></summary><p><span data-es>No. No hay telemetría ni analítica. Lo único que consulta en internet es si hay una versión nueva y el catálogo público de universos e idiomas. Como el código es abierto, cualquiera puede comprobarlo.</span><span data-en>No. There's no telemetry or analytics. The only things it checks online are whether there's a new version and the public catalog of universes and languages. Since the code is open, anyone can verify it.</span></p></details>
   <details><summary><span data-es>¿Dónde quedan mis notas?</span><span data-en>Where do my notes live?</span></summary><p><span data-es>En una carpeta tuya, como archivos Markdown (funcionan con Obsidian). Si quieres, Minuta crea un repositorio privado en tu propia cuenta de GitHub o GitLab y respalda cada reunión.</span><span data-en>In a folder of yours, as Markdown files (they work with Obsidian). If you want, Minuta creates a private repository in your own GitHub or GitLab account and backs up every meeting.</span></p></details>
   <details><summary><span data-es>¿Qué se envía a internet?</span><span data-en>What gets sent to the internet?</span></summary><p><span data-es>El audio nunca sale de tu computador. Solo el texto de la transcripción va a la IA que elegiste, con tu cuenta. Minuta no tiene servidores.</span><span data-en>Audio never leaves your computer. Only the transcript text goes to the AI you chose, with your account. Minuta has no servers.</span></p></details>
   <details><summary><span data-es>¿Funciona con ChatGPT o Gemini?</span><span data-en>Does it work with ChatGPT or Gemini?</span></summary><p><span data-es>Hoy funciona con Claude. ChatGPT (Codex) y Gemini vienen pronto: la app ya está preparada para elegir tu IA.</span><span data-en>Today it works with Claude. ChatGPT (Codex) and Gemini are coming soon: the app is already built to let you choose your AI.</span></p></details>
