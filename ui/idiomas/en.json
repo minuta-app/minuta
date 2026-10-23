@@ -835,7 +835,14 @@
   "📅 Resumen": "📅 Summary",
   "Resumen de la semana con tu IA": "Weekly summary with your AI",
   "reuniones": "meetings",
-  "muletillas /10 min": "fillers /10 min"
+  "muletillas /10 min": "fillers /10 min",
+  "Tus notas se respaldan en": "Your notes are backed up to",
+  ". ¿Qué hago con esta?": ". What should I do with this one?",
+  "Solo quitarla de Minuta": "Just remove it from Minuta",
+  "Sigue en tu respaldo, en la carpeta «archivadas» de tus notas.": "It stays in your backup, in the «archivadas» folder of your notes.",
+  "Borrarla también del respaldo": "Delete it from the backup too",
+  "Va a la Papelera y se quita del repositorio (git conserva su historial).": "It goes to the Trash and is removed from the repository (git keeps its history).",
+  "“{x}” archivada (sigue en tu respaldo)": "“{x}” archived (still in your backup)"
  },
  "palabras": {
   "lunes": "Monday",

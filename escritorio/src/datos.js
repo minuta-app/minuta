@@ -181,9 +181,16 @@ const Extras = {
     if (!fs.existsSync(r)) return false;
     try { await shell.trashItem(r); return true; } catch { return false; }
   },
-  async borrarNota(ruta) {
+  /** Con respaldo y `delRespaldo` falso, la nota va a archivadas/ (Minuta no la muestra; el respaldo la conserva). */
+  async borrarNota(ruta, delRespaldo = true) {
     if (!this.esNota(ruta)) return false;
-    try { await shell.trashItem(ruta); } catch { return false; }
+    try {
+      if (Perfil.datos().respaldo && !delRespaldo) {
+        const dir = path.join(path.dirname(ruta), "archivadas");
+        fs.mkdirSync(dir, { recursive: true });
+        fs.renameSync(ruta, path.join(dir, path.basename(ruta)));
+      } else await shell.trashItem(ruta);
+    } catch { return false; }
     try { fs.rmSync(this.mensajeURL(ruta), { force: true }); } catch {}
     return true;
   },

@@ -1214,21 +1214,28 @@
       <div class="borrar-ico">🗑</div>
       <h2>¿Borrar esta reunión?</h2>
       <p class="borrar-nota"><span class="tipo-barra t-${esc(n.tipo || "Otra")}"></span><b>${esc(n.titulo)}</b><small>${hhmm(n.fecha)}${n.duracion ? ` · ${Math.round(n.duracion)} min` : ""}${n.tipo ? ` · ${esc(nombreTipo(n.tipo))}` : ""}</small></p>
-      <p class="borrar-det">La nota se va a la <b>Papelera</b> (puedes recuperarla desde ahí). Tu nivel y tus logros se recalculan sin ella.</p>
-      <div class="borrar-botones"><button class="boton-txt" data-accion="cancelar-borrar">Cancelar</button><button class="boton-txt peligro" data-accion="si-borrar">Borrar</button></div>
+      ${E.perfil?.respaldo ? `<p class="borrar-det">Tus notas se respaldan en <b>${E.perfil.respaldo === "gitlab" ? "GitLab" : "GitHub"}</b>. ¿Qué hago con esta?</p>
+      <div class="borrar-opciones">
+        <button class="borrar-op" data-accion="si-borrar" data-del-respaldo="0"><b>Solo quitarla de Minuta</b><small>Sigue en tu respaldo, en la carpeta «archivadas» de tus notas.</small></button>
+        <button class="borrar-op peligro" data-accion="si-borrar" data-del-respaldo="1"><b>Borrarla también del respaldo</b><small>Va a la Papelera y se quita del repositorio (git conserva su historial).</small></button>
+      </div>
+      <div class="borrar-botones uno"><button class="boton-txt" data-accion="cancelar-borrar">Cancelar</button></div>`
+      : `<p class="borrar-det">La nota se va a la <b>Papelera</b> (puedes recuperarla desde ahí). Tu nivel y tus logros se recalculan sin ella.</p>
+      <div class="borrar-botones"><button class="boton-txt" data-accion="cancelar-borrar">Cancelar</button><button class="boton-txt peligro" data-accion="si-borrar">Borrar</button></div>`}
     </div></div>`;
   }
-  function borrarNota(ruta) {
+  function borrarNota(ruta, delRespaldo = true) {
     const i = E.notas.findIndex((n) => n.ruta === ruta);
     if (i < 0) return;
     const [n] = E.notas.splice(i, 1); marcarCambioNotas();
     if (E.sel === ruta) E.sel = (E.notas[i] || E.notas[i - 1])?.ruta || null;
     _cachePuntajes.clear();
     E.borrar = null;
-    host.enviar("borrar", { ruta });
+    host.enviar("borrar", { ruta, delRespaldo });
     if (E.sel && !PANEL) host.enviar("seleccion", { ruta: E.sel });
     render({ mantenerScroll: true });
-    toast(`“${n.titulo.length > 38 ? n.titulo.slice(0, 36) + "…" : n.titulo}” a la Papelera`);
+    const corto = n.titulo.length > 38 ? n.titulo.slice(0, 36) + "…" : n.titulo;
+    toast(E.perfil?.respaldo && !delRespaldo ? `“${corto}” archivada (sigue en tu respaldo)` : `“${corto}” a la Papelera`);
   }
 
   // ───────────────────────── Preferencias: categorías ─────────────────────────
@@ -2774,7 +2781,7 @@
     if (bb) { E.borrar = bb.dataset.borrar; render({ mantenerScroll: true }); setTimeout(() => $(".borrar-caja .peligro")?.focus(), 30); return; }
     const ab = ev.target.closest("[data-accion=si-borrar],[data-accion=cancelar-borrar]");
     if (ab) {
-      if (ab.dataset.accion === "si-borrar") borrarNota(E.borrar);
+      if (ab.dataset.accion === "si-borrar") borrarNota(E.borrar, ab.dataset.delRespaldo !== "0");
       else if (ev.target === ab || ab.classList.contains("boton-txt")) { E.borrar = null; render({ mantenerScroll: true }); }
       return;
     }

@@ -384,3 +384,9 @@
 .act-paso { opacity: .8; }
 .act-banner.act-error { border-color: color-mix(in srgb, #ef4444 50%, var(--linea)); }
 @media (prefers-reduced-motion: reduce) { .act-giro, .act-barra.indeterminada::after { animation: none; } }
+/* Borrar con respaldo: dos caminos claros */
+.borrar-opciones { display: grid; gap: 8px; margin: 4px 0 12px; }
+.borrar-op { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 11px 14px; border-radius: var(--radio-c); border: 1px solid var(--linea); background: var(--fondo2); cursor: pointer; color: var(--texto); }
+.borrar-op:hover { border-color: var(--acento); } .borrar-op b { font-size: 14px; } .borrar-op small { font-size: 12px; color: var(--suave); }
+.borrar-op.peligro b { color: #ef4444; } .borrar-op.peligro:hover { border-color: #ef4444; background: rgba(239,68,68,.08); }
+.borrar-botones.uno { grid-template-columns: 1fr; }

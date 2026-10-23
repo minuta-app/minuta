@@ -786,7 +786,13 @@ const ACCIONES = {
     llamarFuncion(w, "respuesta", { id: d.id, ok: !!r.datos, ...(r.datos ? { respuesta: r.datos.respuesta || "", fuentes: r.datos.fuentes || [] } : { error: r.error }) });
   },
   categorias: (d) => { const l = Categorias.desdeJS(d.lista); if (l) { M.categorias = l; Categorias.guardar(l); if (!l.some((c) => c.id === M.tipo)) { M.tipo = l[0].id; M.tipoManual = false; } notasCambiaron(); } },
-  borrar: async (d) => { if (await Extras.borrarNota(String(d.ruta || ""))) { if (M.notaSeleccionada === d.ruta) M.notaSeleccionada = null; notasCambiaron(); } },
+  borrar: async (d) => {
+    if (await Extras.borrarNota(String(d.ruta || ""), d.delRespaldo !== false)) {
+      if (M.notaSeleccionada === d.ruta) M.notaSeleccionada = null;
+      if (Perfil.datos().respaldo) Respaldo.sincronizar();
+      notasCambiaron();
+    }
+  },
   ventana: (d, w) => {
     if (!w || w === panel) return;
     if (d.op === "cerrar") w.close();

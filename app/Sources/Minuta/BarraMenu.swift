@@ -10,20 +10,32 @@ extension Notification.Name {
 enum Papelera {
     static var carpeta: URL { Perfil.carpetaNotas }
 
+    /// Borra una nota. Con respaldo en GitHub/GitLab la persona elige: `delRespaldo` la quita también del repositorio
+    /// (va a la Papelera y se sincroniza al tiro); si no, se mueve a `archivadas/` (Minuta no la muestra, el respaldo la conserva).
     @MainActor
-    static func borrar(_ ruta: String, model: AppModel?) {
+    static func borrar(_ ruta: String, model: AppModel?, delRespaldo: Bool = true) {
         let url = URL(fileURLWithPath: ruta).standardizedFileURL
         guard url.pathExtension == "md",
               url.deletingLastPathComponent().standardizedFileURL.path == carpeta.standardizedFileURL.path,
               FileManager.default.fileExists(atPath: url.path) else { return }
+        let conRespaldo = !(Perfil.datos()["respaldo"] ?? "").isEmpty
         do {
-            try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            if conRespaldo && !delRespaldo {
+                let archivadas = carpeta.appendingPathComponent("archivadas", isDirectory: true)
+                try FileManager.default.createDirectory(at: archivadas, withIntermediateDirectories: true)
+                let destino = archivadas.appendingPathComponent(url.lastPathComponent)
+                try? FileManager.default.removeItem(at: destino)
+                try FileManager.default.moveItem(at: url, to: destino)
+            } else {
+                try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            }
             try? FileManager.default.removeItem(at: Extras.mensajeURL(url.path))
         } catch {
             model?.estado = "No pude mover la nota a la Papelera: \(error.localizedDescription)"
             return
         }
         if model?.notaSeleccionada?.standardizedFileURL == url { model?.notaSeleccionada = nil }
+        if conRespaldo { Respaldo.sincronizar() }
         NotificationCenter.default.post(name: .minutaNotasCambiaron, object: nil)
     }
 }
@@ -292,7 +304,7 @@ final class BarraMenu: NSObject, WKScriptMessageHandler, WKNavigationDelegate, N
         case "inicio":
             model.cambiarInicioAutomatico(datos["activo"] as? Bool ?? false)
         case "borrar":
-            if let ruta = datos["ruta"] as? String { Papelera.borrar(ruta, model: model) }
+            if let ruta = datos["ruta"] as? String { Papelera.borrar(ruta, model: model, delRespaldo: datos["delRespaldo"] as? Bool ?? true) }
         case "categorias":
             if let lista = Categorias.desdeJS(datos["lista"]) {
                 model.guardarCategorias(lista)

@@ -492,7 +492,7 @@ private struct WebHost: NSViewRepresentable {
                     NotificationCenter.default.post(name: .minutaNotasCambiaron, object: nil)
                 }
             case "borrar":
-                if let ruta = datos["ruta"] as? String { Papelera.borrar(ruta, model: model) }
+                if let ruta = datos["ruta"] as? String { Papelera.borrar(ruta, model: model, delRespaldo: datos["delRespaldo"] as? Bool ?? true) }
             case "ventana":
                 switch datos["op"] as? String {
                 case "cerrar": VentanaVisor.shared.cerrar()
