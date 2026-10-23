@@ -1,0 +1,28 @@
+{
+  "_que_es": "Casos compartidos para limpiar nombres de personas: los usan las pruebas de Python (perfil.limpiar_nombre) y de la interfaz (limpiarNombre). Solo nombres ficticios.",
+  "limpiar": [
+    ["Ana Pérez", "Ana Pérez"],
+    ["Matías (PO)", "Matías"],
+    ["Rocío (la separación de voces le atribuyó también las respuestas de Ana, ver 04:31)", "Rocío"],
+    ["? (a quien Matías llama \"Jorge Soto\" en 04:31 y 14:12)", ""],
+    ["Luis? (líder técnico/PM del equipo, \"compa\")", "Luis"],
+    ["Persona 3", ""],
+    ["Persona 12", ""],
+    ["?", ""],
+    ["Ellos", ""],
+    ["Yo", ""],
+    ["Carla Soto — clienta", "Carla Soto"],
+    ["Pedro: gerente", "Pedro"],
+    ["\"Jorge\"", "Jorge"],
+    ["Desconocido", ""],
+    ["La persona que maneja el tablero del sprint del equipo", ""],
+    ["José María", "José María"]
+  ],
+  "participantes": [
+    ["[\"Ana\", \"Matías Soto\"]", ["Ana", "Matías Soto"]],
+    ["[\"Matías (PO)\", \"Rocío (la separación de voces, ver)\", \"Persona 2\"]", ["Matías", "Rocío"]],
+    ["[\"Ana (PO, dice \"hola\")\", \"Luis\"]", ["Ana", "Luis"]],
+    ["[\"Ana\", \"ana\", \"Ana\"]", ["Ana"]],
+    ["", []]
+  ]
+}

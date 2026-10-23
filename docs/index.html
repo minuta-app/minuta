@@ -166,6 +166,16 @@
   .garantia.destacada .txt { flex: 1; min-width: 0; } .garantia.destacada h3 { margin: 0 0 4px; } .garantia.destacada .boton { flex: none; }
   @media (max-width: 720px) { .garantia.destacada { flex-direction: column; align-items: flex-start; } }
 
+  /* tus notas, tus reglas */
+  .tuyas { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  @media (max-width: 900px) { .tuyas { grid-template-columns: minmax(0, 1fr); } }
+  .tuyas-ideas { display: grid; gap: 18px; }
+  .tuyas-ideas b { font-family: var(--titulo); font-size: 18px; } .tuyas-ideas p { margin: 4px 0 0; color: var(--suave); font-size: 15px; }
+  .tuyas-archivo { margin: 0; border-radius: 18px; border: 1px solid var(--linea); background: #08080b; overflow: hidden; }
+  .tuyas-archivo figcaption { padding: 10px 16px; border-bottom: 1px solid var(--linea); color: var(--suave); font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .tuyas-archivo pre { margin: 0; padding: 16px; overflow-x: auto; font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; color: #dcdad3; }
+  .tuyas-archivo .fm { color: var(--verde); } .tuyas-archivo .h { color: var(--acento); }
+  .tuyas-archivo a { display: block; padding: 10px 16px 14px; color: var(--acento); font-weight: 600; font-size: 14px; text-decoration: none; }
   /* tu IA */
   .ias { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
   @media (max-width: 860px) { .ias { grid-template-columns: minmax(0, 1fr); } }
@@ -230,7 +240,7 @@
 <body>
 <header class="barra"><div class="ancho">
   <a class="marca" href="#"><i></i>Minuta</a>
-  <nav><a href="#como"><span data-es>Cómo funciona</span><span data-en>How it works</span></a><a href="#privacidad"><span data-es>Privacidad</span><span data-en>Privacy</span></a><a href="#ia"><span data-es>Tu IA</span><span data-en>Your AI</span></a><a href="#universos"><span data-es>Universos</span><span data-en>Universes</span></a><a href="#comunidad"><span data-es>Comunidad</span><span data-en>Community</span></a><a href="#instalar"><span data-es>Instalar</span><span data-en>Install</span></a></nav>
+  <nav><a href="#como"><span data-es>Cómo funciona</span><span data-en>How it works</span></a><a href="#privacidad"><span data-es>Privacidad</span><span data-en>Privacy</span></a><a href="#tuyas"><span data-es>Tus notas</span><span data-en>Your notes</span></a><a href="#ia"><span data-es>Tu IA</span><span data-en>Your AI</span></a><a href="#universos"><span data-es>Universos</span><span data-en>Universes</span></a><a href="#comunidad"><span data-es>Comunidad</span><span data-en>Community</span></a><a href="#instalar"><span data-es>Instalar</span><span data-en>Install</span></a></nav>
   <a class="estrellas" href="https://github.com/minuta-app/minuta" aria-label="GitHub">★ GitHub <b id="n-estrellas" hidden></b></a>
   <button class="idioma" id="idioma" aria-label="Cambiar idioma / Change language">EN</button>
 </div></header>
@@ -289,7 +299,7 @@
       <div class="logro"><span>🏅</span><div><b><span data-es>Logro desbloqueado</span><span data-en>Achievement unlocked</span></b><span data-es>Cierre con fecha</span><span data-en>Closed with a date</span></div></div>
     </div>
   </div>
-  <p class="escena-pie"><span data-es><b>El audio nunca sale de tu computador.</b> Solo el texto viaja a tu IA, con tu cuenta, y las notas vuelven a tu carpeta.</span><span data-en><b>Audio never leaves your computer.</b> Only the text goes to your AI, with your account, and the notes come back to your folder.</span></p>
+  <p class="escena-pie"><span data-es><b>El audio nunca sale de tu computador.</b> Solo el texto viaja a tu IA, con tu cuenta, y las notas vuelven a tu carpeta y a tu Git, listas para usarlas donde quieras.</span><span data-en><b>Audio never leaves your computer.</b> Only the text goes to your AI, with your account, and the notes come back to your folder and your Git, ready to use anywhere.</span></p>
 </div></section>
 
 <section id="distinto"><div class="ancho">
@@ -302,6 +312,7 @@
     <div class="fila"><div><span data-es>¿Quién guarda tus notas?</span><span data-en>Who keeps your notes?</span></div><div><span data-es>Su base de datos</span><span data-en>Their database</span></div><div><span data-es>Tus archivos y tu Git</span><span data-en>Your files and your Git</span></div></div>
     <div class="fila"><div><span data-es>¿Cuánto pagas?</span><span data-en>What do you pay?</span></div><div><span data-es>Otra suscripción mensual</span><span data-en>Another monthly subscription</span></div><div><span data-es>Nada: usas la IA que ya tienes</span><span data-en>Nothing: you use the AI you already have</span></div></div>
     <div class="fila"><div><span data-es>¿Te ayuda a mejorar?</span><span data-en>Does it help you improve?</span></div><div><span data-es>Resume la reunión</span><span data-en>It summarizes the meeting</span></div><div><span data-es>Además: feedback con citas y un hábito por reunión</span><span data-en>Plus: feedback with quotes and one habit per meeting</span></div></div>
+    <div class="fila"><div><span data-es>¿Puedes usar tus notas en otras herramientas?</span><span data-en>Can you use your notes in other tools?</span></div><div><span data-es>Exportación limitada, a veces pagada</span><span data-en>Limited export, sometimes paid</span></div><div><span data-es>Son Markdown en tu Git: lo que quieras</span><span data-en>They're Markdown in your Git: anything</span></div></div>
     <div class="fila"><div><span data-es>¿Puedes revisar el código?</span><span data-en>Can you read the code?</span></div><div><span data-es>No</span><span data-en>No</span></div><div><span data-es>Sí, es abierto (MIT)</span><span data-en>Yes, it's open (MIT)</span></div></div>
   </div>
 </div></section>
@@ -316,6 +327,41 @@
     <div class="garantia"><div class="ico">🔑</div><h3><span data-es>Tu IA, tu cuenta</span><span data-en>Your AI, your account</span></h3><p><span data-es>Solo el texto de la reunión va a la IA que elegiste, directo y con tu suscripción. Minuta no ve nada en el camino.</span><span data-en>Only the meeting text goes to the AI you chose, directly and with your subscription. Minuta sees nothing along the way.</span></p></div>
     <div class="garantia destacada"><div class="ico">🧾</div><div class="txt"><h3><span data-es>No nos creas: revisa el código</span><span data-en>Don't trust us: check the code</span></h3><p><span data-es>Todo el código es público (licencia MIT). Cualquiera puede leer qué hace Minuta, auditarlo o mejorarlo.</span><span data-en>All the code is public (MIT license). Anyone can read what Minuta does, audit it or improve it.</span></p></div>
       <a class="boton" href="https://github.com/minuta-app/minuta"><span data-es>Ver el código</span><span data-en>See the code</span></a></div>
+  </div>
+</div></section>
+
+<section id="tuyas"><div class="ancho">
+  <div class="sec-cab"><h2><span data-es>Tus notas, tus reglas</span><span data-en>Your notes, your rules</span></h2>
+    <p><span data-es>Cada reunión queda como un archivo Markdown en tu carpeta y en tu propio Git. No hay formato cerrado ni exportación pagada: puedes construir encima, conectarlas con lo que ya usas o llevártelas donde quieras.</span><span data-en>Every meeting is a Markdown file in your folder and your own Git. No locked format, no paid export: build on top of them, connect them to what you already use or take them anywhere.</span></p></div>
+  <div class="tuyas">
+    <div class="tuyas-ideas">
+      <div><b>📂 <span data-es>Ábrelas con lo que quieras</span><span data-en>Open them with anything</span></b><p><span data-es>Obsidian, VS Code o cualquier editor. Se buscan, enlazan y versionan como cualquier Markdown.</span><span data-en>Obsidian, VS Code or any editor. Search, link and version them like any Markdown.</span></p></div>
+      <div><b>🔁 <span data-es>Llévalas a donde te acomode</span><span data-en>Take them wherever you like</span></b><p><span data-es>Notion, Google Docs, Confluence o tu CRM: importa el Markdown o súbelo con un script.</span><span data-en>Notion, Google Docs, Confluence or your CRM: import the Markdown or push it with a script.</span></p></div>
+      <div><b>🛠️ <span data-es>Arma tus propias herramientas</span><span data-en>Build your own tools</span></b><p><span data-es>Fecha, tipo, participantes y métricas van al inicio de cada archivo: manda tus compromisos a tu gestor de tareas o arma tu propio tablero.</span><span data-en>Date, type, participants and metrics sit at the top of each file: send your commitments to your task manager or build your own dashboard.</span></p></div>
+      <div><b>🤖 <span data-es>Pregúntale a tu IA por todo tu historial</span><span data-en>Ask your AI about your whole history</span></b><p><span data-es>Abre tu repositorio de notas con Claude Code, Codex o Gemini y pide: «¿qué acordé con Matías este trimestre?».</span><span data-en>Open your notes repo with Claude Code, Codex or Gemini and ask: “what did I agree with Matías this quarter?”.</span></p></div>
+      <div><b>⚙️ <span data-es>Automatízalo en tu repo</span><span data-en>Automate it in your repo</span></b><p><span data-es>Con GitHub Actions o GitLab CI, cada nota nueva puede avisar en Slack, actualizar una planilla o lo que se te ocurra.</span><span data-en>With GitHub Actions or GitLab CI, every new note can post to Slack, update a sheet or whatever you think of.</span></p></div>
+    </div>
+    <figure class="tuyas-archivo" aria-label="Ejemplo de una nota de Minuta / Example Minuta note">
+      <figcaption>2026-10-20 0930 - Alcance del sprint 12.md</figcaption>
+<pre><code><span class="fm">---
+fecha: 2026-10-20
+hora: 09:30
+tipo: Equipo
+duracion_min: 18.5
+habla_yo_pct: 41
+participantes: ["Matías", "Carla"]
+---</span>
+<span class="h"># Alcance del sprint 12</span>
+
+<span class="h">### Próximos pasos</span>
+- [ ] Ana — entregar el PDF — jueves (2026-10-22)
+- [ ] Matías — priorizar el tablero — lunes
+
+<span class="h">## Personas</span>
+- **Matías** (PO): pide estimaciones concretas
+…</code></pre>
+      <a href="https://github.com/minuta-app/minuta#formato-de-las-notas"><span data-es>Ver el formato completo</span><span data-en>See the full format</span></a>
+    </figure>
   </div>
 </div></section>
 
@@ -412,6 +458,7 @@
   <details><summary><span data-es>¿Cuánto cuesta?</span><span data-en>How much does it cost?</span></summary><p><span data-es>Nada. Minuta es gratis y de código abierto (MIT). Usa la IA que ya tienes; con ChatGPT incluso sirve la cuenta gratis.</span><span data-en>Nothing. Minuta is free and open source (MIT). It uses the AI you already have; with ChatGPT even the free account works.</span></p></details>
   <details><summary><span data-es>¿Necesito saber programar?</span><span data-en>Do I need to know how to code?</span></summary><p><span data-es>No. Lo único "técnico" es instalar tu IA una vez, copiando un par de comandos. <a href="ia.html">La guía</a> te lleva de la mano y el asistente de Minuta comprueba que quedó funcionando.</span><span data-en>No. The only "technical" bit is installing your AI once by copying a couple of commands. <a href="ia.html">The guide</a> walks you through it and Minuta's welcome checks it works.</span></p></details>
   <details><summary><span data-es>¿Funciona con ChatGPT o Gemini?</span><span data-en>Does it work with ChatGPT or Gemini?</span></summary><p><span data-es>Sí. Puedes elegir Claude (con Claude Code), ChatGPT (con Codex) o Gemini (con Antigravity CLI, todavía en beta). Lo eliges en el asistente de bienvenida y lo puedes cambiar después. <a href="ia.html">Cómo instalar cada una</a>.</span><span data-en>Yes. You can pick Claude (with Claude Code), ChatGPT (with Codex) or Gemini (with Antigravity CLI, still in beta). You choose it in the welcome and can change it later. <a href="ia.html">How to install each one</a>.</span></p></details>
+  <details><summary><span data-es>¿Puedo exportar mis notas o usarlas en otras herramientas?</span><span data-en>Can I export my notes or use them in other tools?</span></summary><p><span data-es>Sí, sin pedir permiso: son archivos Markdown en tu carpeta y, si activas el respaldo, en tu propio repositorio de GitHub o GitLab. Ábrelas en Obsidian, impórtalas en Notion o Google Docs, procésalas con un script o con tu IA. <a href="https://github.com/minuta-app/minuta#formato-de-las-notas">El formato está documentado</a>.</span><span data-en>Yes, no permission needed: they're Markdown files in your folder and, if you turn on backup, in your own GitHub or GitLab repository. Open them in Obsidian, import them into Notion or Google Docs, process them with a script or your AI. <a href="https://github.com/minuta-app/minuta#formato-de-las-notas">The format is documented</a>.</span></p></details>
   <details><summary><span data-es>¿Alguien más puede leer mis notas?</span><span data-en>Can anyone else read my notes?</span></summary><p><span data-es>No. Minuta no tiene servidores ni cuentas, así que no hay copia en ninguna parte salvo tu computador y, si lo activas, tu propio repositorio privado. Ni los creadores de Minuta pueden verlas.</span><span data-en>No. Minuta has no servers or accounts, so there's no copy anywhere except your computer and, if you turn it on, your own private repository. Not even Minuta's creators can see them.</span></p></details>
   <details><summary><span data-es>¿Qué se envía a internet?</span><span data-en>What gets sent to the internet?</span></summary><p><span data-es>El audio nunca sale de tu computador. Solo el texto de la transcripción va a la IA que elegiste, con tu cuenta. Además, Minuta consulta si hay una versión nueva y el catálogo público de universos e idiomas. Sin telemetría ni analítica.</span><span data-en>Audio never leaves your computer. Only the transcript text goes to the AI you chose, with your account. Minuta also checks for new versions and the public catalog of universes and languages. No telemetry or analytics.</span></p></details>
   <details><summary><span data-es>¿Funciona en Windows y Linux?</span><span data-en>Does it work on Windows and Linux?</span></summary><p><span data-es>Sí: es la misma app, con las mismas notas, universos y coach. En Windows y Linux la transcripción usa el procesador (en Mac, el chip gráfico), así que es algo más lenta; el modelo «Liviano» va bien en casi cualquier computador. El calendario se conecta pegando la dirección iCal de Google Calendar u Outlook.</span><span data-en>Yes: it's the same app, with the same notes, universes and coach. On Windows and Linux transcription runs on the CPU (on Mac, the GPU), so it's a bit slower; the “Light” model runs well on almost any computer. The calendar connects by pasting your Google Calendar or Outlook iCal address.</span></p></details>

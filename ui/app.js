@@ -126,6 +126,15 @@
     // Íconos o símbolos alrededor ("💎 Claridad", "💬 Otra ▾"): se traduce el centro.
     const m = k.match(/^([^\p{L}¿¡«“"]*)(.*?)([\s▾→←✓…]*)$/u);
     if (m && (m[1] || m[3]) && m[2]) { const c = trNucleo(m[2]); if (c != null) return t.replace(k, m[1] + c + m[3]); }
+    // Mismo texto con otros saltos de línea o espacios (plantillas de varias líneas)
+    const kn = k.replace(/\s+/g, " ");
+    if (kn !== k) { const c = trNucleo(kn); if (c != null) return t.replace(k, c); }
+    // Textos armados con " · " ("18 oct · 70 min · abrir nota →"): se traduce cada parte que se pueda.
+    if (k.includes(" · ")) {
+      const partes = k.split(" · "), nuevas = partes.map((x) => { const y = tr(x); return y; });
+      if (nuevas.some((x, i) => x !== partes[i])) return t.replace(k, nuevas.join(" · "));
+    }
+    if (window._faltantes) window._faltantes.add(k);  // solo en pruebas: textos sin traducción
     return t;
   }
   function trNucleo(k) {
@@ -636,6 +645,14 @@
   };
   const radioControl = (r) => (r >= 18 ? 15 : r >= 12 ? 10 : r >= 8 ? 6 : r >= 2 ? 2 : 0);
   const txt = (clave, def) => tema()?.estilo?.textos?.[clave] || def;
+  /** Texto sobre el color de acento: blanco o casi negro, el que más contraste dé (WCAG). */
+  function sobreAcento(hex) {
+    const v = parseInt(String(hex).replace("#", "").slice(0, 6), 16);
+    if (Number.isNaN(v)) return "#fff";
+    const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+    const L = 0.2126 * lin((v >> 16) & 255) + 0.7152 * lin((v >> 8) & 255) + 0.0722 * lin(v & 255);
+    return (1.05 / (L + 0.05)) >= ((L + 0.05) / 0.0569) ? "#fff" : "#111";
+  }
   function luminancia(hex) {
     const v = parseInt(hex.replace("#", ""), 16);
     return 0.299 * ((v >> 16) & 255) + 0.587 * ((v >> 8) & 255) + 0.114 * (v & 255);
@@ -651,7 +668,7 @@
       "--fondo": e.fondo, "--fondo2": e.fondo2, "--panel": e.panel, "--texto": e.texto, "--suave": e.suave, "--linea": e.linea,
       "--acento": e.acento, "--acento-t": e.acento_texto, "--acento2": e.acento2, "--radio": `${e.radio}px`,
       "--radio-c": `${radioControl(e.radio)}px`, "--fuente-t": fuente, "--peso-t": e.peso, "--mayus": e.mayusculas ? "uppercase" : "none",
-      "--cursiva": e.cursiva ? "italic" : "normal", "--sobre-acento": luminancia(e.acento || "#888888") > 150 ? "#111" : "#fff",
+      "--cursiva": e.cursiva ? "italic" : "normal", "--sobre-acento": sobreAcento(e.acento || "#888888"),
     };
     Object.entries(vars).forEach(([k, v]) => v !== undefined && r.setProperty(k, v));
     const [img, tam] = (PATRONES[e.patron] || (() => ["", ""]))();
@@ -1267,7 +1284,7 @@
       </section>
       <section class="card pref-comentarios"><div><b>🧭 Bienvenida</b><p>Vuelve a revisar tu IA, el modelo de transcripción, tus notas y su respaldo.</p></div>
         <button class="boton-txt" data-accion="bienvenida">Abrir la bienvenida</button></section>
-      <section class="card pref-comentarios"><div><b>✨ Versión ${esc(E.version || "")}</b><p>${E.act.hay ? "Hay una versión nueva lista para instalar." : "Minuta revisa sola si hay versiones nuevas."} Tus notas, perfil y universos no se tocan al actualizar.</p></div>
+      <section class="card pref-comentarios"><div><b>✨ Versión ${esc(E.version || "")}</b><p><span>${E.act.hay ? "Hay una versión nueva lista para instalar." : "Minuta revisa sola si hay versiones nuevas."}</span> <span>Tus notas, perfil y universos no se tocan al actualizar.</span></p></div>
         <button class="boton-txt${E.act.hay ? " aplicar" : ""}" data-act="${E.act.hay ? "instalar" : "buscar"}">${E.act.hay ? "Actualizar ahora" : "Buscar actualizaciones"}</button></section>
       <section class="card pref-comentarios"><div><b>💬 ¿Algo no funciona o tienes una idea?</b><p>Cuéntanos: llega como un reporte público en GitHub. No incluyas datos de tus reuniones.</p></div>
         <button class="boton-txt aplicar" data-accion="comentarios">Enviar comentarios</button></section>
@@ -2927,7 +2944,7 @@
         <button class="boton-txt bv-saltar" data-bv-saltar-ia>La configuro después</button>`;
     } else if (paso === "modelo") {
       const m = b.modelos || { lista: [] };
-      cuerpo = `<h2>Transcripción en tu computador</h2><p class="bv-sub">Se descarga una sola vez el modelo que convierte la voz en texto. Tu audio nunca sale de tu computador.${m.ram ? ` Tu computador tiene ${m.ram} GB de memoria.` : ""}</p>
+      cuerpo = `<h2>Transcripción en tu computador</h2><p class="bv-sub"><span>Se descarga una sola vez el modelo que convierte la voz en texto. Tu audio nunca sale de tu computador.</span>${m.ram ? ` <span>Tu computador tiene ${m.ram} GB de memoria.</span>` : ""}</p>
         <div class="bv-modelos">${m.lista.map((x) => `<button class="bv-modelo${(b.modeloElegido || m.elegido || m.recomendado) === x.id ? " elegido" : ""}" data-bv-modelo="${esc(x.id)}" ${b.descargando ? "disabled" : ""}>
           <b>${esc(x.nombre)} ${x.id === m.recomendado ? `<em>recomendado</em>` : ""}</b><small>${esc(x.detalle)}</small><span>${x.listo ? "✓ Descargado" : `${x.mb} MB`}</span></button>`).join("")}</div>
         ${b.descargando ? `<div class="bv-barra"><i style="width:${b.pct || 0}%"></i></div><p class="cat-ayuda">Descargando… ${b.pct || 0}% · puedes seguir con los demás pasos.</p>`
@@ -3364,6 +3381,8 @@
     irBrief(id) { E.seccion = "agenda"; E.briefAbierto = id; render(); },
     ir(seccion) { E.seccion = seccion; render(); if (seccion === "preferencias") host.enviar("estadoAvisos"); },
     /** Solo para pruebas automáticas (recorrer todas las vistas). */
+    /** Para las pruebas automáticas (pruebas/interfaz.mjs): funciones puras de la interfaz. */
+    _pruebas: { limpiarNombre: (t) => limpiarNombre(t), leerParticipantes: (t) => leerParticipantes(t), nombreValido: (t) => nombreValido(t) },
     _probar(cambios) { if (typeof cambios === "function") cambios(E); else Object.assign(E, cambios); render(); return E.notas.map((n) => n.ruta); },
     /** Resultado del creador de universos: { ok, id, nombre, error } */
     forjado(r) {

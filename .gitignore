@@ -17,6 +17,7 @@
 !/bin/
 !/ui/
 !/universos/
+!/pruebas/
 app/.build/
 bin/minuta-diarizar
 bin/minuta-diarizar.*
@@ -26,3 +27,4 @@ bin/minuta-diarizar.*
 dist/
 escritorio/node_modules/
 escritorio/vendor/
+capturas/

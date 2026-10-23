@@ -1,0 +1,9 @@
+[00:00:02] Yo: Hola, ¿me escuchan bien?
+[00:00:05] Persona 1: Sí, perfecto. Soy Matías, el PO del equipo. Ella es Carla, la Scrum Master.
+[00:00:12] Persona 2: Hola a todos. Hoy quiero cerrar el alcance del sprint 12.
+[00:00:20] Yo: Eh, bueno, este, yo creo que podemos meter la exportación a PDF, o sea, si alcanzamos.
+[00:00:31] Persona 1: Ana, ¿cuánto te toma eso realmente?
+[00:00:35] Yo: Unos tres días. Lo tengo listo el jueves.
+[00:00:41] Persona 2: Ok. Entonces Matías prioriza el tablero el lunes y Ana entrega el PDF el jueves.
+[00:00:50] Persona 1: De acuerdo. Yo además reviso los precios con finanzas antes del viernes.
+[00:00:58] Yo: Perfecto, cierro entonces: PDF el jueves, tablero el lunes, precios el viernes.

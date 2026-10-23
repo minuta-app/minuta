@@ -20,6 +20,8 @@ jobs:
       publicar: ${{ steps.v.outputs.publicar }}
     steps:
       - uses: actions/checkout@v4
+      - name: Pruebas rápidas (no se publica una versión rota)
+        run: python3 pruebas/contrato.py && python3 pruebas/test_python.py
       - id: v
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |

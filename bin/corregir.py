@@ -31,7 +31,7 @@ def partes(texto):
 
 
 def leer_participantes(fm):
-    m = re.search(r"^participantes:\s*(.*)$", fm, re.M)
+    m = re.search(r"^participantes:[ \t]*(.*)$", fm, re.M)
     if not m:
         return []
     bruto = m.group(1).strip()

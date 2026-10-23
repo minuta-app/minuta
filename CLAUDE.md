@@ -8,7 +8,9 @@ Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromis
 1. **Todo es del usuario.** Audio, transcripciones y notas viven en su Mac (y, si quiere, en *su* repo git). No hay servidores ni base de datos propios.
 2. **Gratis y abierto.** El catálogo (universos e idiomas) es un repo público con JSON; los comentarios llegan como issues de GitHub.
 3. **Nada personal en el código.** Lo personal va en `~/minuta/perfil.json` (no versionado). Ver "Privacidad" abajo.
-4. **Plug and play.** Lo que haya que preguntar al usuario se pregunta en la app (Preferencias / asistente), no se escribe a mano en archivos.
+4. **Formato abierto.** Las notas son Markdown documentado en el README ("Formato de las notas"): la gente arma scripts y
+   automatizaciones encima. No cambies nombres de campos ni marcadores sin mantener compatibilidad y actualizar el README.
+5. **Plug and play.** Lo que haya que preguntar al usuario se pregunta en la app (Preferencias / asistente), no se escribe a mano en archivos.
 
 ## Mapa del repo
 
@@ -23,7 +25,8 @@ Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromis
 | `herramientas/` | `revisar_privacidad.sh` (auditoría antes de commitear) y `empaquetar.sh` (arma `dist/Minuta.app` + `dist/Minuta-macOS.zip` y su `.sha256`). |
 | `build.sh` | Empaqueta e instala en `~/Applications/Minuta.app`. **Cierra la app** (ver Despliegue). |
 | `instalar.sh` | Instalador de un comando para usuarios (`curl … \| bash`): baja la última Release, verifica SHA-256 e instala. Sin Python ni Homebrew. |
-| `.github/workflows/publicar.yml` | Al subir un tag `vX.Y.Z`: compila en macos-15 con `empaquetar.sh` y publica la Release. |
+| `.github/workflows/` | `revisar.yml` (pruebas en cada cambio) y `publicar.yml` (al subir la versión en Info.plist: compila Mac, Windows y Linux y publica la Release). |
+| `pruebas/` | Pruebas automáticas (ver "Pruebas"). |
 | `docs/` | Página pública (GitHub Pages): `index.html` (español/inglés, detecta el sistema del visitante), `ia.html` (guía para instalar Claude Code, Codex o Gemini CLI) y capturas en `docs/img` hechas con `demo.json`. |
 | `escritorio/` | App de **Windows y Linux** (Electron): misma `ui/` y mismo `bin/`. Ver "Windows y Linux" abajo. |
 | `instalar.ps1` | Instalador de un comando para Windows (`irm … \| iex`). `instalar.sh` sirve para Mac y Linux. |
@@ -116,6 +119,20 @@ aparece solo: se abre únicamente cuando la persona lo pide (⋯ → Enviar come
 - Interfaz: usa `render({ mantenerScroll: true })` para no saltar; el contenedor de página usa `data-pagina` (no `data-vista`, que dispara navegación).
 - Antes de terminar un cambio de UI: `node --check ui/app.js` y prueba en navegador (`cd ui && python3 -m http.server 8765` → `http://localhost:8765/index.html`; `#panel` para el panel, `?idioma=en` para inglés, `window.Minuta._probar({...})` para saltar a cualquier vista).
 - Python: `python3 -m py_compile bin/*.py`. Swift: solo compila en el Mac (`build.sh`).
+
+## Pruebas (GitHub las corre en cada cambio: `.github/workflows/revisar.yml`)
+
+- `bash pruebas/correr.sh`: todo lo de abajo menos compilar Swift. Córrelo antes de cada commit (la interfaz necesita Playwright: `PLAYWRIGHT=/ruta/playwright`).
+- `pruebas/contrato.py`: cada `host.enviar("x")`/`data-pn`/`data-av` de la interfaz existe en Swift (VisorWeb/BarraMenu) **y** en `ACCIONES`
+  de Electron, y cada `window.Minuta.x` que llaman las apps existe. Excepciones a propósito en `EXCEPCIONES` con su motivo.
+- `pruebas/test_python.py`: limpiar nombres, `corregir.py` (con IA simulada), `limpiar_notas.py`, universos incluidos. HOME temporal: nunca toca datos reales.
+- `pruebas/interfaz.mjs`: todas las vistas sin errores en español e inglés, **ningún texto sin traducir** (los datos de demo no cuentan),
+  los mismos casos de nombres que Python (`casos_nombres.json`) y contraste del botón principal en cada universo. `CAPTURAS=carpeta` guarda capturas
+  (en GitHub quedan como artefacto "capturas" de cada revisión).
+- `pruebas/evaluar_ia.py`: valida la estructura de la respuesta de la IA (ejemplo fijo en CI; `--real` con tu IA y `pruebas/ia/transcripcion_*.txt`).
+  Úsalo con `--real` antes de tocar el prompt de `procesar.py`.
+- El job `mac` compila Swift en macos-15 si cambió `app/`, `build.sh` o `empaquetar.sh`. `publicar.yml` corre contrato y Python antes de armar una versión.
+- Al agregar algo nuevo: si es una función pura, agrega casos; si es una acción, el contrato la revisa solo; si es texto, la prueba de la interfaz exige su traducción.
 
 ## Despliegue al Mac del usuario
 

@@ -842,7 +842,21 @@
   "Sigue en tu respaldo, en la carpeta «archivadas» de tus notas.": "It stays in your backup, in the «archivadas» folder of your notes.",
   "Borrarla también del respaldo": "Delete it from the backup too",
   "Va a la Papelera y se quita del repositorio (git conserva su historial).": "It goes to the Trash and is removed from the repository (git keeps its history).",
-  "“{x}” archivada (sigue en tu respaldo)": "“{x}” archived (still in your backup)"
+  "“{x}” archivada (sigue en tu respaldo)": "“{x}” archived (still in your backup)",
+  "Bienvenida": "Welcome",
+  "¿Borrar esta reunión?": "Delete this meeting?",
+  "Color {x}": "Color {x}",
+  "Borrar {x}": "Delete {x}",
+  "{x} · ⌘K pregunta": "{x} · ⌘K ask",
+  "⌘K pregunta": "⌘K ask",
+  "abrir nota →": "open note →",
+  "Cada logro suma {n} {x}": "Each achievement adds {n} {x}",
+  "{x} acumulados": "{x} earned",
+  "{n} reuniones · del {x} al {x} · comparando tus primeras {n} con tus últimas {n}": "{n} meetings · from {x} to {x} · comparing your first {n} with your last {n}",
+  "La que más repetiste: “{x}” (×{n}). Cuando la sientas venir, haz una pausa en silencio.": "The one you repeated most: “{x}” (×{n}). When you feel it coming, pause in silence.",
+  "Se mencionó en {n} reuniones desde el {x}": "Mentioned in {n} meetings since {x}",
+  "✓ Desbloqueado el {x}": "✓ Unlocked on {x}",
+  "la última {x}": "last one {x}"
  },
  "palabras": {
   "lunes": "Monday",

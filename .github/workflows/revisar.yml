@@ -1,0 +1,61 @@
+# Revisión automática de cada cambio: si algo falla, se ve en GitHub antes de que llegue a alguien.
+# - comun: sintaxis, privacidad básica, contrato interfaz ↔ apps, pruebas de Python y de la interfaz (español/inglés, universos).
+# - mac: que la app de Mac compile (solo si cambió algo de Swift o del empaquetado).
+# Para correrlo en tu computador: ver "Pruebas" en CLAUDE.md.
+name: Revisar
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  group: revisar-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  comun:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Sintaxis
+        run: |
+          node --check ui/app.js
+          for f in escritorio/src/*.js; do node --check "$f"; done
+          python3 -m py_compile bin/*.py pruebas/*.py
+          python3 -c "import json, glob; [json.load(open(f, encoding='utf-8')) for f in glob.glob('ui/idiomas/*.json') + glob.glob('universos/*.json') + ['ui/demo.json']]"
+          for f in build.sh instalar.sh herramientas/*.sh escritorio/herramientas/*.sh; do bash -n "$f"; done
+      - name: Privacidad (correos personales y rutas de usuario)
+        run: bash herramientas/revisar_privacidad.sh --generico
+      - name: Contrato entre la interfaz y las apps
+        run: python3 pruebas/contrato.py
+      - name: Pruebas de Python
+        run: python3 pruebas/test_python.py
+      - name: Estructura de las notas que escribe la IA (respuesta de ejemplo)
+        run: python3 pruebas/evaluar_ia.py
+      - name: Pruebas de la interfaz
+        run: |
+          npm i --no-save --prefix "$RUNNER_TEMP/pw" playwright@1.56.1
+          "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install --with-deps chromium
+          mkdir -p capturas
+          PLAYWRIGHT="$RUNNER_TEMP/pw/node_modules/playwright" CAPTURAS=capturas node pruebas/interfaz.mjs
+      - name: Capturas para revisar a ojo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: capturas, path: capturas, retention-days: 14, if-no-files-found: ignore }
+
+  mac:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: ¿Cambió algo de la app de Mac?
+        id: cambio
+        run: |
+          ANTES="${{ github.event.before }}"
+          if [ "${{ github.event_name }}" != "push" ] || ! git cat-file -e "$ANTES" 2>/dev/null || git diff --name-only "$ANTES" HEAD | grep -qE '^(app/|herramientas/empaquetar\.sh|build\.sh)'; then echo "si=1" >> "$GITHUB_OUTPUT"; fi
+      - name: Compilar
+        if: steps.cambio.outputs.si == '1'
+        run: cd app && swift build -c release

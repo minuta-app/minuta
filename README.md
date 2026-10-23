@@ -75,6 +75,67 @@ pegando la dirección iCal secreta de Google Calendar u Outlook.
 
 Grabar a otras personas tiene reglas distintas según el país: avisa y pide consentimiento antes de grabar.
 
+## Tus notas, tus reglas
+
+Cada reunión es un archivo Markdown en tu carpeta y, si activas el respaldo, en **tu propio repositorio** de GitHub o GitLab.
+No hay formato cerrado ni exportación pagada: puedes construir encima.
+
+- **Ábrelas con lo que quieras:** Obsidian, VS Code o cualquier editor de Markdown.
+- **Llévalas a donde te acomode:** Notion, Google Docs, Confluence o tu CRM importan Markdown; o súbelas con un script.
+- **Arma tus herramientas:** el frontmatter trae fecha, tipo, participantes y métricas; los compromisos son casillas
+  `- [ ] responsable — qué — cuándo (AAAA-MM-DD)`. Un script de pocas líneas los manda a tu gestor de tareas o arma tu tablero.
+- **Pregúntale a tu IA por todo tu historial:** abre el repo de notas con Claude Code, Codex o Gemini CLI.
+- **Automatiza en tu repo:** con GitHub Actions o GitLab CI, cada nota nueva puede avisar en Slack, actualizar una planilla, etc.
+
+### Formato de las notas
+
+Archivo `AAAA-MM-DD HHMM - Título.md`:
+
+```markdown
+---
+fecha: 2026-10-20            # día de la reunión
+hora: 09:30
+tipo: Equipo                 # el tipo de reunión que elegiste (tus categorías)
+plataforma: Microsoft Teams  # si se detectó
+duracion_min: 18.5
+habla_yo_pct: 41             # % del tiempo que hablaste tú
+palabras_por_min_yo: 142
+preguntas_yo: 4
+interrupciones_yo: 1
+monologo_max_seg: 75
+participantes: ["Matías", "Carla"]   # lista JSON, solo nombres
+tags: [reunion, minuta]
+---
+# Alcance del sprint 12
+
+### <Tema>
+- hechos, decisiones (**Decisión:**) y pendientes (**Pendiente:**)
+
+### Próximos pasos
+- [ ] Ana — entregar el PDF — el jueves (2026-10-22)
+- [x] Matías — priorizar el tablero — lunes
+
+## Personas
+- **Matías** (PO): qué le importa y cómo decide
+
+## Feedback para Ana
+- **Veredicto:** …
+- 🔧 [00:00:20] "cita" — qué faltó → Prueba: "frase alternativa"
+- ✅ [00:00:58] "cita" — por qué funcionó
+- **Puntajes:** Claridad 6 · Escucha 7 · Preguntas 5 · Cierre 9
+- **Hábito para la próxima:** …
+
+## Métricas
+| … | … |
+
+## Transcripción
+> [00:00:02] Ana: …
+> [00:00:05] Matías: …
+```
+
+Los marcadores (`### Próximos pasos`, `## Personas`, `**Puntajes:**`…) van siempre en español aunque la nota esté en otro idioma,
+así tus scripts funcionan igual. El feedback y `## Personas` son solo para ti: el mensaje para los participantes los omite.
+
 ## Actualizaciones
 
 Minuta revisa sola si hay una versión nueva y te ofrece actualizar con un clic. Tus notas, perfil, universos y modelos viven fuera de la app,
@@ -93,6 +154,9 @@ cd ui && python3 -m http.server 8765  # vista previa de la interfaz con datos fi
 - Con `~/minuta` como checkout git, la app usa ese código y se actualiza con `git pull`.
 - Publicar una versión: sube la versión en `app/Info.plist` y `git tag vX.Y.Z && git push --tags`; GitHub Actions compila y crea la Release.
 - La guía completa para contribuir (arquitectura, reglas, agentes) está en [`CLAUDE.md`](CLAUDE.md).
+- **Pruebas:** `bash pruebas/correr.sh` corre lo mismo que GitHub revisa en cada cambio (sintaxis, privacidad, contrato entre la
+  interfaz y las apps, pruebas de Python y de la interfaz en español e inglés con todos los universos). `python3 pruebas/evaluar_ia.py --real`
+  prueba el prompt de las notas con tu IA y transcripciones ficticias.
 
 **Windows y Linux** (`escritorio/`, Electron):
 
@@ -127,7 +191,8 @@ Minuta es gratis y abierta, y la hacemos entre todos. Ninguna de estas formas de
 **transcribes them locally** (whisper.cpp + speaker separation), and uses the AI you choose — Claude (Claude Code), ChatGPT (Codex)
 or Gemini (Antigravity CLI, beta), with your own account — to give you
 notes, commitments, and honest, quote-backed feedback. Audio never leaves your computer; notes are plain Markdown files you own,
-optionally backed up to a private repo in your own GitHub or GitLab account. No Minuta accounts, servers or telemetry.
+optionally backed up to a private repo in your own GitHub or GitLab account — so you can open them in Obsidian, import them into
+Notion or Google Docs, or build your own tools and automations on top ([format](#formato-de-las-notas)). No Minuta accounts, servers or telemetry.
 
 **Install:** Mac and Linux: `curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh | bash` ·
 Windows (PowerShell): `irm https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.ps1 | iex` ·
