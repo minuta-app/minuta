@@ -17,7 +17,7 @@ Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromis
 | `app/Sources/Minuta/` | App Swift (SwiftPM, macOS 15). Barra de menú (`BarraMenu.swift`), ventana web (`VisorWeb.swift`), captura de audio y detección de reuniones (`Audio.swift`), modelo y flujo (`MinutaApp.swift`), alertas flotantes (`Alerta.swift`), coach en vivo (`Vivo.swift`), dictado del Gimnasio (`Dictado.swift`), perfil (`Perfil.swift`), catálogo e idiomas (`Catalogo.swift`), universos y juego (`Juego.swift`). `Visor.swift` es el visor SwiftUI antiguo (casi sin uso). |
 | `app/Sources/Diarizar/` | Binario `minuta-diarizar` (FluidAudio) que separa voces de la pista "Ellos". |
 | `app/Sources/Transcribir/` | Binario `minuta-transcribir`: whisper.cpp (xcframework oficial v1.8.3, Metal) con las **mismas opciones que `whisper-cli`**, para que el pipeline sea igual en Mac, Windows y Linux. |
-| `bin/` | Python: `procesar.py` (pipeline principal y prompt de notas), `perfil.py` (perfil compartido), `redactar.py` (mensaje para participantes), `gimnasio.py`, `preguntar.py` (⌘K), `semana.py`, `universo.py` (creador de universos), `logros.py`, `recalcular_interrupciones.py`. |
+| `bin/` | Python: `procesar.py` (pipeline principal y prompt de notas), `perfil.py` (perfil compartido, `limpiar_nombre`, `hechos`), `corregir.py` (corrige una nota con la IA según una instrucción en palabras; guarda copia en `~/minuta/respaldos/` y lo aprendido en `personas_conocidas.json`, que `procesar.py` usa en las próximas notas), `limpiar_notas.py` (ordena nombres de participantes en notas viejas), `redactar.py` (mensaje para participantes), `gimnasio.py`, `preguntar.py` (⌘K), `semana.py`, `universo.py` (creador de universos), `logros.py`, `recalcular_interrupciones.py`. |
 | `ui/` | Interfaz web única (`app.js` + CSS) que usan la ventana y el panel de la barra de menú. `demo.json` = datos ficticios para la vista previa en navegador. `idiomas/en.json` = inglés incluido. |
 | `universos/` | Los 4 universos incluidos (cine, starwars, harrypotter, marvel). El resto está en el catálogo. |
 | `herramientas/` | `revisar_privacidad.sh` (auditoría antes de commitear) y `empaquetar.sh` (arma `dist/Minuta.app` + `dist/Minuta-macOS.zip` y su `.sha256`). |
@@ -91,11 +91,11 @@ aparece solo: se abre únicamente cuando la persona lo pide (⋯ → Enviar come
 ## Datos en tiempo de ejecución (en el computador, nunca en git)
 
 `~/minuta` es a la vez el checkout del repo **y** la carpeta de datos. El `.gitignore` es una lista blanca: solo se versiona lo listado.
-- `perfil.json` (nombre, rol, idiomas, carpeta de notas) · `config.json` (universo elegido) · `ajustes.json` (avisos) · `categorias.json`
+- `perfil.json` (nombre, rol, idiomas, carpeta de notas) · `config.json` (universo elegido) · `ajustes.json` (avisos) · `categorias.json` · `personas_conocidas.json` (correcciones sobre personas) · `respaldos/` (copias antes de corregir)
 - `correcciones.json`, `vocabulario.txt`, `votos.json`, `historial.jsonl`, `practicas.jsonl`, `mensajes/` (borradores redactados por nota)
 - `temas/` (universos descargados o creados; ganan sobre los incluidos con el mismo id) · `idiomas/` (idiomas descargados) · `catalogo/` (caché de índices)
 - `grabaciones/<fecha>/` (audio .caf, JSON de whisper, `hablantes.json`, `meta.json`, `procesar.log`) · `models/` (whisper)
-- Notas: carpeta `carpeta_notas` del perfil (`.md` con frontmatter: fecha, hora, tipo, plataforma, correos, métricas, participantes).
+- Notas: carpeta `carpeta_notas` del perfil (`.md` con frontmatter: fecha, hora, tipo, plataforma, correos, métricas, `participantes` como lista JSON de nombres limpios).
 
 ## Cómo se conectan las piezas
 

@@ -256,6 +256,16 @@ private struct WebHost: NSViewRepresentable {
                 if let ruta = datos["ruta"] as? String, let texto = datos["texto"] as? String, Extras.reescribir(ruta, texto) {
                     NotificationCenter.default.post(name: .minutaNotasCambiaron, object: nil)
                 }
+            case "corregirIA":
+                // La IA corrige la nota según lo que la persona dijo en palabras (bin/corregir.py).
+                guard let ruta = datos["ruta"] as? String, let instruccion = datos["instruccion"] as? String else { break }
+                let archivo = FileManager.default.temporaryDirectory.appendingPathComponent("minuta-corregir-\(UUID().uuidString).txt")
+                guard (try? instruccion.write(to: archivo, atomically: true, encoding: .utf8)) != nil else { break }
+                model.correrScriptJSON("corregir.py", [ruta, archivo.path]) { [weak self] r, error in
+                    try? FileManager.default.removeItem(at: archivo)
+                    NotificationCenter.default.post(name: .minutaNotasCambiaron, object: nil)
+                    self?.llamarFuncion("corregido", r ?? ["ok": false, "error": error])
+                }
             case "correccion":
                 Extras.agregarCorreccion(datos)
             case "quitarCorreccion":

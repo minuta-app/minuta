@@ -15,6 +15,7 @@ Ejemplo de perfil.json (ver perfil.ejemplo.json en la raíz del repo):
 """
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -135,3 +136,43 @@ def es_usuario(nombre):
         return False
     propios = {"yo", P["nombre"].strip().lower(), P["nombre_completo"].strip().lower()} - {""}
     return n in propios or any(n.startswith(p + " ") for p in propios if p != "yo")
+
+
+_NO_NOMBRE = re.compile(r"^(\?+|yo|ellos|equipo|persona\s*\d+|desconocid\w*|no identificad\w*|sin identificar|varios|todos)$", re.I)
+
+
+def limpiar_nombre(texto):
+    """Deja solo el nombre de una persona: 'Christian (la separación de voces le atribuyó…)' → 'Christian'.
+    Devuelve '' si no hay un nombre claro ('?', descripciones largas, 'Persona 2'…). La IA a veces agrega comentarios."""
+    t = (texto or "").strip()
+    base = t.split("(", 1)[0].strip() or re.sub(r"[()]", "", t)
+    base = re.split(r"\s+[—–-]\s+|[,;:]|\s+/\s+", base, maxsplit=1)[0]
+    base = re.sub(r"[\"“”«»]", "", base).strip(" \t'‘’.?¿!¡*_`")
+    if not base or _NO_NOMBRE.match(base) or len(base) > 40 or len(base.split()) > 4 or re.search(r"\d", base):
+        return ""
+    return base
+
+
+#: Datos sobre personas que el usuario corrigió ("Orlando es Scrum Master"): se usan en las próximas notas.
+HECHOS = os.path.join(BASE, "personas_conocidas.json")
+
+
+def hechos():
+    try:
+        with open(HECHOS, encoding="utf-8") as f:
+            return [h for h in json.load(f) if isinstance(h, dict) and h.get("texto")]
+    except (OSError, ValueError):
+        return []
+
+
+def agregar_hechos(nuevos):
+    lista = hechos()
+    vistos = {h["texto"].strip().lower() for h in lista}
+    from datetime import date
+    for t in nuevos:
+        t = (t or "").strip().lstrip("-• ").strip()
+        if t and t.lower() not in vistos:
+            lista.append({"texto": t, "fecha": date.today().isoformat()})
+            vistos.add(t.lower())
+    with open(HECHOS, "w", encoding="utf-8") as f:
+        json.dump(lista[-60:], f, ensure_ascii=False, indent=2)

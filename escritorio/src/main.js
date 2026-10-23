@@ -725,6 +725,15 @@ const ACCIONES = {
     llamarFuncion(w, "descargado", { tipo: "idioma", id: d.codigo, ok: !error, error: error || "", instalados: Idioma.instalados() });
   },
   perfil: (d) => { Perfil.mezclar(d.cambios || {}); Idioma.olvidar(); actualizarBandeja(); notasCambiaron(); },
+  corregirIA: async (d, w) => {
+    // La IA corrige la nota según lo que la persona dijo en palabras (bin/corregir.py).
+    const archivo = path.join(os.tmpdir(), `minuta-corregir-${Date.now()}.txt`);
+    fs.writeFileSync(archivo, String(d.instruccion || ""));
+    const r = await correrScriptJSON("corregir.py", [String(d.ruta || ""), archivo]);
+    fs.rmSync(archivo, { force: true });
+    notasCambiaron();
+    llamarFuncion(w, "corregido", r.datos || { ok: false, error: r.error });
+  },
   comentariosCuenta: async (d, w) => llamarFuncion(w, "comentariosCuenta", { usuario: await Comentarios.cuenta() }),
   votarUniverso: async (d, w) => {
     const r = await Comentarios.votar(Number(d.numero), d.positivo !== false);

@@ -161,6 +161,21 @@
   }
 
   // ───────────────────────── Notas ─────────────────────────
+  /** Solo el nombre: "Ana (PO, la separación de voces…)" → "Ana" (igual que perfil.limpiar_nombre en Python). */
+  function limpiarNombre(t) {
+    let b = String(t || "").trim();
+    b = b.split("(")[0].trim() || b.replace(/[()]/g, "");
+    b = b.split(/\s+[—–-]\s+|[,;:]|\s+\/\s+/)[0].replace(/["“”«»]/g, "").replace(/^[\s'‘’.?¿!¡*_`]+|[\s'‘’.?¿!¡*_`]+$/g, "");
+    return b && b.length <= 40 && b.split(/\s+/).length <= 4 && !/\d/.test(b) && !/^(yo|ellos|equipo|persona\s*\d+|desconocid\w*|varios|todos)$/i.test(b) ? b : "";
+  }
+  /** Participantes del frontmatter: lista JSON (notas nuevas) o el formato antiguo, que se rompía con comas dentro de los nombres. */
+  function leerParticipantes(bruto) {
+    const t = String(bruto || "").trim();
+    let lista;
+    try { lista = JSON.parse(t); } catch { lista = t.match(/"(.*?)"(?=\s*,\s*"|\s*\]$)/g)?.map((x) => x.slice(1, -1)) || t.replace(/^\[|\]$/g, "").split(","); }
+    const vistos = new Set();
+    return (Array.isArray(lista) ? lista : []).map(limpiarNombre).filter((n) => n && !vistos.has(n.toLowerCase()) && vistos.add(n.toLowerCase()));
+  }
   function parsearNota(ruta, texto) {
     let fm = {}, cuerpo = texto;
     if (texto.startsWith("---\n")) {
@@ -178,7 +193,7 @@
     const [y, m, d] = (fm.fecha || "").split("-").map(Number);
     const [hh, mm] = (fm.hora || "00:00").split(":").map(Number);
     const fecha = y ? new Date(y, m - 1, d, hh || 0, mm || 0) : new Date();
-    const participantes = (fm.participantes || "").replace(/^\[|\]$/g, "").split(",").map((s) => s.trim().replace(/^"|"$/g, "")).filter(Boolean);
+    const participantes = leerParticipantes(fm.participantes);
     return { ruta, titulo, fecha, tipo: fm.tipo || "", duracion: parseFloat(fm.duracion_min) || 0, participantes, fm, cuerpo, texto };
   }
 
@@ -809,7 +824,8 @@
         <button class="boton boton-et principal" data-accion="enviar" title="Enviar resumen por correo, Teams o WhatsApp"><i>✉︎</i><span>Enviar</span></button>` : ""}
         <button class="boton boton-et${E.menu ? " activo" : ""}" style="--i:2" data-accion="menu" title="Más opciones" aria-haspopup="menu" aria-expanded="${!!E.menu}"><i>⋯</i><span>Más</span></button>
         ${E.menu ? `<div class="menu-mas" role="menu">
-          ${enReunion && n ? `<button role="menuitem" data-accion="corregir"><span>✎</span>Corregir una palabra en toda la nota</button>
+          ${enReunion && n ? `<button role="menuitem" data-accion="corregir-ia"><span>✎</span>Corregir la nota con tu IA</button>
+          <button role="menuitem" data-accion="corregir"><span>Aa</span>Cambiar una palabra en toda la nota</button>
           <button role="menuitem" data-accion="obsidian"><span>↗</span>Abrir en Obsidian</button>
           ${E.plataforma === "web" ? "" : `<button role="menuitem" data-accion="finder"><span>▤</span>Mostrar en la carpeta</button>`}
           <button role="menuitem" data-accion="comentar-nota"><span>🗨</span>Comentar el feedback de esta nota</button><hr>` : ""}
@@ -1335,6 +1351,34 @@
       <div class="borrar-botones"><button class="boton-txt" data-accion="cancelar-corr">Cancelar</button><button class="boton-txt aplicar" data-accion="aplicar-corr">Corregir</button></div>
     </div></div>`;
   }
+  // ── Corregir con tu IA: se dice en palabras qué está mal y la IA lo arregla en toda la nota ──
+  E.corrIA = null;
+  function dialogoCorregirIA() {
+    const c = E.corrIA;
+    if (!c) return "";
+    if (c.listo) return `<div class="galeria borrar-fondo" data-accion="cerrar-corria"><div class="galeria-caja borrar-caja corr-caja" role="dialog" aria-label="Nota corregida">
+      <h2>✓ Nota corregida</h2><p class="borrar-det" data-sin-traducir>${esc(c.listo.cambios || "")}</p>
+      ${c.listo.recordados?.length ? `<p class="corr-info">Lo recordaré en las próximas reuniones:</p><ul class="corria-rec" data-sin-traducir>${c.listo.recordados.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      <p class="corr-info nada">Guardé una copia de la nota anterior por si quieres volver atrás.</p>
+      <div class="borrar-botones"><span></span><button class="boton-txt aplicar" data-accion="cerrar-corria">Listo</button></div></div></div>`;
+    return `<div class="galeria borrar-fondo" data-accion="cerrar-corria"><div class="galeria-caja borrar-caja corr-caja" role="dialog" aria-label="Corregir la nota con tu IA">
+      <h2>✎ Corregir la nota con tu IA</h2>
+      <p class="borrar-det">Dile qué está mal, como se lo dirías a una persona. Tu IA lo arregla en el resumen, los próximos pasos, las personas, el feedback y quién habla en la transcripción, y lo recuerda para las próximas reuniones.</p>
+      <label class="cat-campo"><span>¿Qué hay que corregir?</span><textarea id="corria-txt" rows="4" ${c.trabajando ? "disabled" : ""} placeholder="ej: Matías no es el PO, es el Scrum Master. La Persona 2 es Ana y ella es la PO.">${esc(c.texto || "")}</textarea></label>
+      ${c.error ? `<p class="forja-error">${esc(c.error)}</p>` : ""}
+      ${c.trabajando ? `<div class="pr-pensando"><span></span><span></span><span></span> Tu IA está corrigiendo la nota…</div>` : ""}
+      <div class="borrar-botones"><button class="boton-txt" data-accion="a-palabra" ${c.trabajando ? "disabled" : ""}>Solo cambiar una palabra</button><button class="boton-txt aplicar" data-accion="aplicar-corria" ${c.trabajando ? "disabled" : ""}>Corregir</button></div>
+    </div></div>`;
+  }
+  function aplicarCorregirIA() {
+    const c = E.corrIA; if (!c || c.trabajando) return;
+    c.texto = ($("#corria-txt")?.value || "").trim();
+    if (!c.texto) { $("#corria-txt")?.focus(); return; }
+    c.trabajando = true; c.error = "";
+    render({ mantenerScroll: true });
+    if (E.plataforma === "web") { setTimeout(() => window.Minuta.corregido({ ok: true, cambios: "(vista previa) Aquí verías qué corrigió tu IA.", recordados: [c.texto] }), 1200); return; }
+    host.enviar("corregirIA", { ruta: c.ruta, instruccion: c.texto });
+  }
   function abrirCorregir(de = "") {
     E.corr = { de, a: "", palabra: true, mayus: /[A-ZÁÉÍÓÚÑ]/.test(de) && de === de.toUpperCase(), recordar: true, todas: false };
     ocultarFlotante();
@@ -1716,7 +1760,7 @@
     return propios.some((p) => n === p || (p !== "yo" && n.startsWith(p + " ")));
   };
   const yoNombre = () => (E.perfil?.nombre || "").trim() || "tú";
-  const nombreValido = (s) => { const t = String(s || "").trim(); return t.length > 1 && !/^\?|^persona \d|^ellos$|^yo$|^equipo$/i.test(t); };
+  const nombreValido = (s) => { const t = String(s || "").trim(); return t.length > 1 && t.length <= 40 && t.split(/\s+/).length <= 4 && !/[()"“”:;\d]/.test(t) && !/^\?|^persona \d|^ellos$|^yo$|^equipo$/i.test(t); };
   const DIAS_N = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
   const MESES_N = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const inicioDia = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -1854,8 +1898,9 @@
       for (const nom of n.participantes) if (nombreValido(nom) && !esYo(nom)) { const p = tocar(nom); if (!p.notas.includes(n)) p.notas.push(n); }
       for (const linea of (secciones(n).personas || "").split("\n")) {
         const x = linea.match(/^\s*[-*]\s+\*\*([^*]+)\*\*\s*(?:\(([^)]*)\))?\s*[:—-]?\s*(.*)$/);
-        if (!x || !nombreValido(x[1]) || esYo(x[1])) continue;
-        const p = tocar(x[1]);
+        const nom = x && limpiarNombre(x[1]);
+        if (!nom || !nombreValido(nom) || esYo(nom)) continue;
+        const p = tocar(nom);
         if (x[2] && !p.rol) p.rol = x[2].trim();
         if (x[3]) p.perfil.push({ texto: x[3].trim(), nota: n });
         if (!p.notas.includes(n)) p.notas.push(n);
@@ -2462,7 +2507,7 @@
       return;
     }
     app.className = `plataforma-${E.plataforma}${E.lateral ? "" : " sin-lateral"}${animar ? " animar" : " quieto"}`;
-    app.innerHTML = `${E.lateral ? lateral() : ""}<main class="principal-cont">${superior()}<div class="principal"><div class="hoja" data-pagina="${E.seccion === "reuniones" ? E.vista : E.seccion}">${contenido()}</div></div></main>${galeria()}${confirmarBorrado()}${dialogoCorregir()}${overlayPreguntar()}${overlayGimnasio()}${overlayEnviar()}${overlayComentarios()}${overlayBienvenida()}${bannerActualizacion()}`;
+    app.innerHTML = `${E.lateral ? lateral() : ""}<main class="principal-cont">${superior()}<div class="principal"><div class="hoja" data-pagina="${E.seccion === "reuniones" ? E.vista : E.seccion}">${contenido()}</div></div></main>${galeria()}${confirmarBorrado()}${dialogoCorregir()}${dialogoCorregirIA()}${overlayPreguntar()}${overlayGimnasio()}${overlayEnviar()}${overlayComentarios()}${overlayBienvenida()}${bannerActualizacion()}`;
     traducirDOM(app);
     const pr = $(".principal");
     if (pr && (opts.mantenerScroll || !animar)) pr.scrollTo({ top: scroll, behavior: "instant" });
@@ -2732,6 +2777,10 @@
       case "menu": E.menu = !E.menu; render({ mantenerScroll: true }); break;
       case "enviar": if (n) abrirEnviar(n.ruta); break;
       case "corregir": if (n) abrirCorregir(getSelection()?.toString().trim().slice(0, 60) || ""); break;
+      case "corregir-ia": if (n) { E.menu = false; E.corrIA = { texto: "", ruta: n.ruta }; render({ mantenerScroll: true }); setTimeout(() => $("#corria-txt")?.focus(), 30); } break;
+      case "cerrar-corria": if (ev.target === b || b.classList.contains("boton-txt") || b.classList.contains("boton")) { if (!E.corrIA?.trabajando) { E.corrIA = null; render({ mantenerScroll: true }); } } break;
+      case "aplicar-corria": aplicarCorregirIA(); break;
+      case "a-palabra": E.corrIA = null; if (n) abrirCorregir(""); break;
       case "cancelar-corr": if (ev.target === b || b.classList.contains("boton-txt")) { E.corr = null; render({ mantenerScroll: true }); } break;
       case "aplicar-corr": aplicarCorregir(); break;
       case "borrar": if (n) { E.borrar = n.ruta; render({ mantenerScroll: true }); setTimeout(() => $(".borrar-caja .peligro")?.focus(), 30); } break;
@@ -3166,6 +3215,13 @@
       render({ mantenerScroll: true });
     },
     /** Terminó una descarga del catálogo. */
+    /** Resultado de corregir una nota con la IA: { ok, cambios, recordados, error } */
+    corregido(r) {
+      const c = E.corrIA; if (!c) return;
+      c.trabajando = false;
+      if (r?.ok) { c.listo = r; _cachePuntajes.clear(); marcarCambioNotas(); } else c.error = r?.error || "No se pudo corregir.";
+      render({ mantenerScroll: true });
+    },
     /** Cuenta de GitHub con la que se puede publicar: { usuario } (null si no hay). */
     comentariosCuenta(d) { E.comentCuenta = d?.usuario || null; if (E.coment || E.galeria) render({ mantenerScroll: true }); },
     /** Resultado de publicar un comentario con la cuenta: { ok, url, error } */

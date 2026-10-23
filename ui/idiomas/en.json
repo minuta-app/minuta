@@ -770,7 +770,20 @@
   "(transcripción),": "(transcription),",
   "(separación de voces),": "(speaker separation),",
   "y": "and",
-  ". Los universos son homenajes de fans creados por la comunidad; las marcas y personajes pertenecen a sus dueños.": ". Universes are fan tributes made by the community; brands and characters belong to their owners."
+  ". Los universos son homenajes de fans creados por la comunidad; las marcas y personajes pertenecen a sus dueños.": ". Universes are fan tributes made by the community; brands and characters belong to their owners.",
+  "Corregir la nota con tu IA": "Fix the note with your AI",
+  "ej: Matías no es el PO, es el Scrum Master. La Persona 2 es Ana y ella es la PO.": "e.g.: Matías isn't the PO, he's the Scrum Master. Person 2 is Ana and she's the PO.",
+  "Cambiar una palabra en toda la nota": "Change a word throughout the note",
+  "✎ Corregir la nota con tu IA": "✎ Fix the note with your AI",
+  "Dile qué está mal, como se lo dirías a una persona. Tu IA lo arregla en el resumen, los próximos pasos, las personas, el feedback y quién habla en la transcripción, y lo recuerda para las próximas reuniones.": "Tell it what's wrong, as you'd tell a person. Your AI fixes it in the summary, next steps, people, feedback and who's speaking in the transcript, and remembers it for future meetings.",
+  "¿Qué hay que corregir?": "What needs fixing?",
+  "Tu IA está corrigiendo la nota…": "Your AI is fixing the note…",
+  "Solo cambiar una palabra": "Just change a word",
+  "✓ Nota corregida": "✓ Note fixed",
+  "Lo recordaré en las próximas reuniones:": "I'll remember this in future meetings:",
+  "Guardé una copia de la nota anterior por si quieres volver atrás.": "I saved a copy of the previous note in case you want to go back.",
+  "Listo": "Done",
+  "No se pudo corregir.": "Couldn't fix it."
  },
  "palabras": {
   "lunes": "Monday",

@@ -14,7 +14,7 @@ import time
 import unicodedata
 import wave
 
-from perfil import NOMBRE, NOMBRE_FB, IDIOMA, IDIOMA_AUDIO, HUMOR, CARPETA_NOTAS, es_usuario, P as PERFIL, ejecutar_ia, NOMBRE_IA
+from perfil import NOMBRE, NOMBRE_FB, IDIOMA, IDIOMA_AUDIO, HUMOR, CARPETA_NOTAS, es_usuario, P as PERFIL, ejecutar_ia, NOMBRE_IA, limpiar_nombre, hechos
 PERFIL_MODELO = (PERFIL.get("modelo_whisper") or "").strip()  # noqa: E402
 
 HOME = os.path.expanduser("~")
@@ -360,6 +360,15 @@ CONFIRMACIONES = set("""si sí ya ok okay oka claro exacto perfecto dale bueno c
 ya ya po pucha oh uy ya veo de acuerdo gracias vale buena genial super súper listo entiendo entonces sipo yapo""".split())
 
 
+def datos_conocidos():
+    """Lo que el usuario corrigió antes sobre las personas (roles, nombres): la IA lo usa en vez de adivinar."""
+    lista = hechos()[-30:]
+    if not lista:
+        return ""
+    return ("\nDatos que " + NOMBRE + " ya corrigió sobre las personas (son ciertos, úsalos):\n"
+            + "\n".join(f"- {h['texto']}" for h in lista))
+
+
 def es_yo(nombre):
     """Etiqueta de hablante que en realidad es el usuario (eco de su voz en el audio del sistema)."""
     return es_usuario(nombre) or bool(re.search(r"\beco\b|^Yo\b|duplic", nombre or "", re.I)) or (
@@ -532,7 +541,7 @@ Evento de calendario: {meta.get('evento') or '(ninguno)'} · Invitados: {', '.jo
 Tipo: {nombre_categoria(meta.get('tipo', 'Otra'))}. {enfoque_categoria(meta.get('tipo', 'Otra'))}
 Métricas medidas (exactas): {json.dumps(m, ensure_ascii=False)}
 
-En las notas y el feedback usa los nombres reales en vez de "Persona N" cuando los sepas.
+En las notas y el feedback usa los nombres reales en vez de "Persona N" cuando los sepas.{datos_conocidos()}
 
 Responde SOLO en markdown, en {IDIOMA}, con exactamente esta estructura. Los marcadores de estructura (TITULO:, HABLANTES:,
 "### Próximos pasos", "## Personas", "## Feedback para …", **Veredicto:**, **Puntajes:** Claridad · Escucha · Preguntas · Cierre,
@@ -541,7 +550,7 @@ tal cual, en español, aunque el resto esté en otro idioma: la app los usa para
 
 TITULO: <título específico de máximo 8 palabras>
 HABLANTES: Persona 1 = <nombre>; Persona 2 = <nombre>; ...
-(deduce cada nombre por cómo se llaman entre ellos, cómo se presentan, a quién le responde {NOMBRE} o la lista de invitados;
+(SOLO el nombre, sin comentarios, paréntesis ni roles. Deduce cada nombre por cómo se llaman entre ellos, cómo se presentan, a quién le responde {NOMBRE} o la lista de invitados;
 si no hay evidencia clara escribe "?". Si dos etiquetas son claramente la misma persona, dales el mismo nombre.
 Omite la línea si no hay etiquetas "Persona N". Esta nota entre paréntesis no va en tu respuesta.)
 
@@ -706,8 +715,8 @@ def main():
                     titulo = linea.split(":", 1)[1].strip() or titulo
             elif linea.upper().startswith("HABLANTES:") and not cuerpo:
                 for num, nombre in re.findall(r"Persona (\d+)\s*=\s*([^;]+)", linea):
-                    nombre = nombre.strip().strip(".")
-                    if nombre and nombre != "?" and "desconocid" not in nombre.lower():
+                    nombre = limpiar_nombre(nombre)  # solo el nombre: la IA a veces agrega comentarios entre paréntesis
+                    if nombre:
                         nombres[f"Persona {num}"] = nombre
             elif linea.strip() or cuerpo:
                 cuerpo.append(linea)
@@ -734,7 +743,8 @@ def main():
         **({"plataforma": meta["plataforma"]} if meta.get("plataforma") else {}),
         **({"correos": "[" + ", ".join(f'"{c}"' for c in meta["correos"]) + "]"} if meta.get("correos") else {}),
         **{k: v for k, v in m.items() if not isinstance(v, (dict, list))},
-        "participantes": "[" + ", ".join(f'"{p}"' for p in m["habla_por_persona_min"]) + "]",
+        # JSON: los nombres pueden traer comas o comillas; la app y los scripts lo leen como lista.
+        "participantes": json.dumps([p for p in m["habla_por_persona_min"] if p and not es_yo(p)], ensure_ascii=False),
     }
     fm = "\n".join(f"{k}: {v}" for k, v in frontmatter.items())
     cuerpo_transcripcion = "\n".join("> " + l for l in transcripcion.splitlines())
