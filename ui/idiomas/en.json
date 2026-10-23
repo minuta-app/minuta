@@ -807,7 +807,19 @@
   "¿Quieres crearlo? Tu IA lo arma en unos minutos, con sus personajes, rangos y logros.": "Want to create it? Your AI builds it in a few minutes, with its characters, ranks and achievements.",
   "¿Creas el primero? Tu IA lo arma en unos minutos.": "Create the first one? Your AI builds it in a few minutes.",
   "⚒️ Crearlo": "⚒️ Create it",
-  "⚒️ Crear un universo": "⚒️ Create a universe"
+  "⚒️ Crear un universo": "⚒️ Create a universe",
+  "Actualizando Minuta": "Updating Minuta",
+  "No se pudo actualizar": "Couldn't update",
+  "Reintentar": "Try again",
+  "Descargando la versión nueva…": "Downloading the new version…",
+  "Preparando la versión nueva…": "Preparing the new version…",
+  "Instalando: Minuta se cerrará y volverá a abrirse sola": "Installing: Minuta will close and reopen on its own",
+  "No pude descargar la versión nueva. Revisa tu conexión e intenta de nuevo.": "I couldn't download the new version. Check your connection and try again.",
+  "No pude preparar la versión nueva. Minuta sigue igual que antes; intenta de nuevo más tarde.": "I couldn't prepare the new version. Minuta is unchanged; try again later.",
+  "Paso {n} de {n}": "Step {n} of {n}",
+  "Paso {n} de {n} · {n}%": "Step {n} of {n} · {n}%",
+  "Paso {n} de {n} · unos {n} o {n} minutos": "Step {n} of {n} · about {n} or {n} minutes",
+  "Paso {n} de {n} · {n}% · unos {n} o {n} minutos": "Step {n} of {n} · {n}% · about {n} or {n} minutes"
  },
  "palabras": {
   "lunes": "Monday",

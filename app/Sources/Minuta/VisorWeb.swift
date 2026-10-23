@@ -369,10 +369,12 @@ private struct WebHost: NSViewRepresentable {
                 model.buscarActualizacion()
             case "actualizar":
                 guard model.fase == .inactiva, model.enCola.isEmpty else {
-                    llamarFuncion("aviso", ["t": Idioma.t("Termina la grabación y espera a que se generen las notas antes de actualizar.")]); break
+                    llamarFuncion("actualizacionProgreso", ["paso": "error", "texto": Idioma.t("Termina la grabación y espera a que se generen las notas antes de actualizar.")]); break
                 }
+                // El aviso de actualización pasa a mostrar el avance (descargar → preparar → instalar), sin alertas.
                 Actualizaciones.instalar { [weak self] ok, error in
-                    self?.llamarFuncion("aviso", ["t": ok ? Idioma.t("Actualizando… Minuta se va a cerrar y abrir sola.") : error])
+                    if ok { Actualizaciones.seguir { d in self?.llamarFuncion("actualizacionProgreso", d) } }
+                    else { self?.llamarFuncion("actualizacionProgreso", ["paso": "error", "texto": error]) }
                 }
             case "catalogo":
                 let tipo = (datos["tipo"] as? String) == "idiomas" ? "idiomas" : "universos"

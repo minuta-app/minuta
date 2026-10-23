@@ -356,19 +356,54 @@ enum Actualizaciones {
     }
 
     /// Instala la versión nueva y vuelve a abrir Minuta. Notas, perfil, universos y modelos no se tocan (viven en ~/minuta).
+    /// Avance de la instalación: el guion escribe "paso|texto" (o "error|texto") y swift build sus "[n/m]".
+    static let archivoEstado = URL(fileURLWithPath: "/tmp/minuta-actualizar.estado")
+    static let archivoProgreso = URL(fileURLWithPath: "/tmp/minuta-actualizar.progreso")
+    private static var reloj: Timer?
+
+    /// Lee el avance cada segundo y lo entrega a la interfaz hasta que termina (la app se cierra) o falla.
+    static func seguir(_ avisar: @escaping @MainActor ([String: Any]) -> Void) {
+        reloj?.invalidate()
+        reloj = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            Task { @MainActor in
+                let estado = ((try? String(contentsOf: archivoEstado, encoding: .utf8)) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let partes = estado.split(separator: "|", maxSplits: 1).map(String.init)
+                guard partes.count == 2 else { return }
+                var d: [String: Any] = ["paso": partes[0], "texto": partes[1], "total": 3]
+                if partes[0] == "2", let log = try? String(contentsOf: archivoProgreso, encoding: .utf8),
+                   let m = log.matches(of: /\[(\d+)\/(\d+)\]/).last, let n = Double(m.1), let t = Double(m.2), t > 0 {
+                    d["pct"] = Int(n / t * 100)
+                }
+                avisar(d)
+                if partes[0] == "error" { reloj?.invalidate(); reloj = nil }
+            }
+        }
+    }
+
     static func instalar(_ fin: @escaping @MainActor (Bool, String) -> Void) {
         let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("minuta-actualizacion")
         let guion = tmp.appendingPathComponent("actualizar.sh")
         try? FileManager.default.removeItem(at: tmp)
         try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
         let pid = ProcessInfo.processInfo.processIdentifier
+        let e = archivoEstado.path, prog = archivoProgreso.path
+        let t1 = Idioma.t("Descargando la versión nueva…"), t2 = Idioma.t("Preparando la versión nueva…"), t3 = Idioma.t("Instalando: Minuta se cerrará y volverá a abrirse sola")
+        let tErrBajar = Idioma.t("No pude descargar la versión nueva. Revisa tu conexión e intenta de nuevo.")
+        let tErrArmar = Idioma.t("No pude preparar la versión nueva. Minuta sigue igual que antes; intenta de nuevo más tarde.")
+        try? FileManager.default.removeItem(at: archivoProgreso)
+        try? "1|\(t1)".write(to: archivoEstado, atomically: true, encoding: .utf8)
         let texto: String
         if esDesarrollo {
             texto = """
             #!/bin/bash
             export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin
             cd "\(raiz.path)" || exit 1
-            { git pull --ff-only && bash ./build.sh && open "$HOME/Applications/Minuta.app"; } > /tmp/minuta-actualizar.log 2>&1 || open "$HOME/Applications/Minuta.app"
+            echo "1|\(t1)" > "\(e)"
+            git pull --ff-only || { echo "error|\(tErrBajar)" > "\(e)"; exit 1; }
+            echo "2|\(t2)" > "\(e)"
+            MINUTA_ESTADO="\(e)" MINUTA_ETAPA3="\(t3)" MINUTA_PROGRESO="\(prog)" bash ./build.sh || { echo "error|\(tErrArmar)" > "\(e)"; pgrep -x Minuta >/dev/null || open "$HOME/Applications/Minuta.app"; exit 1; }
+            rm -f "\(e)" "\(prog)"
+            open "$HOME/Applications/Minuta.app"
             """
         } else {
             guard let zip, let huella else { fin(false, Idioma.t("No encontré la descarga de la versión nueva.")); return }
@@ -376,17 +411,20 @@ enum Actualizaciones {
             texto = """
             #!/bin/bash
             # Baja la versión nueva, verifica su huella, espera a que Minuta se cierre, la reemplaza y la abre.
-            set -e
             cd "\(tmp.path)"
-            curl -fsSL "\(zip.absoluteString)" -o Minuta-macOS.zip
-            curl -fsSL "\(huella.absoluteString)" -o Minuta-macOS.zip.sha256
-            [ "$(shasum -a 256 Minuta-macOS.zip | cut -d' ' -f1)" = "$(cut -d' ' -f1 Minuta-macOS.zip.sha256)" ] || { echo "huella distinta"; exit 1; }
-            ditto -x -k Minuta-macOS.zip nueva
+            echo "1|\(t1)" > "\(e)"
+            curl -fsSL "\(zip.absoluteString)" -o Minuta-macOS.zip && curl -fsSL "\(huella.absoluteString)" -o Minuta-macOS.zip.sha256 || { echo "error|\(tErrBajar)" > "\(e)"; exit 1; }
+            echo "2|\(t2)" > "\(e)"
+            [ "$(shasum -a 256 Minuta-macOS.zip | cut -d' ' -f1)" = "$(cut -d' ' -f1 Minuta-macOS.zip.sha256)" ] || { echo "error|\(tErrBajar)" > "\(e)"; exit 1; }
+            ditto -x -k Minuta-macOS.zip nueva || { echo "error|\(tErrArmar)" > "\(e)"; exit 1; }
             xattr -dr com.apple.quarantine nueva/Minuta.app 2>/dev/null || true
+            echo "3|\(t3)" > "\(e)"
+            sleep 1.5
             osascript -e 'tell application id "app.minuta.mac" to quit' 2>/dev/null || true
             while kill -0 \(pid) 2>/dev/null; do sleep 0.5; done
             rm -rf "\(app).anterior"; mv "\(app)" "\(app).anterior"
             ditto nueva/Minuta.app "\(app)" && rm -rf "\(app).anterior" || mv "\(app).anterior" "\(app)"
+            rm -f "\(e)"
             open "\(app)"
             """
         }
@@ -396,8 +434,6 @@ enum Actualizaciones {
         p.arguments = ["-c", "nohup /bin/bash '\(guion.path)' > /tmp/minuta-actualizar.log 2>&1 &"]
         do {
             try p.run(); fin(true, "")
-            // Versión publicada: Minuta se cierra para que el guion la reemplace (en desarrollo lo hace build.sh).
-            if !esDesarrollo { DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { NSApp.terminate(nil) } }
         } catch { fin(false, error.localizedDescription) }
     }
 }

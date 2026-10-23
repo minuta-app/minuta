@@ -2558,6 +2558,13 @@
     const ac = ev.target.closest("[data-act]");
     if (ac) {
       if (ac.dataset.act === "luego") { E.act.oculto = true; render({ mantenerScroll: true }); return; }
+      if (ac.dataset.act === "cerrar-progreso") { E.act.progreso = null; render({ mantenerScroll: true }); return; }
+      if (ac.dataset.act === "instalar" && PANEL) { host.enviar("actualizar"); return; }
+      if (ac.dataset.act === "instalar") {
+        E.act.progreso = { paso: "1", texto: "Descargando la versión nueva…", total: 3 }; E.act.oculto = false; render({ mantenerScroll: true });
+        if (E.plataforma === "web") simularActualizacion(); else host.enviar("actualizar");
+        return;
+      }
       if (ac.dataset.act === "buscar") { host.enviar("buscarActualizacion"); toast("Buscando actualizaciones…"); return; }
       host.enviar("actualizar"); if (E.plataforma === "web") toast("Actualizando…"); return;
     }
@@ -2955,7 +2962,25 @@
 
   // ───────────────────────── Actualizaciones ─────────────────────────
   E.act = { hay: false };
+  /** Vista previa en el navegador: recorre los pasos para ver cómo se ve. */
+  function simularActualizacion() {
+    const pasos = [["1", "Descargando la versión nueva…"], ["2", "Preparando la versión nueva…", 10], ["2", "Preparando la versión nueva…", 55], ["2", "Preparando la versión nueva…", 92], ["3", "Instalando: Minuta se cerrará y volverá a abrirse sola"]];
+    pasos.forEach(([paso, texto, pct], i) => setTimeout(() => window.Minuta.actualizacionProgreso({ paso, texto, total: 3, ...(pct != null ? { pct } : {}) }), 900 * (i + 1)));
+  }
   function bannerActualizacion() {
+    const pr = E.act.progreso;
+    if (pr) {
+      // El mismo aviso muestra el avance: paso N de 3, barra y qué está pasando. Sin alertas del sistema.
+      if (pr.paso === "error") return `<div class="act-banner act-error" role="alert"><span>⚠️</span><div><b>No se pudo actualizar</b><small>${esc(pr.texto || "")}</small></div>
+        <button class="boton-txt aplicar" data-act="instalar">Reintentar</button><button class="boton-mini" data-act="cerrar-progreso" title="Cerrar">✕</button></div>`;
+      const n = Math.max(1, Math.min(3, +pr.paso || 1)), total = pr.total || 3;
+      const dentro = pr.pct != null ? pr.pct / 100 : null;
+      const pct = Math.round(((n - 1) + (dentro ?? 0.15)) / total * 100);
+      return `<div class="act-banner act-progreso" role="status" aria-live="polite"><span class="act-giro">⟳</span><div class="act-cuerpo">
+        <b>Actualizando Minuta</b><small>${esc(pr.texto || "")}</small>
+        <div class="act-barra${dentro == null ? " indeterminada" : ""}"><i style="width:${pct}%"></i></div>
+        <small class="act-paso">Paso ${n} de ${total}${dentro != null ? ` · ${pr.pct}%` : ""}${n === 2 && !ESCRITORIO ? " · unos 2 o 3 minutos" : ""}</small></div></div>`;
+    }
     if (!E.act.hay || E.act.oculto) return "";
     return `<div class="act-banner" role="status"><span>✨</span><div><b>Hay una versión nueva de Minuta</b><small>${esc((E.act.detalle || "").split("\n").slice(0, 3).join(" · ").replace(/•\s*/g, "")).slice(0, 160)}</small></div>
       <button class="boton-txt aplicar" data-act="instalar">Actualizar</button><button class="boton-mini" data-act="luego" title="Más tarde">✕</button></div>`;
@@ -3226,6 +3251,14 @@
     },
     permisoMicrofono(r) { if (E.bv) { E.bv.micOk = r.ok; render({ mantenerScroll: true }); } },
     /** Hay (o no) versión nueva. */
+    /** Desde el panel de la barra de menú: empieza la actualización mostrando el avance en esta ventana. */
+    iniciarActualizacion() {
+      if (E.act.progreso && E.act.progreso.paso !== "error") return;
+      E.act.progreso = { paso: "1", texto: "Descargando la versión nueva…", total: 3 }; E.act.oculto = false; render({ mantenerScroll: true });
+      host.enviar("actualizar");
+    },
+    /** Avance de la actualización: { paso: "1"|"2"|"3"|"error", texto, total, pct } */
+    actualizacionProgreso(d) { E.act.progreso = d; render({ mantenerScroll: true }); },
     actualizacion(r) { const antes = E.act.hay; E.act = { ...E.act, ...r }; if (r.hay !== antes || r.hay) render({ mantenerScroll: true }); },
     /** Índice del catálogo público (universos o idiomas). */
     catalogo(r) {

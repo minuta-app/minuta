@@ -252,11 +252,17 @@ const Actualizaciones = {
     } catch { return { hay: false, detalle: "" }; }
   },
   /** Baja la versión nueva, verifica su huella y la instala. Notas, perfil, universos y modelos no se tocan (viven en ~/minuta). */
-  async instalar() {
+  /** avance({ paso: "1"|"2"|"3", texto, total, pct }): la interfaz lo muestra en el mismo aviso de actualización. */
+  async instalar(avance = () => {}) {
+    const T = { bajar: Idioma.t("Descargando la versión nueva…"), preparar: Idioma.t("Preparando la versión nueva…"),
+      instalar: Idioma.t("Instalando: Minuta se cerrará y volverá a abrirse sola") };
+    const paso = (n, texto, pct) => avance({ paso: String(n), texto, total: 3, ...(pct != null ? { pct } : {}) });
     if (this.esDesarrollo) {
+      paso(1, T.bajar);
       const r = await Respaldo.git(["pull", "--ff-only"], BASE);
-      if (!r.ok) throw new Error(r.texto.slice(-300));
-      app.relaunch(); app.exit(0);
+      if (!r.ok) throw new Error(Idioma.t("No pude descargar la versión nueva. Revisa tu conexión e intenta de nuevo."));
+      paso(3, T.instalar);
+      setTimeout(() => { app.relaunch(); app.exit(0); }, 1500);
       return;
     }
     if (!this._url || !this._huella) throw new Error(Idioma.t("No encontré la descarga de la versión nueva."));
@@ -264,7 +270,13 @@ const Actualizaciones = {
     const tmp = path.join(os.tmpdir(), "minuta-actualizacion");
     fs.mkdirSync(tmp, { recursive: true });
     const nuevo = path.join(tmp, ASSET);
-    await descargarVerificado(this._url, huella, nuevo);
+    paso(1, T.bajar, 0);
+    const total = +((await net.fetch(this._url, { method: "HEAD" }).catch(() => null))?.headers.get("content-length") || 0);
+    try {
+      await descargarVerificado(this._url, huella, nuevo, (b) => total && paso(1, T.bajar, Math.min(99, Math.round((b / total) * 100))));
+    } catch { throw new Error(Idioma.t("No pude descargar la versión nueva. Revisa tu conexión e intenta de nuevo.")); }
+    paso(3, T.instalar);
+    await new Promise((ok) => setTimeout(ok, 1500));
     if (PLATAFORMA === "windows") {
       // Instalador silencioso: reemplaza la app y la vuelve a abrir (--force-run).
       spawn(nuevo, ["/S", "--force-run"], { detached: true, stdio: "ignore", windowsHide: true }).unref();

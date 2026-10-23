@@ -7,7 +7,7 @@ set -euo pipefail
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$PATH
 RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$RAIZ/app"
-swift build -c release 2>&1 | tail -20
+swift build -c release 2>&1 | tee "${MINUTA_PROGRESO:-/dev/null}" | tail -20  # MINUTA_PROGRESO: la app lee "[n/m]" para mostrar el avance
 REL=.build/release
 
 # Python portátil (python-build-standalone): se descarga una vez y se verifica su huella.

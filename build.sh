@@ -20,6 +20,8 @@ fi
 bash "$RAIZ/herramientas/empaquetar.sh"
 APP="$HOME/Applications/Minuta.app"
 mkdir -p "$HOME/Applications"
+# Si lo lanzó el actualizador de la app, avisa que viene el último paso (la app muestra el avance).
+if [ -n "${MINUTA_ESTADO:-}" ]; then echo "3|${MINUTA_ETAPA3:-Instalando…}" > "$MINUTA_ESTADO"; sleep 1.5; fi
 pkill -x Minuta 2>/dev/null || true
 rm -rf "$APP"
 ditto "$RAIZ/dist/Minuta.app" "$APP"

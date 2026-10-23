@@ -705,9 +705,12 @@ const ACCIONES = {
   // ── Actualizaciones ──
   buscarActualizacion: () => buscarActualizacion(),
   actualizar: async (_d, w) => {
-    if (M.fase !== "inactiva" || M.enCola.length) return llamarFuncion(w, "aviso", { t: t("Termina la grabación y espera a que se generen las notas antes de actualizar.") });
-    llamarFuncion(w, "aviso", { t: t("Actualizando… Minuta se va a cerrar y abrir sola.") });
-    try { await Actualizaciones.instalar(); } catch (e) { llamarFuncion(w, "aviso", { t: String(e.message || e) }); }
+    // Desde el panel: se abre la ventana y el avance se muestra ahí.
+    if (panel && w === panel) { panel.hide(); return enVisor("window.Minuta && window.Minuta.iniciarActualizacion && window.Minuta.iniciarActualizacion()"); }
+    if (M.fase !== "inactiva" || M.enCola.length) return llamarFuncion(w, "actualizacionProgreso", { paso: "error", texto: t("Termina la grabación y espera a que se generen las notas antes de actualizar.") });
+    // El aviso de actualización pasa a mostrar el avance (descargar → instalar), sin alertas.
+    try { await Actualizaciones.instalar((d) => llamarFuncion(w, "actualizacionProgreso", d)); }
+    catch (e) { llamarFuncion(w, "actualizacionProgreso", { paso: "error", texto: String(e.message || e) }); }
   },
   catalogo: async (d, w) => {
     const tipo = d.tipo === "idiomas" ? "idiomas" : "universos";

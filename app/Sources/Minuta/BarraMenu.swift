@@ -312,6 +312,13 @@ final class BarraMenu: NSObject, WKScriptMessageHandler, WKNavigationDelegate, N
         case "prep":
             ocultar()
             model.abrirPreparacion(datos["id"] as? String ?? "")
+        case "actualizar":
+            // Desde el panel: se abre la ventana y el avance de la actualización se muestra ahí.
+            ocultar()
+            VentanaVisor.shared.mostrar(model: model)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                VentanaVisor.shared.web?.evaluateJavaScript("window.Minuta && window.Minuta.iniciarActualizacion && window.Minuta.iniciarActualizacion()")
+            }
         case "salir":
             NSApp.terminate(nil)
         case "cerrarPanel":
