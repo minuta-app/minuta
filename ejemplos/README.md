@@ -2,7 +2,7 @@
 
 Tus notas de Minuta son Markdown en tu carpeta y en tu Git ([formato](../README.md#formato-de-las-notas)). Estos ejemplos son
 puntos de partida: cópialos, adáptalos y, si armas algo útil, compártelo en
-[Discussions → Show and tell](https://github.com/minuta-app/minuta/discussions/categories/show-and-tell).
+[Discussions → Show and tell](https://github.com/minuta-app/minuta/discussions/categories/muestra-lo-que-armaste).
 
 | Ejemplo | Qué hace |
 |---|---|

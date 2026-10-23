@@ -20,7 +20,7 @@ y sin otra suscripción.
 
 | | Con un comando | Descargando |
 |---|---|---|
-| 🍎 **Mac** | `curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh \| bash` (Terminal) | [`Minuta-macOS.zip`](https://github.com/minuta-app/minuta/releases/latest/download/Minuta-macOS.zip): descomprime, arrastra a Aplicaciones y la primera vez ábrela con **clic derecho → Abrir** |
+| 🍎 **Mac** | `curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh \| bash` (Terminal) | [`Minuta-macOS.zip`](https://github.com/minuta-app/minuta/releases/latest/download/Minuta-macOS.zip): descomprime y arrastra a Aplicaciones; la primera vez, si macOS dice que no pudo verificarla: **Ajustes del Sistema → Privacidad y seguridad → Abrir igualmente** |
 | 🪟 **Windows** | `irm https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.ps1 \| iex` (PowerShell) | [`Minuta-Windows.exe`](https://github.com/minuta-app/minuta/releases/latest/download/Minuta-Windows.exe): si aparece «Windows protegió tu PC», **Más información → Ejecutar de todas formas** |
 | 🐧 **Linux** | `curl -fsSL https://raw.githubusercontent.com/minuta-app/minuta/main/instalar.sh \| bash` (sin sudo) | [`Minuta-Linux.AppImage`](https://github.com/minuta-app/minuta/releases/latest/download/Minuta-Linux.AppImage) (necesita FUSE: `sudo apt install libfuse2`) |
 
@@ -88,7 +88,7 @@ No hay formato cerrado ni exportación pagada: puedes construir encima.
 - **Automatiza en tu repo:** con GitHub Actions o GitLab CI, cada nota nueva puede avisar en Slack, actualizar una planilla, etc.
 
 En [`ejemplos/`](ejemplos/) hay scripts listos para partir (por ejemplo, tus compromisos abiertos de todas las reuniones, o en CSV).
-Si armas algo útil, compártelo en [Discussions → Show and tell](https://github.com/minuta-app/minuta/discussions/categories/show-and-tell).
+Si armas algo útil, compártelo en [Discussions → Show and tell](https://github.com/minuta-app/minuta/discussions/categories/muestra-lo-que-armaste).
 
 ### Formato de las notas
 
@@ -179,7 +179,7 @@ Comentarios y errores: desde la app (⋯ → Enviar comentarios) o en [issues](h
 Minuta es gratis y abierta, y la hacemos entre todos. Casi ninguna forma de sumarte exige programar:
 
 - 💬 **Conversa** en [Discussions](https://github.com/minuta-app/minuta/discussions): preguntas, ideas y consejos entre quienes la usan.
-- 🧩 **Muestra lo que armaste** con tus notas (scripts, tableros, automatizaciones) en [Show and tell](https://github.com/minuta-app/minuta/discussions/categories/show-and-tell).
+- 🧩 **Muestra lo que armaste** con tus notas (scripts, tableros, automatizaciones) en [Show and tell](https://github.com/minuta-app/minuta/discussions/categories/muestra-lo-que-armaste).
 - 🗳️ **Vota los universos** desde la galería de la app (o en los [issues de votos](https://github.com/minuta-app/minuta-catalogo/issues?q=is%3Aissue+label%3Avotos)).
 - 🌌 **Crea un universo** (Universos → Crear universo) y propónlo al [catálogo](https://github.com/minuta-app/minuta-catalogo) con 📤.
 - 🌍 **Traduce** la interfaz: los idiomas viven en el [catálogo](https://github.com/minuta-app/minuta-catalogo/tree/main/idiomas).
