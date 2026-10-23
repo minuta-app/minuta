@@ -72,11 +72,21 @@ estándar de Python: no agregues dependencias de pip. `build.sh` se niega a inst
 
 ## Publicar una versión
 
-1. Sube la versión en `app/Info.plist` y `escritorio/package.json`; commit y push.
-2. Con GitHub Actions: `git tag vX.Y.Z && git push --tags` (el workflow arma Mac, Windows y Linux y crea el Release).
+1. Sube la versión en `app/Info.plist` y `escritorio/package.json` y haz push a main. **Eso es todo:** el workflow `publicar.yml`
+   ve que cambió `Info.plist`, compila Mac, Windows y Linux y crea el Release `vX.Y.Z` (si esa versión ya existe, no hace nada).
+   Las apps instaladas lo ven al abrir o cada 6 h y muestran el aviso **dentro de la app** (banner y Preferencias, nunca una alerta del sistema).
+2. También se puede lanzar con una etiqueta `vX.Y.Z` o a mano desde Actions.
 3. A mano (si Actions no está disponible): Mac con `bash herramientas/empaquetar.sh` en el Mac; Windows/Linux con los comandos de arriba;
    cada archivo con su `.sha256`; luego `gh release create vX.Y.Z <archivos>` (desde el Mac del usuario, que tiene `gh` con sesión).
    Nombres fijos (los usan los instaladores y el actualizador): `Minuta-macOS.zip`, `Minuta-Windows.exe`, `Minuta-Linux.AppImage`, `Minuta-Linux.tar.gz`.
+4. El Mac del usuario es una instalación de desarrollo (`~/minuta` es checkout git): se actualiza con `git pull` + `build.sh`, no con Releases.
+
+## Comentarios, votos y propuestas desde la app
+
+`Comentarios.swift` / `Comentarios` en `escritorio/src/main.js`. Sin servidor: si la persona conectó GitHub para el respaldo, se usa ese token
+(Llavero / safeStorage) para publicar issues (`minuta-app/minuta` o el catálogo), votar universos (reacciones) y proponer universos creados
+(issue con etiqueta `propuesta` y el JSON, solo con los campos de datos). Sin cuenta, se abre GitHub con todo listo. Nada es obligatorio ni
+aparece solo: se abre únicamente cuando la persona lo pide (⋯ → Enviar comentarios, ⋯ → Comentar el feedback, 💬/📤 en la galería).
 
 ## Datos en tiempo de ejecución (en el computador, nunca en git)
 

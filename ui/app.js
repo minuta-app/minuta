@@ -811,7 +811,8 @@
         ${E.menu ? `<div class="menu-mas" role="menu">
           ${enReunion && n ? `<button role="menuitem" data-accion="corregir"><span>✎</span>Corregir una palabra en toda la nota</button>
           <button role="menuitem" data-accion="obsidian"><span>↗</span>Abrir en Obsidian</button>
-          ${E.plataforma === "web" ? "" : `<button role="menuitem" data-accion="finder"><span>▤</span>Mostrar en la carpeta</button>`}<hr>` : ""}
+          ${E.plataforma === "web" ? "" : `<button role="menuitem" data-accion="finder"><span>▤</span>Mostrar en la carpeta</button>`}
+          <button role="menuitem" data-accion="comentar-nota"><span>🗨</span>Comentar el feedback de esta nota</button><hr>` : ""}
           <button role="menuitem" data-accion="preguntar"><span>✦</span>Pregúntale a tus reuniones<kbd>⌘K</kbd></button>
           <button role="menuitem" data-abrir-gym=""><span>🥊</span>Gimnasio: ensaya una reunión<kbd>⌘G</kbd></button>
           <button role="menuitem" data-accion="galeria"><span>${tema()?.emoji || "✨"}</span>Cambiar de universo<kbd>⌘U</kbd></button>
@@ -961,15 +962,19 @@
   }
   const puntajeVotos = (id) => { const v = E.votosU?.[id]; return v ? v.si - v.no : 0; };
   const chipVotos = (id) => { const v = E.votosU?.[id]; return v && (v.si || v.no) ? `<span class="u-votos" title="Votos de la comunidad">👍 ${v.si}</span>` : ""; };
-  function abrirVoto(id) {
-    const url = E.votosU?.[id]?.url; if (!url) return;
-    if (E.plataforma === "web") window.open(url, "_blank"); else host.enviar("abrirURL", { url });
+  function abrirVoto(id, voto) {
+    const v = E.votosU?.[id]; if (!v?.url) return;
+    const numero = +(/\/issues\/(\d+)/.exec(v.url)?.[1] || 0);
+    // Con su cuenta de GitHub conectada, el voto queda como reacción sin salir de la app.
+    if (E.comentCuenta && numero && voto && E.plataforma !== "web") { host.enviar("votarUniverso", { id, numero, positivo: voto === "si" }); return; }
+    if (E.plataforma === "web") window.open(v.url, "_blank"); else host.enviar("abrirURL", { url: v.url });
   }
 
   function galeria() {
     if (!E.galeria) return "";
     if (!E.catU.estado) setTimeout(() => pedirCatalogo("universos"), 0);
     if (!E.votosU) setTimeout(pedirVotos, 0);
+    pedirCuenta();
     const instalados = new Set(E.temas.map((t) => t.id));
     const porBajar = E.catU.lista.filter((u) => !instalados.has(u.id)).sort((a, b) => puntajeVotos(b.id) - puntajeVotos(a.id));
     const prev = E.previa && E.catU.lista.find((u) => u.id === E.previa);
@@ -982,7 +987,8 @@
         return `<div class="u-celda"><button class="universo${t.id === E.temaId ? " elegido" : ""}" data-tema="${t.id}" style="${varsUniverso(t.estilo)}">
           <span class="u-emoji">${t.emoji}</span><span class="u-nombre">${esc(t.nombre)}</span><span class="u-xp">XP: ${esc(t.xp)}${t.creado ? "" : chipVotos(t.id)}</span>
           <span class="u-iconos">${(t.iconos_rangos || []).slice(0, 7).join(" ")}</span>${t.id === E.temaId ? '<span class="u-check">✓</span>' : ""}${t.creado ? '<span class="u-creado">⚒️ creado</span>' : t.incluido ? "" : '<span class="u-creado">⬇ descargado</span>'}</button>
-          ${borrable ? `<button class="boton-mini u-quitar" data-forja="borrar-u" data-id="${esc(t.id)}" title="Quitar este universo">🗑</button>` : ""}</div>`;
+          ${borrable ? `<button class="boton-mini u-quitar" data-forja="borrar-u" data-id="${esc(t.id)}" title="Quitar este universo">🗑</button>` : ""}
+          ${t.creado ? `<button class="boton-mini u-proponer" data-proponer-u="${esc(t.id)}" title="Proponerlo al catálogo para que otros lo usen">📤</button>` : ""}</div>`;
       }).join("")}<button class="universo u-nuevo" data-forja="abrir"><span class="u-emoji">＋</span><span class="u-nombre">Crear universo</span><span class="u-xp">Con tu IA, en ~5 min</span></button></div>
       <div class="u-sub">Más universos para descargar ${E.catU.estado === "cargando" ? `<small>cargando…</small>` : E.catU.error && !E.catU.lista.length ? `<small>sin conexión al catálogo</small>` : `<small>${porBajar.length} disponibles · gratis</small>`}</div>
       ${porBajar.length ? `<div class="galeria-grid">${porBajar.map((u) => `<div class="u-celda"><button class="universo u-catalogo" data-previa="${esc(u.id)}" style="${varsUniverso(u.estilo)}" title="Ver cómo es">
@@ -997,7 +1003,7 @@
   function previaUniverso(u) {
     const m = u.muestra || {};
     return `<div class="u-previa" style="${varsUniverso(u.estilo)}" role="dialog" aria-label="Vista previa de ${esc(u.nombre)}">
-      <div class="up-cab"><span class="up-emoji">${u.emoji}</span><div><h3>${esc(u.nombre)}</h3><p>${esc(u.descripcion || "")}</p>${E.votosU?.[u.id] ? `<div class="up-votos"><span>¿Te gusta? Vota en GitHub:</span><button class="boton-mini" data-votar-u="${esc(u.id)}" title="Abre GitHub para votar">👍 ${E.votosU[u.id].si}</button><button class="boton-mini" data-votar-u="${esc(u.id)}" title="Abre GitHub para votar">👎 ${E.votosU[u.id].no}</button></div>` : ""}</div><button class="boton-mini" data-previa-cerrar title="Cerrar">✕</button></div>
+      <div class="up-cab"><span class="up-emoji">${u.emoji}</span><div><h3>${esc(u.nombre)}</h3><p>${esc(u.descripcion || "")}</p>${E.votosU?.[u.id] ? `<div class="up-votos"><span>${E.comentCuenta ? "¿Te gusta?" : "¿Te gusta? Vota en GitHub:"}</span><button class="boton-mini${E.votosU[u.id].mio === "si" ? " activo" : ""}" data-votar-u="${esc(u.id)}" data-voto="si" title="${E.comentCuenta ? "Votar a favor" : "Abre GitHub para votar"}">👍 ${E.votosU[u.id].si}</button><button class="boton-mini${E.votosU[u.id].mio === "no" ? " activo" : ""}" data-votar-u="${esc(u.id)}" data-voto="no" title="${E.comentCuenta ? "Votar en contra" : "Abre GitHub para votar"}">👎 ${E.votosU[u.id].no}</button><button class="boton-mini" data-comentar-u="${esc(u.id)}" title="Comentar este universo">💬</button></div>` : ""}</div><button class="boton-mini" data-previa-cerrar title="Cerrar">✕</button></div>
       ${m.elogio ? `<blockquote class="up-elogio">“${esc(m.elogio)}”</blockquote>` : ""}
       <div class="up-cols">
         <div><div class="up-eti">Rangos</div><ol class="up-rangos">${(m.rangos || []).map((r, i) => `<li><span>${esc(m.iconos_rangos?.[i] || "")}</span>${esc(r)}</li>`).join("")}</ol></div>
@@ -1219,7 +1225,17 @@
       <section class="card pref-comentarios"><div><b>✨ Versión ${esc(E.version || "")}</b><p>${E.act.hay ? "Hay una versión nueva lista para instalar." : "Minuta revisa sola si hay versiones nuevas."} Tus notas, perfil y universos no se tocan al actualizar.</p></div>
         <button class="boton-txt${E.act.hay ? " aplicar" : ""}" data-act="${E.act.hay ? "instalar" : "buscar"}">${E.act.hay ? "Actualizar ahora" : "Buscar actualizaciones"}</button></section>
       <section class="card pref-comentarios"><div><b>💬 ¿Algo no funciona o tienes una idea?</b><p>Cuéntanos: llega como un reporte público en GitHub. No incluyas datos de tus reuniones.</p></div>
-        <button class="boton-txt aplicar" data-accion="comentarios">Enviar comentarios</button></section>`;
+        <button class="boton-txt aplicar" data-accion="comentarios">Enviar comentarios</button></section>
+      ${acercaDe()}`;
+  }
+  /** Créditos y enlaces: quién hace Minuta, con qué está hecha y dónde está el código. */
+  const ENLACES = [["🌐", "Sitio web", "https://minuta-app.github.io/minuta/"], ["🧾", "Código en GitHub", "https://github.com/minuta-app/minuta"],
+    ["🌌", "Catálogo de universos e idiomas", "https://github.com/minuta-app/minuta-catalogo"], ["🤖", "Guía de tu IA", "https://minuta-app.github.io/minuta/ia.html"],
+    ["🙌", "Quiénes la hacen", "https://github.com/minuta-app/minuta/graphs/contributors"]];
+  function acercaDe() {
+    return `<section class="card acerca"><div><b>🎙️ Acerca de Minuta</b><p><span data-sin-traducir>Minuta ${esc(E.version || "")}</span> <span>es gratis y de código abierto (licencia MIT), hecha por su comunidad. Sin servidores ni cuentas: todo es tuyo.</span></p></div>
+      <div class="acerca-enlaces">${ENLACES.map(([i, n, u]) => `<button class="boton-mini" data-bv-url="${u}">${i} ${n}</button>`).join("")}</div>
+      <p class="acerca-creditos">Hecha con <b>whisper.cpp</b> (transcripción), <b>${ESCRITORIO ? "sherpa-onnx" : "FluidAudio"}</b> (separación de voces), <b>Python</b>${ESCRITORIO ? " y <b>Electron</b>" : " y <b>SwiftUI</b>"}. Los universos son homenajes de fans creados por la comunidad; las marcas y personajes pertenecen a sus dueños.</p></section>`;
   }
 
   function panelPreferencias() {
@@ -2521,7 +2537,8 @@
     if (E.coment) {
       const ct = ev.target.closest("[data-coment-tipo]"); if (ct) { E.coment.titulo = $("#coment-titulo")?.value; E.coment.texto = $("#coment-texto")?.value; E.coment.tipo = ct.dataset.comentTipo; render({ mantenerScroll: true }); return; }
       if (ev.target.closest("[data-coment-sistema]")) { E.coment.titulo = $("#coment-titulo")?.value; E.coment.texto = $("#coment-texto")?.value; E.coment.sistema = !E.coment.sistema; render({ mantenerScroll: true }); return; }
-      if (ev.target.closest("[data-coment-enviar]")) { enviarComentario(); return; }
+      const ce = ev.target.closest("[data-coment-enviar]"); if (ce) { enviarComentario(ce.dataset.comentEnviar); return; }
+      if (ev.target.closest("[data-coment-ver]")) { host.enviar("abrirURL", { url: E.coment.enviado }); E.coment = null; render({ mantenerScroll: true }); return; }
       const cc = ev.target.closest("[data-accion=cerrar-coment]");
       if (cc && (cc.classList.contains("boton") || cc.classList.contains("boton-txt") || ev.target.classList.contains("borrar-fondo"))) { E.coment = null; render({ mantenerScroll: true }); return; }
       if (ev.target.closest(".env-caja")) return;
@@ -2644,8 +2661,17 @@
       if (a === "abrir") setTimeout(() => $("#forja-nombre")?.focus(), 30);
       return;
     }
+    const au = !E.bv && ev.target.closest(".acerca [data-bv-url]");
+    if (au) { if (E.plataforma === "web") window.open(au.dataset.bvUrl, "_blank"); else host.enviar("abrirURL", { url: au.dataset.bvUrl }); return; }
     const vu = ev.target.closest("[data-votar-u]");
-    if (vu) { abrirVoto(vu.dataset.votarU); return; }
+    if (vu) { abrirVoto(vu.dataset.votarU, vu.dataset.voto); return; }
+    const cu = ev.target.closest("[data-comentar-u],[data-proponer-u]");
+    if (cu) {
+      const id = cu.dataset.comentarU || cu.dataset.proponerU;
+      const u = E.temas.find((t) => t.id === id) || E.catU.lista.find((t) => t.id === id);
+      if (u) abrirComentario(cu.dataset.proponerU ? { tipo: "propuesta", universo: u } : { tipo: "universo", universo: u });
+      return;
+    }
     const uPrev = ev.target.closest("[data-previa],[data-previa-cerrar],[data-bajar-u]");
     if (uPrev) {
       if (uPrev.dataset.bajarU) { descargarUniverso(uPrev.dataset.bajarU, !!uPrev.dataset.usar); E.previa = null; return; }
@@ -2699,7 +2725,8 @@
     switch (b.dataset.accion) {
       case "galeria": E.galeria = true; render({ mantenerScroll: true }); break;
       case "bienvenida": E.menu = false; abrirBienvenida(); break;
-      case "comentarios": E.menu = false; E.coment = { tipo: "error", sistema: true }; render({ mantenerScroll: true }); setTimeout(() => $("#coment-titulo")?.focus(), 30); break;
+      case "comentarios": E.menu = false; abrirComentario({ tipo: "error" }); break;
+      case "comentar-nota": E.menu = false; abrirComentario({ tipo: "nota" }); break;
       case "cerrar-galeria": if (ev.target === b || b.classList.contains("boton")) { E.galeria = false; render({ mantenerScroll: true }); } break;
       case "lateral": E.lateral = !E.lateral; render({ mantenerScroll: true }); break;
       case "menu": E.menu = !E.menu; render({ mantenerScroll: true }); break;
@@ -2867,28 +2894,90 @@
       <button class="boton-txt aplicar" data-act="instalar">Actualizar</button><button class="boton-mini" data-act="luego" title="Más tarde">✕</button></div>`;
   }
 
-  // ───────────────────────── Comentarios sobre la app (sin servidor: issue en GitHub) ─────────────────────────
+  // ───────────────────────── Comentarios (sin servidor: issues en GitHub) ─────────────────────────
+  // Con la cuenta de GitHub del respaldo se publican desde la app; si no, se abre GitHub con todo listo.
+  // Nada es obligatorio ni aparece solo: el formulario se abre únicamente cuando la persona lo pide.
   E.coment = null;
+  E.comentCuenta = undefined; // undefined: aún no se pregunta · null: sin cuenta · "usuario": se publica con su cuenta
+  function pedirCuenta() {
+    if (E.comentCuenta !== undefined || E.plataforma === "web") return;
+    E.comentCuenta = null;
+    host.enviar("comentariosCuenta", {});
+  }
+  function abrirComentario(c) {
+    E.coment = { sistema: true, ...c };
+    pedirCuenta();
+    render({ mantenerScroll: true });
+    setTimeout(() => $(c.tipo === "error" || c.tipo === "idea" || c.tipo === "otro" ? "#coment-titulo" : "#coment-texto")?.focus(), 30);
+  }
+  const TIPOS_COMENT = [["error", "🐞 Algo falla"], ["idea", "💡 Una idea"], ["universo", "🌌 Un universo"], ["otro", "💬 Otro"]];
+  /** Universo listo para el catálogo: solo los campos de datos (nada de la máquina de la persona). */
+  function universoParaCatalogo(u) {
+    const CAMPOS = ["id", "nombre", "emoji", "xp", "personaje_por_defecto", "elogios", "apartados", "rangos", "logros", "iconos_logros", "iconos_apartados", "iconos_rangos", "estilo", "idioma", "descripcion"];
+    return JSON.stringify(Object.fromEntries(CAMPOS.filter((k) => u[k] !== undefined).map((k) => [k, u[k]])), null, 2);
+  }
   function overlayComentarios() {
     const c = E.coment; if (!c) return "";
-    return `<div class="galeria borrar-fondo" data-accion="cerrar-coment"><div class="galeria-caja env-caja" role="dialog" aria-label="Enviar comentarios">
-      <div class="gy-cab"><div><h2>💬 Enviar comentarios</h2><p>Se abre GitHub con tu mensaje listo; lo revisas y lo publicas tú. Es público: no pongas datos de tus reuniones.</p></div><button class="boton" data-accion="cerrar-coment" title="Cerrar (Esc)">✕</button></div>
-      <div class="pestanas">${[["error", "🐞 Algo falla"], ["idea", "💡 Una idea"], ["universo", "🌌 Un universo"], ["otro", "💬 Otro"]].map(([k, n]) => `<button class="pestana${c.tipo === k ? " activa" : ""}" data-coment-tipo="${k}">${n}</button>`).join("")}</div>
-      <label class="cat-campo"><span>Título</span><input id="coment-titulo" value="${esc(c.titulo || "")}" placeholder="${c.tipo === "error" ? "ej: no detecta Zoom cuando…" : c.tipo === "universo" ? "ej: universo de The Office" : "ej: poder exportar a PDF"}"></label>
-      <label class="cat-campo"><span>Cuéntanos</span><textarea id="coment-texto" rows="6" placeholder="${c.tipo === "error" ? "Qué hiciste, qué esperabas y qué pasó." : "Mientras más concreto, mejor."}">${esc(c.texto || "")}</textarea></label>
-      <label class="av-op" data-coment-sistema><span class="av-txt"><b>Incluir versión de la app e idioma</b><small>ayuda a reproducir errores; nunca se incluyen notas ni nombres</small></span><span class="pn-interruptor${c.sistema ? " on" : ""}"><i></i></span></label>
-      <div class="borrar-botones"><button class="boton-txt" data-accion="cerrar-coment">Cancelar</button><button class="boton-txt aplicar" data-coment-enviar>Abrir en GitHub</button></div>
+    const cuenta = E.comentCuenta;
+    if (c.enviado) return `<div class="galeria borrar-fondo" data-accion="cerrar-coment"><div class="galeria-caja env-caja" role="dialog" aria-label="Comentario publicado">
+      <div class="gy-cab"><div><h2>✓ Publicado</h2><p>${c.tipo === "propuesta" ? "Tu universo quedó propuesto en el catálogo. Cuando lo revisemos, aparecerá para que todos lo descarguen." : "Gracias. Quedó publicado en GitHub y te llegarán las respuestas ahí."}</p></div><button class="boton" data-accion="cerrar-coment" title="Cerrar (Esc)">✕</button></div>
+      <div class="borrar-botones"><button class="boton-txt" data-accion="cerrar-coment">Cerrar</button><button class="boton-txt aplicar" data-coment-ver>Verlo en GitHub</button></div></div></div>`;
+    const sobre = c.tipo === "nota" ? "el feedback de una nota" : c.universo ? `${c.universo.emoji || "🌌"} ${c.universo.nombre}` : "";
+    const titulo = c.tipo === "propuesta" ? "📤 Proponer tu universo" : c.tipo === "nota" ? "🗨 Comentar el feedback" : c.universo ? "💬 Comentar un universo" : "💬 Enviar comentarios";
+    const ayuda = c.tipo === "propuesta" ? "Se envía el universo (nombre, rangos, logros, frases y colores) para que lo revisemos y lo sumemos al catálogo. Revisa que no tenga tu nombre, el de tu empresa ni datos de tus reuniones."
+      : c.tipo === "nota" ? "Cuéntanos qué te pareció el feedback. No se envía nada de la nota: solo lo que escribas aquí."
+      : "No incluyas datos de tus reuniones.";
+    const donde = cuenta ? `Se publica en GitHub con tu cuenta <b>@${esc(cuenta)}</b> y es público.` : "Se abre GitHub con tu mensaje listo; lo revisas y lo publicas tú. Es público.";
+    const general = !c.universo && c.tipo !== "nota";
+    return `<div class="galeria borrar-fondo" data-accion="cerrar-coment"><div class="galeria-caja env-caja" role="dialog" aria-label="${esc(titulo)}">
+      <div class="gy-cab"><div><h2>${titulo}</h2><p><span>${donde}</span> <span>${ayuda}</span></p></div><button class="boton" data-accion="cerrar-coment" title="Cerrar (Esc)">✕</button></div>
+      ${sobre ? `<p class="coment-sobre">Sobre: <b data-sin-traducir>${esc(sobre)}</b></p>` : ""}
+      ${general ? `<div class="pestanas">${TIPOS_COMENT.map(([k, n]) => `<button class="pestana${c.tipo === k ? " activa" : ""}" data-coment-tipo="${k}">${n}</button>`).join("")}</div>
+      <label class="cat-campo"><span>Título</span><input id="coment-titulo" value="${esc(c.titulo || "")}"></label>` : ""}
+      <label class="cat-campo"><span>${c.tipo === "propuesta" ? "Cuéntanos algo de tu universo (opcional)" : "Cuéntanos"}</span><textarea id="coment-texto" rows="${c.tipo === "propuesta" ? 3 : 6}">${esc(c.texto || "")}</textarea></label>
+      ${c.tipo === "propuesta" ? "" : `<label class="av-op" data-coment-sistema><span class="av-txt"><b>${c.tipo === "nota" ? "Incluir versión de la app, idioma, tu IA y el universo" : "Incluir versión de la app e idioma"}</b><small>ayuda a entender el contexto; nunca se incluyen notas ni nombres</small></span><span class="pn-interruptor${c.sistema ? " on" : ""}"><i></i></span></label>`}
+      ${c.error ? `<p class="forja-error">No se pudo publicar: ${esc(c.error)}. Puedes abrirlo en GitHub.</p>` : ""}
+      <div class="borrar-botones${cuenta ? " tres" : ""}"><button class="boton-txt" data-accion="cerrar-coment">Cancelar</button>
+        ${cuenta ? `<button class="boton-txt" data-coment-enviar="navegador">Abrir en GitHub</button><button class="boton-txt aplicar" data-coment-enviar="directo" ${c.enviando ? "disabled" : ""}>${c.enviando ? "Publicando…" : "Publicar"}</button>`
+          : `<button class="boton-txt aplicar" data-coment-enviar="navegador">Abrir en GitHub</button>`}</div>
     </div></div>`;
   }
-  function enviarComentario() {
+  function enviarComentario(modo) {
     const c = E.coment; c.titulo = ($("#coment-titulo")?.value || "").trim(); c.texto = ($("#coment-texto")?.value || "").trim();
-    if (!c.titulo) { $("#coment-titulo")?.focus(); return; }
-    const pre = { error: "🐞", idea: "💡", universo: "🌌", otro: "💬" }[c.tipo] || "";
-    const cuerpo = `${c.texto}${c.sistema ? `\n\n---\nMinuta · idioma ${E.idioma.codigo} · ${ESCRITORIO ? (window.MINUTA_HOST === "windows" ? "Windows" : "Linux") : navigator.userAgent.match(/Mac OS X [\d_]+/)?.[0]?.replace(/_/g, ".") || "macOS"}` : ""}`;
-    const datos = { titulo: `${pre} ${c.titulo}`, cuerpo, etiqueta: { error: "error", idea: "idea", universo: "universo", otro: "comentario" }[c.tipo] };
-    if (E.plataforma === "web") window.open(`https://github.com/minuta-app/minuta-catalogo/issues/new?title=${encodeURIComponent(datos.titulo)}&body=${encodeURIComponent(cuerpo)}&labels=${datos.etiqueta}`, "_blank");
-    else host.enviar("comentarios", datos);
-    E.coment = null; render({ mantenerScroll: true }); toast("Se abrió GitHub: revisa y publica ✓");
+    const general = !c.universo && c.tipo !== "nota";
+    if (general && !c.titulo) { $("#coment-titulo")?.focus(); return; }
+    if (!general && c.tipo !== "propuesta" && !c.texto) { $("#coment-texto")?.focus(); return; }
+    const so = ESCRITORIO ? (window.MINUTA_HOST === "windows" ? "Windows" : "Linux") : navigator.userAgent.match(/Mac OS X [\d_]+/)?.[0]?.replace(/_/g, ".") || "macOS";
+    const ia = { claude: "Claude", codex: "ChatGPT (Codex)", gemini: "Gemini" }[E.perfil?.ia || "claude"] || "";
+    const sistema = c.sistema && c.tipo !== "propuesta" ? `\n\n---\nMinuta ${E.version || ""} · idioma ${E.idioma.codigo} · ${so}${c.tipo === "nota" ? ` · IA: ${ia} · universo: ${E.temaId}` : ""}` : "";
+    const resumen = (t) => t.replace(/\s+/g, " ").slice(0, 70) + (t.length > 70 ? "…" : "");
+    const u = c.universo;
+    let datos;
+    if (c.tipo === "propuesta") {
+      const json = universoParaCatalogo(u);
+      datos = { repo: "catalogo", etiqueta: "propuesta", titulo: `📤 Propuesta de universo: ${u.nombre} [${u.id}]`,
+        cuerpo: `${c.texto ? c.texto + "\n\n" : ""}Universo creado con Minuta.\n\n\`\`\`json\n${json}\n\`\`\`` };
+      // Por el navegador no cabe un universo entero en la dirección: se copia y la persona lo pega.
+      if (modo !== "directo" && datos.cuerpo.length > 6000) {
+        host.enviar("copiar", { texto: "```json\n" + json + "\n```" });
+        datos.cuerpo = `${c.texto ? c.texto + "\n\n" : ""}Universo creado con Minuta.\n\n<!-- Tu universo quedó copiado: pégalo aquí abajo (Cmd+V / Ctrl+V). -->\n`;
+      }
+    } else if (u) {
+      datos = { repo: "catalogo", etiqueta: "universo", titulo: `🌌 ${u.nombre} [${u.id}]: ${resumen(c.texto)}`, cuerpo: c.texto + sistema };
+    } else if (c.tipo === "nota") {
+      datos = { repo: "app", etiqueta: "feedback", titulo: `🗨 Sobre el feedback: ${resumen(c.texto)}`, cuerpo: c.texto + sistema };
+    } else {
+      const pre = { error: "🐞", idea: "💡", universo: "🌌", otro: "💬" }[c.tipo] || "";
+      datos = { repo: c.tipo === "universo" ? "catalogo" : "app", etiqueta: { error: "error", idea: "idea", universo: "universo", otro: "comentario" }[c.tipo],
+        titulo: `${pre} ${c.titulo}`, cuerpo: (c.texto || "") + sistema };
+    }
+    if (modo === "directo") { c.enviando = true; c.error = ""; render({ mantenerScroll: true }); host.enviar("comentarios", { ...datos, directo: true }); return; }
+    if (E.plataforma === "web") {
+      const r = datos.repo === "catalogo" ? "minuta-app/minuta-catalogo" : "minuta-app/minuta";
+      window.open(`https://github.com/${r}/issues/new?title=${encodeURIComponent(datos.titulo)}&body=${encodeURIComponent(datos.cuerpo)}&labels=${datos.etiqueta}`, "_blank");
+    } else host.enviar("comentarios", datos);
+    E.coment = null; render({ mantenerScroll: true });
+    toast(c.tipo === "propuesta" && datos.cuerpo.includes("quedó copiado") ? "Se abrió GitHub: pega tu universo y publica ✓" : "Se abrió GitHub: revisa y publica ✓");
   }
 
   document.addEventListener("input", (ev) => {
@@ -3077,6 +3166,24 @@
       render({ mantenerScroll: true });
     },
     /** Terminó una descarga del catálogo. */
+    /** Cuenta de GitHub con la que se puede publicar: { usuario } (null si no hay). */
+    comentariosCuenta(d) { E.comentCuenta = d?.usuario || null; if (E.coment || E.galeria) render({ mantenerScroll: true }); },
+    /** Resultado de publicar un comentario con la cuenta: { ok, url, error } */
+    comentarioEnviado(d) {
+      if (!E.coment) return;
+      E.coment.enviando = false;
+      if (d.ok && /^https:\/\/github\.com\//.test(d.url || "")) E.coment.enviado = d.url; else E.coment.error = d.error || "GitHub no respondió";
+      render({ mantenerScroll: true });
+    },
+    /** Resultado de votar un universo: { id, ok, nuevo, positivo } */
+    votado(d) {
+      const v = E.votosU?.[d.id]; if (!v) return;
+      if (!d.ok) { toast("No se pudo votar"); return; }
+      if (d.nuevo) v[d.positivo ? "si" : "no"]++;
+      v.mio = d.positivo ? "si" : "no";
+      toast(d.nuevo ? "¡Voto registrado! ✓" : "Ya habías votado así");
+      render({ mantenerScroll: true });
+    },
     descargado(r) {
       if (r.tipo === "universo") {
         E.catU.bajando = null;

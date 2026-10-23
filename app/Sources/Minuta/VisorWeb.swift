@@ -392,9 +392,23 @@ private struct WebHost: NSViewRepresentable {
                 Idioma.olvidar()
                 enviarTodo()
                 NotificationCenter.default.post(name: .minutaNotasCambiaron, object: nil)
+            case "comentariosCuenta":
+                Comentarios.cuenta { [weak self] u in self?.llamarFuncion("comentariosCuenta", ["usuario": u ?? NSNull()]) }
+            case "votarUniverso":
+                guard let numero = datos["numero"] as? Int, let id = datos["id"] as? String else { break }
+                let positivo = datos["positivo"] as? Bool ?? true
+                Comentarios.votar(numero: numero, positivo: positivo) { [weak self] ok, nuevo in
+                    self?.llamarFuncion("votado", ["id": id, "ok": ok, "nuevo": nuevo, "positivo": positivo])
+                }
+            case "comentarios" where datos["directo"] as? Bool == true:
+                // Con la cuenta de GitHub de la persona (la del respaldo): se publica sin abrir el navegador.
+                Comentarios.publicar(repo: datos["repo"] as? String ?? "app", titulo: datos["titulo"] as? String ?? "",
+                                     cuerpo: datos["cuerpo"] as? String ?? "", etiqueta: datos["etiqueta"] as? String ?? "comentario") { [weak self] ok, texto in
+                    self?.llamarFuncion("comentarioEnviado", ["ok": ok, "url": ok ? texto : "", "error": ok ? "" : texto])
+                }
             case "comentarios":
                 // Abre un issue prellenado en GitHub; el usuario lo revisa y lo publica él mismo.
-                var c = URLComponents(string: Catalogo.urlComentarios)!
+                var c = URLComponents(string: "https://github.com/\(Comentarios.repos[datos["repo"] as? String ?? "app"] ?? "minuta-app/minuta")/issues/new")!
                 c.queryItems = [URLQueryItem(name: "title", value: datos["titulo"] as? String ?? ""),
                                 URLQueryItem(name: "body", value: datos["cuerpo"] as? String ?? ""),
                                 URLQueryItem(name: "labels", value: datos["etiqueta"] as? String ?? "comentario")]

@@ -49,6 +49,37 @@ function muestras(buf) {
 /** Ventanas cuya interfaz ya terminó de cargar (isLoading() aún dice true durante did-finish-load). */
 const listo = new Set();
 const cargada = (w) => w && !w.isDestroyed() && listo.has(w.webContents.id);
+// ───────────── Comentarios y votos con la cuenta de GitHub del respaldo (sin servidor propio) ─────────────
+const Comentarios = {
+  repos: { app: "minuta-app/minuta", catalogo: Catalogo.repo },
+  _usuario: null,
+  async _api(ruta, metodo = "GET", cuerpo) {
+    const token = Respaldo.token("github");
+    if (!token) return { codigo: 0, json: {} };
+    try {
+      const r = await net.fetch(`https://api.github.com/${ruta}`, { method: metodo, body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "User-Agent": "Minuta", "Content-Type": "application/json" } });
+      return { codigo: r.status, json: await r.json().catch(() => ({})) };
+    } catch (e) { return { codigo: 0, json: { message: e.message } }; }
+  },
+  async cuenta() {
+    if (this._usuario) return this._usuario;
+    const r = await this._api("user");
+    this._usuario = r.codigo === 200 ? r.json.login || null : null;
+    return this._usuario;
+  },
+  async publicar(repo, titulo, cuerpo, etiqueta) {
+    const r = this.repos[repo]; if (!r) return { ok: false, error: "Repositorio desconocido" };
+    const x = await this._api(`repos/${r}/issues`, "POST", { title: titulo, body: cuerpo, labels: [etiqueta] });
+    return x.codigo === 201 ? { ok: true, url: x.json.html_url } : { ok: false, error: x.json.message || `GitHub respondió ${x.codigo}` };
+  },
+  async votar(numero, positivo) {
+    if (!numero) return { ok: false, nuevo: false };
+    const x = await this._api(`repos/${Catalogo.repo}/issues/${numero}/reactions`, "POST", { content: positivo ? "+1" : "-1" });
+    return { ok: x.codigo === 200 || x.codigo === 201, nuevo: x.codigo === 201 };
+  },
+};
+
 function llamarFuncion(web, f, datos) {
   if (!web || web.isDestroyed()) return Promise.resolve(null);
   return web.webContents.executeJavaScript(`window.Minuta && window.Minuta.${f} ? window.Minuta.${f}(${json(datos)}) : null`).catch(() => null);
@@ -694,8 +725,18 @@ const ACCIONES = {
     llamarFuncion(w, "descargado", { tipo: "idioma", id: d.codigo, ok: !error, error: error || "", instalados: Idioma.instalados() });
   },
   perfil: (d) => { Perfil.mezclar(d.cambios || {}); Idioma.olvidar(); actualizarBandeja(); notasCambiaron(); },
-  comentarios: (d) => {
-    const u = new URL(Catalogo.urlComentarios);
+  comentariosCuenta: async (d, w) => llamarFuncion(w, "comentariosCuenta", { usuario: await Comentarios.cuenta() }),
+  votarUniverso: async (d, w) => {
+    const r = await Comentarios.votar(Number(d.numero), d.positivo !== false);
+    llamarFuncion(w, "votado", { id: d.id, ok: r.ok, nuevo: r.nuevo, positivo: d.positivo !== false });
+  },
+  comentarios: async (d, w) => {
+    if (d.directo) {
+      // Con la cuenta de GitHub de la persona (la del respaldo): se publica sin abrir el navegador.
+      const r = await Comentarios.publicar(d.repo, String(d.titulo || ""), String(d.cuerpo || ""), String(d.etiqueta || "comentario"));
+      return llamarFuncion(w, "comentarioEnviado", r);
+    }
+    const u = new URL(`https://github.com/${Comentarios.repos[d.repo] || Comentarios.repos.app}/issues/new`);
     u.searchParams.set("title", String(d.titulo || "")); u.searchParams.set("body", String(d.cuerpo || "")); u.searchParams.set("labels", String(d.etiqueta || "comentario"));
     shell.openExternal(u.toString());
   },

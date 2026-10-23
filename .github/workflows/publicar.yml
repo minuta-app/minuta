@@ -1,27 +1,51 @@
-# Publica una versión de Minuta: al subir una etiqueta v* (ej. v0.3.0) compila Mac, Windows y Linux,
-# arma cada descarga con su huella SHA-256 y crea el Release. La app y los instaladores lo descargan de ahí.
+# Publica una versión de Minuta sola: basta con subir el número de versión en app/Info.plist (y escritorio/package.json)
+# y hacer push a main. Compila Mac, Windows y Linux, arma cada descarga con su huella SHA-256 y crea el Release vX.Y.Z;
+# las apps instaladas lo ven en su próxima revisión (al abrir y cada 6 h) y muestran el aviso dentro de la app.
+# También sirve subir una etiqueta v* o lanzarlo a mano. Si la versión ya está publicada, no hace nada.
 # (Si Actions no está disponible, se hace a mano: ver "Publicar una versión" en CLAUDE.md.)
 name: Publicar versión
 on:
   push:
+    branches: [main]
+    paths: ["app/Info.plist"]
     tags: ["v*"]
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      publicar: ${{ steps.v.outputs.publicar }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}"
+          else V=$(python3 -c "import plistlib;print(plistlib.load(open('app/Info.plist','rb'))['CFBundleShortVersionString'])"); fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if gh release view "v$V" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "publicar=false" >> "$GITHUB_OUTPUT"; echo "v$V ya está publicada: nada que hacer."
+          else echo "publicar=true" >> "$GITHUB_OUTPUT"; echo "Se publicará v$V"; fi
+
   macos:
+    needs: version
+    if: needs.version.outputs.publicar == 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Versión de la etiqueta en Info.plist
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${GITHUB_REF_NAME#v}" app/Info.plist
+      - name: Versión en Info.plist
+        run: /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ needs.version.outputs.version }}" app/Info.plist
       - name: Empaquetar
         run: bash herramientas/empaquetar.sh
       - uses: actions/upload-artifact@v4
         with: { name: macos, path: "dist/Minuta-macOS.zip*" }
 
   windows-linux:
+    needs: version
+    if: needs.version.outputs.publicar == 'true'
     # Ambos se arman desde Linux: whisper se compila con zig y el instalador de Windows con makensis (sin Wine).
     runs-on: ubuntu-24.04
     defaults: { run: { working-directory: escritorio } }
@@ -31,9 +55,8 @@ jobs:
         with: { node-version: 22 }
       - name: Herramientas
         run: sudo apt-get update && sudo apt-get install -y nsis cmake && python3 -m pip install --user --break-system-packages ziglang
-      - name: Versión de la etiqueta
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: npm version --no-git-tag-version --allow-same-version "${GITHUB_REF_NAME#v}"
+      - name: Versión
+        run: npm version --no-git-tag-version --allow-same-version "${{ needs.version.outputs.version }}"
       - run: npm ci
       - name: Linux (AppImage y tar.gz)
         run: |
@@ -49,12 +72,13 @@ jobs:
         with: { name: escritorio, path: "escritorio/dist/Minuta-*" }
 
   release:
-    needs: [macos, windows-linux]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [version, macos, windows-linux]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/download-artifact@v4
         with: { path: descargas, merge-multiple: true }
       - name: Crear el Release
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: gh release create "$GITHUB_REF_NAME" descargas/* --repo "$GITHUB_REPOSITORY" --title "Minuta $GITHUB_REF_NAME" --generate-notes
+        run: |
+          V="v${{ needs.version.outputs.version }}"
+          gh release create "$V" descargas/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Minuta $V" --generate-notes

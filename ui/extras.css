@@ -345,3 +345,16 @@
 /* Preferencias en Windows/Linux: dirección iCal del calendario */
 .av-ics { display: flex; gap: 8px; margin: -2px 0 10px 34px; }
 .av-ics input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--linea); background: var(--panel); color: var(--texto); font: inherit; font-size: 13px; }
+
+/* Comentarios y propuestas de universos */
+.u-proponer { position: absolute; top: 8px; right: 44px; z-index: 2; opacity: 0; transition: opacity .15s; }
+.u-celda:hover .u-proponer, .u-proponer:focus-visible { opacity: 1; }
+.u-celda:not(:has(.u-quitar)) .u-proponer { right: 8px; }
+.up-cab .up-votos .boton-mini.activo { background: color-mix(in srgb, var(--u-texto) 18%, transparent); font-weight: 700; }
+.coment-sobre { margin: 0 0 12px; font-size: 14px; color: var(--suave); } .coment-sobre b { color: var(--texto); }
+.borrar-botones.tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* Acerca de Minuta (Preferencias) */
+.card.acerca { display: grid; gap: 12px; }
+.acerca p { margin: 4px 0 0; color: var(--suave); font-size: 13.5px; }
+.acerca-enlaces { display: flex; flex-wrap: wrap; gap: 8px; } .acerca-enlaces .boton-mini { width: auto; padding: 5px 11px; margin: 0; }
+.acerca-creditos { font-size: 12.5px !important; } .acerca-creditos b { color: var(--texto); font-weight: 600; }
