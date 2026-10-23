@@ -71,14 +71,36 @@ html.panel.emulada.forma body { padding: 30px; }
 .pn-cargando { width: 34px; height: 34px; flex: none; border-radius: 50%; border: 3px solid color-mix(in srgb, var(--acento) 25%, transparent); border-top-color: var(--acento); animation: girar 0.9s linear infinite; }
 .pn-estado { font-size: 11.5px; color: var(--suave); padding: 0 3px; line-height: 1.4; }
 
-/* Semana */
-.pn-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
-.pn-kpis .metrica { padding: 9px 10px 8px; }
-.pn-kpis .valor { font-size: 20px; display: flex; align-items: baseline; gap: 3px; }
-.pn-kpis .valor small { font-size: 11px; }
-.pn-kpis .valor i { font-style: normal; font-size: 9px; margin-left: 2px; }
+/* Semana: una tarjeta con tres cifras */
+.pn-kpis { display: grid; grid-template-columns: repeat(3, 1fr); padding: 9px 4px !important; }
+.pn-kpis > div { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1px; }
+.pn-kpis > div + div { border-left: 1px solid var(--linea); }
+.pn-kpis b { font: 800 18px/1.1 var(--fuente-t, ui-rounded), system-ui; font-variant-numeric: tabular-nums; color: var(--texto); display: flex; align-items: baseline; gap: 2px; }
+.pn-kpis b small { font-size: 10.5px; font-weight: 600; color: var(--suave); }
+.pn-kpis span { font-size: 10px; color: var(--suave); line-height: 1.2; }
+.pn-kpis i { font-style: normal; font-size: 8.5px; margin-left: 2px; }
 .pn-kpis i.bien { color: #22c55e; } .pn-kpis i.mal { color: #ef4444; } .pn-kpis i.igual { color: var(--suave); }
-.pn-kpis .nombre { font-size: 10px; margin-top: 3px; line-height: 1.2; }
+
+/* Nivel en una fila (abre los universos) */
+.pn-nivel { position: relative; display: flex !important; align-items: center; gap: 10px; width: 100%; padding: 9px 12px 12px !important; text-align: left; cursor: pointer; overflow: hidden; }
+.pn-nivel-ico { width: 34px; height: 34px; flex: none; display: grid; place-items: center; font-size: 19px; border-radius: 50%; background: color-mix(in srgb, var(--acento) 22%, transparent); }
+.pn-nivel-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pn-nivel-txt b { font-family: var(--fuente-t); font-weight: var(--peso-t); font-style: var(--cursiva); text-transform: var(--mayus); font-size: 14.5px; line-height: 1.15; color: var(--texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pn-nivel-txt small { font-size: 10.5px; color: var(--suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pn-nivel-logros { flex: none; display: flex; align-items: center; gap: 3px; font-size: 13px; }
+.pn-nivel-logros b { font: 800 16px/1 var(--fuente-t, ui-rounded), system-ui; color: var(--acento-t, var(--acento)); }
+.pn-nivel-barra { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: color-mix(in srgb, var(--texto) 10%, transparent); }
+.pn-nivel-barra::after { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--p) * 100%); background: var(--acento); }
+.pn-nivel:hover .pn-nivel-ico { transform: scale(1.08); } .pn-nivel-ico { transition: transform .15s; }
+
+/* Actualización pendiente: una fila delgada bajo la cabecera */
+.pn-act-fila { display: flex; align-items: center; gap: 8px; width: 100%; margin: -3px 0 -2px; padding: 6px 10px; border-radius: var(--radio-c); cursor: pointer; text-align: left;
+  color: var(--sobre-acento); background: var(--acento); font-size: 12px; }
+.pn-act-fila span { font-weight: 800; } .pn-act-fila b { flex: 1; font-weight: 700; }
+.pn-act-fila em { font-style: normal; font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(0,0,0,.2); color: #fff; }
+.pn-act-fila:hover { filter: brightness(1.06); }
+.pn-acc .boton.activo { background: color-mix(in srgb, var(--acento) 25%, transparent); }
+.pn-link:disabled { opacity: .45; cursor: default; text-decoration: none; }
 
 .pn-lista { overflow: visible; padding: 0; margin: -2px 0 0; flex: none; }
 .pn-lista .fila { padding: 6px 8px; }
@@ -143,8 +165,11 @@ html.panel.emulada.forma body { padding: 30px; }
 
 /* Tipo de reunión configurable */
 .pn-tit-tipo { margin: 2px 2px -4px; }
-.pn-tipos { display: flex !important; flex-wrap: wrap; gap: 3px; }
-.pn-tipos .pestana { flex: 1 1 auto; min-width: 74px; }
+.pn-tipos { display: flex !important; flex-wrap: nowrap; gap: 3px; overflow-x: auto; scrollbar-width: none; }
+.pn-tipos::-webkit-scrollbar { display: none; }
+.pn-tipos .pestana { flex: 1 0 auto; min-width: 0; padding: 6px 5px; gap: 4px; font-size: 11px; position: relative; white-space: nowrap; }
+.pn-tipos .pn-tipo-editar { flex: 0 0 auto; min-width: 30px; opacity: .65; } .pn-tipos .pn-tipo-editar:hover { opacity: 1; }
+.pn-tipos sup { font-size: 8px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; opacity: .75; margin-left: 1px; }
 .pn-emo { font-size: 12px; line-height: 1; }
 .pn-pista { display: flex; align-items: center; gap: 7px; margin: -3px 3px 0; font-size: 11px; color: var(--suave); line-height: 1.35; }
 .pn-pista .tipo-barra { width: 7px; height: 7px; border-radius: 50%; flex: none; }
@@ -158,3 +183,16 @@ html.panel.emulada.forma body { padding: 30px; }
 .vv b.bien { color: var(--bien); } .vv b.ojo { color: var(--ojo); } .vv b.mal { color: var(--mal); }
 .vv small { font-size: 10px; color: var(--suave); }
 .pn-parar-txt small { text-shadow: none !important; }
+
+/* Título y tipo en una sola fila; el tipo se elige en un menú con lo que evaluará tu IA */
+.pn-fila-titulo { display: flex; gap: 6px; align-items: stretch; }
+.pn-fila-titulo .pn-campo { flex: 1; min-width: 0; margin: 0; }
+.pn-tipo-sel { position: relative; flex: none; display: flex; }
+.pn-tipo-btn { display: flex; align-items: center; gap: 5px; padding: 0 9px; font-size: 11.5px; max-width: 150px; white-space: nowrap; cursor: pointer; }
+.pn-tipo-nom { overflow: hidden; text-overflow: ellipsis; }
+.pn-tipo-btn sup { font-size: 8px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; opacity: .75; }
+.pn-flecha { font-size: 9px; opacity: .7; }
+.pn-tipo-menu { min-width: 260px; top: calc(100% + 6px); }
+.pn-tipo-menu .pn-tm-txt { width: auto !important; flex: 1; text-align: left !important; display: flex; flex-direction: column; min-width: 0; }
+.pn-tipo-menu .pn-tm-txt b { font-size: 12.5px; } .pn-tipo-menu .pn-tm-txt small { font-size: 10.5px; color: var(--suave); white-space: normal; line-height: 1.3; }
+.pn-tipo-menu { background: var(--fondo); z-index: 40; }

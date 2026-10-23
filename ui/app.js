@@ -1085,13 +1085,25 @@
       return `<i class="${bien ? "bien" : "mal"}">${d > 0 ? "▲" : "▼"}</i>`;
     };
     const mE = mul(esta), mA = mul(antes);
-    return `<div class="pn-kpis">
-      <div class="metrica"><div class="valor">${esta.length}${flecha(esta.length, antes.length)}</div><div class="nombre">reuniones · 7 días</div></div>
-      <div class="metrica"><div class="valor">${Math.round(suma(esta, (x) => x.dur))}<small>min</small></div><div class="nombre">en reuniones</div></div>
-      <div class="metrica"><div class="valor">${mE == null ? "—" : mE.toFixed(1)}${flecha(mE, mA, true)}</div><div class="nombre">muletillas /10 min</div></div>
+    return `<div class="pn-kpis card">
+      <div><b>${esta.length}${flecha(esta.length, antes.length)}</b><span>reuniones</span></div>
+      <div><b>${Math.round(suma(esta, (x) => x.dur))}<small>min</small></b><span>en reuniones</span></div>
+      <div><b>${mE == null ? "—" : mE.toFixed(1)}${flecha(mE, mA, true)}</b><span>muletillas /10 min</span></div>
     </div>`;
   }
 
+  /** Tu nivel en una sola fila: rango, lo que falta y logros. Tocarlo abre los universos. */
+  function nivelPanel() {
+    const t = tema(); if (!t) return "";
+    const xp = xpTotal(E.notas), { i, r, sig } = rango(t, xp);
+    const prog = sig ? (xp - UMBRALES[i]) / (sig - UMBRALES[i]) : 1;
+    const logros = calcularLogros(E.notas).filter((e) => e.fecha).length;
+    return `<button class="pn-nivel card" data-pn-vista="universos" title="${esc(t.nombre)} · cambiar de universo">
+      <span class="pn-nivel-ico">${icoRango(t, i)}</span>
+      <span class="pn-nivel-txt"><b>${esc(r.nombre)}</b><small>Rango ${i + 1}${sig ? ` · faltan ${sig - xp} ${esc(t.xp)}` : " · rango máximo"}</small></span>
+      <span class="pn-nivel-logros" title="${logros} logros desbloqueados"><b>${logros}</b>🏅</span>
+      <i class="pn-nivel-barra" style="--p:${Math.max(0.03, Math.min(1, prog))}"></i></button>`;
+  }
   function panelInicio() {
     const t = tema(), p = E.pan, vv = t?.estilo?.ventana || {};
     const [verbo, parar] = GRABAR[t?.id] || [vv.grabar || "Grabar reunión", vv.parar || "Detener"];
@@ -1111,11 +1123,13 @@
         <div><b>${esc(PROCESANDO[t?.id] || t?.estilo?.ventana?.procesando || "Generando tus notas…")}</b><small>Transcribo, separo voces y escribo el feedback. Te aviso al terminar.</small></div></section>`;
     } else {
       bloque = `${p.detectada ? `<div class="pn-alerta"><span class="pn-punto"></span><div><b>Reunión detectada en ${esc(p.detectada)}</b><small>¿La grabo?</small></div></div>` : ""}
-        <label class="buscador pn-campo"><span class="lupa">✎</span><input id="pn-titulo" placeholder="Título (opcional, lo saco del calendario)" value="${esc(p.titulo)}" autocomplete="off"></label>
-        <div class="pn-tit pn-tit-tipo">¿Qué tipo de reunión es?<button class="pn-link" data-pn="preferencias" title="Agregar o editar categorías">Editar</button></div>
-        <div class="pestanas pn-tipos" role="radiogroup" aria-label="Tipo de reunión">${E.categorias.map((c) =>
-          `<button role="radio" aria-checked="${p.tipo === c.id}" class="pestana${p.tipo === c.id ? " activa" : ""}" data-pn-tipo="${esc(c.id)}" title="${esc(c.descripcion || c.nombre)}"><span class="pn-emo">${esc(c.emoji)}</span>${esc(c.nombre)}</button>`).join("")}</div>
-        <div class="pn-pista"><span class="tipo-barra t-${esc(p.tipo)}"></span>${p.tipoAuto ? "<b>Elegida sola</b> · " : ""}Tu IA evaluará: ${esc(categoria(p.tipo).descripcion || "comunicación general")}</div>
+        <div class="pn-fila-titulo">
+          <label class="buscador pn-campo"><span class="lupa">✎</span><input id="pn-titulo" placeholder="Título (opcional)" value="${esc(p.titulo)}" autocomplete="off" aria-label="Título de la reunión (opcional, lo saco del calendario)"></label>
+          <div class="pn-tipo-sel">${(() => { const c = categoria(p.tipo); return `<button class="pestana activa pn-tipo-btn" data-pn-tipomenu aria-haspopup="menu" aria-expanded="${!!E.pnTipoMenu}" title="Tipo de reunión · tu IA evaluará: ${esc(c.descripcion || c.nombre)}"><span class="pn-emo">${esc(c.emoji || "💬")}</span><span class="pn-tipo-nom">${esc(c.nombre || "Tipo")}</span>${p.tipoAuto ? '<sup title="Elegido solo por el calendario o la app">auto</sup>' : ""}<span class="pn-flecha">▾</span></button>`; })()}
+            ${E.pnTipoMenu ? `<div class="menu-mas pn-tipo-menu" role="menu" aria-label="Tipo de reunión">${E.categorias.map((c) =>
+              `<button role="menuitemradio" aria-checked="${p.tipo === c.id}" data-pn-tipo="${esc(c.id)}"><span>${esc(c.emoji)}</span><span class="pn-tm-txt"><b>${esc(c.nombre)}</b><small>Tu IA evaluará: ${esc(c.descripcion || "comunicación general")}</small></span>${p.tipo === c.id ? "<kbd>✓</kbd>" : ""}</button>`).join("")}
+              <hr><button data-pn="preferencias"><span>✎</span>Editar tipos de reunión</button></div>` : ""}</div>
+        </div>
         <button class="pn-grabar" data-pn="grabar"><span class="pn-rec"></span><span class="pn-verbo">${esc(verbo)}</span></button>`;
     }
     const recientes = E.notas.slice(0, 3).map((n) => `<div class="fila-env"><button class="fila" data-pn-nota="${esc(n.ruta)}"><span class="tipo-barra t-${esc(n.tipo || "Otra")}"></span>
@@ -1124,16 +1138,13 @@
     const cola = p.procesando || [];
     const enFondo = cola.length ? `<section class="pn-procesando pn-fondo card"><div class="pn-cargando" aria-hidden="true"><i></i></div>
         <div><b>${esc(PROCESANDO[t?.id] || t?.estilo?.ventana?.procesando || "Generando tus notas…")}</b><small>«${esc(cola[0])}»${cola.length > 1 ? ` · y ${cola.length - 1} más en espera` : ""} · en segundo plano, puedes grabar otra reunión.</small></div></section>` : "";
-    const nueva = p.actualizacion?.hay && p.fase === "inactiva" && !(p.procesando || []).length
-      ? `<button class="pn-act" data-act="instalar"><span>✨</span><span><b>Versión nueva de Minuta</b><small>Toca para actualizar · no se pierde nada</small></span></button>` : "";
-    return `${hud()}
-      ${nueva}
+    return `${nivelPanel()}
       ${p.fase === "inactiva" ? proximaPanel() : ""}
       ${bloque}
       ${enFondo}
       ${p.estado && p.fase !== "procesando" ? `<div class="pn-estado">${esc(p.estado)}${/^Lista:/.test(p.estado) && E.notas[0] ? ` <button class="pn-link" data-pn-enviar="${esc(E.notas[0].ruta)}">✉︎ Enviar resumen</button>` : ""}</div>` : ""}
-      ${p.fase !== "grabando" ? `${E.notas.length ? `<div class="pn-tit">Tu semana</div>${semana()}` : ""}
-      ${recientes ? `<div class="pn-tit">${esc(txt("reuniones", "Recientes"))}<button class="pn-link" data-pn="visor">Ver todas →</button></div><nav class="lista pn-lista">${recientes}</nav>` : ""}` : ""}`;
+      ${p.fase !== "grabando" ? `${E.notas.length ? `<div class="pn-tit">Tu semana<button class="pn-link" data-pn="semana" ${p.fase !== "inactiva" ? "disabled" : ""} title="Resumen de la semana con tu IA">📅 Resumen</button></div>${semana()}` : ""}
+      ${recientes ? `<div class="pn-tit">${esc(txt("reuniones", "Recientes"))}</div><nav class="lista pn-lista">${recientes}</nav>` : ""}` : ""}`;
   }
 
   function panelUniversos() {
@@ -1148,26 +1159,23 @@
   function panelAjustes() {
     return `<div class="pn-tit">Ajustes<button class="pn-link" data-pn-vista="inicio">← Volver</button></div>
       <button class="pn-opcion card" data-pn="inicio"><span>Abrir Minuta al iniciar sesión</span><span class="pn-interruptor${E.pan.inicio ? " on" : ""}"><i></i></span></button>
-      <button class="pn-opcion card" data-pn="visor"><span>Abrir el visor de notas</span><kbd>↗</kbd></button>
       <button class="pn-opcion card peligro" data-pn="salir" ${E.pan.fase === "grabando" ? "disabled" : ""}><span>Salir de Minuta</span><kbd>⏻</kbd></button>`;
   }
 
   function panel() {
-    const t = tema();
+    const t = tema(), p = E.pan;
+    const nueva = p.actualizacion?.hay && p.fase === "inactiva" && !(p.procesando || []).length;
     const cuerpo = E.panVista === "universos" ? panelUniversos() : E.panVista === "ajustes" ? panelAjustes() : panelInicio();
     return `<div class="pn${E.pan.fase === "grabando" ? " en-vivo" : ""}">
       <header class="pn-cab">
         <div class="pn-marca"><span class="pn-logo">${E.pan.fase === "grabando" ? '<span class="pn-rec chico"></span>' : t?.emoji || "🎙️"}</span><b>Minuta</b><span class="pn-sub">${esc(TITULO_VENTANA[t?.id] || t?.estilo?.ventana?.titulo || "")}</span></div>
         <div class="pn-acc">
-          <button class="boton" data-pn-vista="${E.panVista === "universos" ? "inicio" : "universos"}" title="Cambiar de universo">${t?.emoji || "✨"}</button>
-          <button class="boton" data-pn="visor" title="Abrir el visor">↗</button>
+          <button class="boton${E.panVista === "ajustes" ? " activo" : ""}" data-pn-vista="${E.panVista === "ajustes" ? "inicio" : "ajustes"}" title="Ajustes">⚙</button>
+          <button class="boton" data-pn="visor" title="Abrir Minuta">↗</button>
         </div>
       </header>
+      ${nueva ? `<button class="pn-act-fila" data-act="instalar" title="Tus notas, perfil y universos no se tocan"><span>⬆</span><b>Actualización pendiente</b><em>Instalar</em></button>` : ""}
       <div class="pn-cuerpo">${cuerpo}</div>
-      <footer class="pn-pie">
-        <button class="pn-pie-b" data-pn="semana" ${E.pan.fase !== "inactiva" ? "disabled" : ""}>📅 Resumen semanal</button>
-        <button class="pn-pie-b" data-pn-vista="${E.panVista === "ajustes" ? "inicio" : "ajustes"}" title="Ajustes">⚙</button>
-      </footer>
     </div>`;
   }
 
@@ -2770,11 +2778,13 @@
       else if (ev.target === ab || ab.classList.contains("boton-txt")) { E.borrar = null; render({ mantenerScroll: true }); }
       return;
     }
+    if (ev.target.closest("[data-pn-tipomenu]")) { E.pnTipoMenu = !E.pnTipoMenu; render(); return; }
+    if (E.pnTipoMenu && !ev.target.closest(".pn-tipo-menu")) { E.pnTipoMenu = false; render(); }
     const pn = ev.target.closest("[data-pn],[data-pn-tipo],[data-pn-vista],[data-pn-nota]");
     if (pn) {
       const d = pn.dataset;
       if (d.pnVista) { E.panVista = d.pnVista; render(); return; }
-      if (d.pnTipo) { E.pan.tipo = d.pnTipo; host.enviar("tipo", { tipo: d.pnTipo }); render(); return; }
+      if (d.pnTipo) { E.pan.tipo = d.pnTipo; E.pan.tipoAuto = false; E.pnTipoMenu = false; host.enviar("tipo", { tipo: d.pnTipo }); render(); return; }
       if (d.pnNota) { host.enviar("visor", { ruta: d.pnNota }); return; }
       if (d.pn === "inicio") { E.pan.inicio = !E.pan.inicio; host.enviar("inicio", { activo: E.pan.inicio }); render(); return; }
       if (d.pn === "grabar") { host.enviar("grabar", { titulo: E.pan.titulo, tipo: E.pan.tipo }); return; }
