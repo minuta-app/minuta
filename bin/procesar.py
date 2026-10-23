@@ -14,7 +14,7 @@ import time
 import unicodedata
 import wave
 
-from perfil import NOMBRE, NOMBRE_FB, IDIOMA, IDIOMA_AUDIO, HUMOR, CARPETA_NOTAS, es_usuario, P as PERFIL
+from perfil import NOMBRE, NOMBRE_FB, IDIOMA, IDIOMA_AUDIO, HUMOR, CARPETA_NOTAS, es_usuario, P as PERFIL, CLAUDE
 PERFIL_MODELO = (PERFIL.get("modelo_whisper") or "").strip()  # noqa: E402
 
 HOME = os.path.expanduser("~")
@@ -29,7 +29,6 @@ VAD = os.path.join(BASE, "models", "ggml-silero-v5.1.2.bin")
 VAULT = CARPETA_NOTAS
 HISTORIAL = os.path.join(BASE, "historial.jsonl")
 DIAS_AUDIO = 14  # se borran los audios más antiguos que esto
-os.environ["PATH"] = "/opt/homebrew/bin:/usr/local/bin:" + os.environ.get("PATH", "")
 
 # Palabras propias para que Whisper las escriba bien. Edita ~/minuta/vocabulario.txt para agregar más.
 VOCABULARIO = "Reunión de trabajo."
@@ -85,17 +84,29 @@ def herramienta(*candidatos):
     dirs = [d for d in (os.environ.get("MINUTA_HERRAMIENTAS"), os.path.join(BASE, "bin")) if d]
     for nombre in candidatos:
         for d in dirs:
-            ruta = os.path.join(d, nombre)
-            if os.path.isfile(ruta) and os.access(ruta, os.X_OK):
-                return ruta
+            for ruta in (os.path.join(d, nombre), os.path.join(d, nombre + ".exe")):
+                if os.path.isfile(ruta) and os.access(ruta, os.X_OK):
+                    return ruta
         if shutil.which(nombre):
             return shutil.which(nombre)
     return None
 
 
+def es_wav_whisper(ruta):
+    """¿Ya es WAV 16 kHz mono 16 bits? (lo que graba la app de Windows/Linux)."""
+    try:
+        with wave.open(ruta, "rb") as w:
+            return w.getframerate() == SR and w.getnchannels() == 1 and w.getsampwidth() == 2
+    except Exception:
+        return False
+
+
 def a_wav(origen, destino):
     """Convierte la grabación a WAV 16 kHz mono 16 bits (lo que necesita Whisper).
-    En macOS usa afconvert (viene con el sistema); en Windows/Linux, ffmpeg."""
+    En macOS usa afconvert (viene con el sistema); Windows y Linux ya graban en ese formato; si no, ffmpeg."""
+    if es_wav_whisper(origen):
+        shutil.copyfile(origen, destino)
+        return
     if sys.platform == "darwin" and os.path.exists("/usr/bin/afconvert"):
         subprocess.run(["/usr/bin/afconvert", "-f", "WAVE", "-d", "LEI16@16000", "-c", "1", origen, destino], check=True)
         return
@@ -184,14 +195,28 @@ def repartir(s, regiones, etiquetas=None):
 
 
 def diarizar(wav, salida):
-    """Separa las voces de la pista 'Ellos' con FluidAudio. Devuelve [{hablante, ini, fin}] o []."""
+    """Separa las voces de la pista 'Ellos'. Devuelve [{hablante, ini, fin}] o [].
+    En Mac: FluidAudio (minuta-diarizar). En Windows y Linux: sherpa-onnx con pyannote + 3D-Speaker (vienen con la app)."""
     binario = herramienta("minuta-diarizar")
-    if not binario:
-        return []
     try:
-        subprocess.run([binario, wav, salida], check=True, timeout=3600)
-        with open(salida, encoding="utf-8") as f:
-            return json.load(f)
+        if binario:
+            subprocess.run([binario, wav, salida], check=True, timeout=3600)
+            with open(salida, encoding="utf-8") as f:
+                return json.load(f)
+        sherpa = herramienta("sherpa-onnx-offline-speaker-diarization")
+        dir_modelos = os.path.dirname(sherpa) if sherpa else ""
+        segmentacion, huella = (os.path.join(dir_modelos, f) for f in ("voces-segmentacion.onnx", "voces-huella.onnx"))
+        if not sherpa or not os.path.exists(segmentacion) or not os.path.exists(huella):
+            return []
+        hilos = str(max(1, min(4, (os.cpu_count() or 2) - 1)))
+        r = subprocess.run([sherpa, "--clustering.cluster-threshold=0.9", f"--segmentation.num-threads={hilos}", f"--embedding.num-threads={hilos}",
+                            f"--segmentation.pyannote-model={segmentacion}", f"--embedding.model={huella}", wav],
+                           capture_output=True, text=True, timeout=3600, check=True)
+        tramos = [{"hablante": h, "ini": float(a), "fin": float(b)}
+                  for a, b, h in re.findall(r"^\s*([\d.]+)\s+--\s+([\d.]+)\s+(\S+)\s*$", r.stdout, re.M)]
+        with open(salida, "w", encoding="utf-8") as f:
+            json.dump(tramos, f)
+        return tramos
     except Exception as e:  # sin diarización seguimos con "Ellos"
         log("Diarización no disponible:", e)
         return []
@@ -264,7 +289,8 @@ def transcribir(wav, salida):
     motor = herramienta("minuta-transcribir", "whisper-cli")
     if not motor:
         raise SystemExit("No encontré el transcriptor (minuta-transcribir o whisper-cli).")
-    cmd = [motor, "-m", MODELO, "-l", IDIOMA_AUDIO, "-t", "4", "-f", wav,
+    hilos = str(max(2, min(8, os.cpu_count() or 4)))  # en Windows/Linux whisper corre en el procesador: usa los núcleos que hay
+    cmd = [motor, "-m", MODELO, "-l", IDIOMA_AUDIO, "-t", hilos, "-f", wav,
            "-oj", "-of", salida, "-np", "-sns", "-mc", "64", "--prompt", VOCABULARIO]
     if os.path.exists(VAD):
         cmd += ["--vad", "-vm", VAD]
@@ -569,7 +595,7 @@ TRANSCRIPCIÓN:
 
 
 def llamar_claude(prompt, cwd):
-    cmd = ["claude", "-p", "--output-format", "text"]
+    cmd = [CLAUDE, "-p", "--output-format", "text"]
     modelo = os.environ.get("MINUTA_MODELO")
     if modelo:
         cmd += ["--model", modelo]
@@ -633,7 +659,9 @@ def main():
 
     pistas, audio = {}, {}
     for quien, archivo in (("Yo", "yo"), ("Ellos", "ellos")):
-        origen = os.path.join(carpeta, archivo + ".caf")
+        # Mac graba .caf; Windows y Linux, WAV listo para Whisper (<pista>.grabacion.wav).
+        origen = next((os.path.join(carpeta, archivo + ext) for ext in (".caf", ".grabacion.wav")
+                       if os.path.exists(os.path.join(carpeta, archivo + ext))), os.path.join(carpeta, archivo + ".caf"))
         if not os.path.exists(origen) or os.path.getsize(origen) < 10000:
             log("Sin audio para", quien)
             continue

@@ -1,0 +1,104 @@
+{
+  "name": "minuta",
+  "productName": "Minuta",
+  "version": "0.3.0",
+  "description": "Notas de reuniones y coach de comunicación que vive en tu computador.",
+  "homepage": "https://soydavidcornejo.github.io/minuta/",
+  "license": "MIT",
+  "author": {
+    "name": "Minuta",
+    "email": "soydavidcornejo@users.noreply.github.com"
+  },
+  "main": "src/main.js",
+  "private": true,
+  "scripts": {
+    "inicio": "electron .",
+    "preparar:linux": "bash herramientas/preparar.sh linux",
+    "preparar:windows": "bash herramientas/preparar.sh windows",
+    "empaquetar:linux": "bash herramientas/preparar.sh linux && electron-builder --linux AppImage tar.gz",
+    "empaquetar:windows": "bash herramientas/preparar.sh windows && electron-builder --win dir && bash herramientas/instalador-windows.sh"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "app.minuta.escritorio",
+    "productName": "Minuta",
+    "copyright": "MIT · Minuta",
+    "directories": {
+      "output": "dist",
+      "buildResources": "iconos"
+    },
+    "files": [
+      "src/**",
+      "iconos/**",
+      "package.json"
+    ],
+    "asar": true,
+    "extraResources": [
+      {
+        "from": "../bin",
+        "to": "minuta/bin",
+        "filter": [
+          "*.py"
+        ]
+      },
+      {
+        "from": "../ui",
+        "to": "minuta/ui",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../universos",
+        "to": "minuta/universos",
+        "filter": [
+          "*.json"
+        ]
+      },
+      {
+        "from": "vendor/${os}/herramientas",
+        "to": "herramientas"
+      },
+      {
+        "from": "vendor/${os}/python",
+        "to": "python"
+      },
+      {
+        "from": "iconos/minuta-256.png",
+        "to": "minuta.png"
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "tar.gz"
+      ],
+      "icon": "iconos/minuta.png",
+      "category": "Office",
+      "artifactName": "Minuta-Linux.${ext}",
+      "synopsis": "Notas de reuniones y coach de comunicación",
+      "syncDesktopName": true
+    },
+    "win": {
+      "target": [
+        "dir"
+      ],
+      "icon": "iconos/minuta.ico",
+      "artifactName": "Minuta-Windows.${ext}",
+      "signExecutable": false
+    },
+    "publish": null,
+    "compression": "maximum"
+  },
+  "dependencies": {
+    "node-ical": "0.27.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/soydavidcornejo/minuta.git"
+  },
+  "desktopName": "minuta.desktop"
+}

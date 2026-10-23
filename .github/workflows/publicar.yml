@@ -1,5 +1,6 @@
-# Publica una versión de Minuta: al subir una etiqueta v* (ej. v0.2.0) compila en un Mac de GitHub,
-# arma Minuta-macOS.zip con su huella SHA-256 y crea el Release. La app y el instalador lo descargan de ahí.
+# Publica una versión de Minuta: al subir una etiqueta v* (ej. v0.3.0) compila Mac, Windows y Linux,
+# arma cada descarga con su huella SHA-256 y crea el Release. La app y los instaladores lo descargan de ahí.
+# (Si Actions no está disponible, se hace a mano: ver "Publicar una versión" en CLAUDE.md.)
 name: Publicar versión
 on:
   push:
@@ -14,15 +15,46 @@ jobs:
       - uses: actions/checkout@v4
       - name: Versión de la etiqueta en Info.plist
         if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" app/Info.plist
+        run: /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${GITHUB_REF_NAME#v}" app/Info.plist
       - name: Empaquetar
         run: bash herramientas/empaquetar.sh
-      - name: Crear el Release
+      - uses: actions/upload-artifact@v4
+        with: { name: macos, path: "dist/Minuta-macOS.zip*" }
+
+  windows-linux:
+    # Ambos se arman desde Linux: whisper se compila con zig y el instalador de Windows con makensis (sin Wine).
+    runs-on: ubuntu-24.04
+    defaults: { run: { working-directory: escritorio } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Herramientas
+        run: sudo apt-get update && sudo apt-get install -y nsis cmake && python3 -m pip install --user --break-system-packages ziglang
+      - name: Versión de la etiqueta
         if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ github.token }}
+        run: npm version --no-git-tag-version --allow-same-version "${GITHUB_REF_NAME#v}"
+      - run: npm ci
+      - name: Linux (AppImage y tar.gz)
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/Minuta-macOS.zip dist/Minuta-macOS.zip.sha256 \
-            --title "Minuta $GITHUB_REF_NAME" --generate-notes
+          bash herramientas/preparar.sh linux
+          npx electron-builder --linux AppImage tar.gz
+          (cd dist && sha256sum Minuta-Linux.AppImage > Minuta-Linux.AppImage.sha256 && sha256sum Minuta-Linux.tar.gz > Minuta-Linux.tar.gz.sha256)
+      - name: Windows (instalador)
+        run: |
+          bash herramientas/preparar.sh windows
+          npx electron-builder --win dir
+          bash herramientas/instalador-windows.sh
+      - uses: actions/upload-artifact@v4
+        with: { name: escritorio, path: "escritorio/dist/Minuta-*" }
+
+  release:
+    needs: [macos, windows-linux]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: descargas, merge-multiple: true }
+      - name: Crear el Release
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release create "$GITHUB_REF_NAME" descargas/* --repo "$GITHUB_REPOSITORY" --title "Minuta $GITHUB_REF_NAME" --generate-notes

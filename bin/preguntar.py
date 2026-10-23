@@ -14,11 +14,10 @@ import subprocess
 import sys
 import unicodedata
 
-from perfil import NOMBRE, IDIOMA, CARPETA_NOTAS
+from perfil import NOMBRE, IDIOMA, CARPETA_NOTAS, CLAUDE
 
 HOME = os.path.expanduser("~")
 VAULT = CARPETA_NOTAS
-os.environ["PATH"] = f"/opt/homebrew/bin:/usr/local/bin:{HOME}/.local/bin:" + os.environ.get("PATH", "")
 
 VACIAS = set("""a al algo ante antes como con contra cual cuales cuando de del desde donde dos el ella ellas ellos en entre era es esa
 ese eso esta este esto estos fue fueron ha han hay la las le les lo los mas me mi mis muy nada ni no nos o otra otro para pero por porque
@@ -131,7 +130,7 @@ PREGUNTA: {pregunta}
 REUNIONES MÁS RELEVANTES:
 {chr(10).join(bloques)}
 """
-    cmd = ["claude", "-p", "--output-format", "text"]
+    cmd = [CLAUDE, "-p", "--output-format", "text"]
     if os.environ.get("MINUTA_MODELO"):
         cmd += ["--model", os.environ["MINUTA_MODELO"]]
     r = subprocess.run(cmd, input=prompt, text=True, capture_output=True, timeout=300, cwd=os.path.join(HOME, "minuta"))

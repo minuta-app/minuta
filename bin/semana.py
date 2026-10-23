@@ -7,13 +7,12 @@ import os
 import re
 import subprocess
 
-from perfil import QUIEN, IDIOMA, CARPETA_NOTAS
+from perfil import QUIEN, IDIOMA, CARPETA_NOTAS, CLAUDE
 
 HOME = os.path.expanduser("~")
 BASE = os.path.join(HOME, "minuta")
 HISTORIAL = os.path.join(BASE, "historial.jsonl")
 SALIDA = os.path.join(CARPETA_NOTAS, "Semanal")
-os.environ["PATH"] = "/opt/homebrew/bin:/usr/local/bin:" + os.environ.get("PATH", "")
 
 
 def feedback_de(ruta):
@@ -65,7 +64,7 @@ Escribe en {IDIOMA}, en markdown, con esta estructura:
 REUNIONES:
 {chr(10).join(bloques)}
 """
-    r = subprocess.run(["claude", "-p", "--output-format", "text"], input=prompt, text=True,
+    r = subprocess.run([CLAUDE, "-p", "--output-format", "text"], input=prompt, text=True,
                        capture_output=True, cwd=BASE, timeout=900)
     if r.returncode != 0 or not r.stdout.strip():
         raise SystemExit(f"claude -p falló: {r.stderr[:500]}")

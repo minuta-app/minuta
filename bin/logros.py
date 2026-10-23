@@ -11,7 +11,8 @@ import sys
 
 HOME = os.path.expanduser("~")
 TEMAS = os.path.join(HOME, "minuta", "temas")
-os.environ["PATH"] = f"/opt/homebrew/bin:/usr/local/bin:{HOME}/.local/bin:" + os.environ.get("PATH", "")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from perfil import CLAUDE  # noqa: E402
 
 LOGROS = {
     "primera_reunion": "Completaste tu primera reunión.",
@@ -57,7 +58,7 @@ La descripción debe explicar el criterio con la misma claridad (puedes darle un
 Elige 1 emoji por logro. Devuelve SOLO un objeto JSON: {{"<id>": {{"nombre": "...", "descripcion": "...", "icono": "..."}}}}
 Logros:
 {pedido}"""
-    r = subprocess.run(["claude", "-p", "--output-format", "text"], input=prompt, text=True, capture_output=True, timeout=600,
+    r = subprocess.run([CLAUDE, "-p", "--output-format", "text"], input=prompt, text=True, capture_output=True, timeout=600,
                        cwd=os.path.dirname(TEMAS))
     salida = r.stdout.strip()
     i, j = salida.find("{"), salida.rfind("}")

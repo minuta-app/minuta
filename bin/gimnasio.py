@@ -11,10 +11,9 @@ import os
 import subprocess
 import sys
 
-from perfil import NOMBRE, QUIEN, IDIOMA, PAIS
+from perfil import NOMBRE, QUIEN, IDIOMA, PAIS, CLAUDE
 
 HOME = os.path.expanduser("~")
-os.environ["PATH"] = f"/opt/homebrew/bin:/usr/local/bin:{HOME}/.local/bin:" + os.environ.get("PATH", "")
 
 DIFICULTAD = {
     "amable": "Eres colaborativo y receptivo, aunque haces preguntas razonables.",
@@ -24,7 +23,7 @@ DIFICULTAD = {
 
 
 def claude(prompt):
-    cmd = ["claude", "-p", "--output-format", "text"]
+    cmd = [CLAUDE, "-p", "--output-format", "text"]
     if os.environ.get("MINUTA_MODELO"):
         cmd += ["--model", os.environ["MINUTA_MODELO"]]
     r = subprocess.run(cmd, input=prompt, text=True, capture_output=True, timeout=300, cwd=os.path.join(HOME, "minuta"))

@@ -1,4 +1,4 @@
-# Solo el código y los universos van al repo. Grabaciones, notas, modelos y datos personales se quedan en el Mac.
+# Solo el código y los universos van al repo. Grabaciones, notas, modelos y datos personales se quedan en el computador.
 /*
 !/.gitignore
 !/README.md
@@ -8,6 +8,8 @@
 !/.claude/
 !/herramientas/
 !/instalar.sh
+!/instalar.ps1
+!/escritorio/
 !/LICENSE
 !/docs/
 !/.github/
@@ -22,3 +24,5 @@ bin/minuta-diarizar.*
 *.log
 .DS_Store
 dist/
+escritorio/node_modules/
+escritorio/vendor/

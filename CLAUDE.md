@@ -1,6 +1,6 @@
 # Minuta — guía para trabajar en el proyecto
 
-Minuta es una app de macOS (estilo Granola) que graba reuniones, transcribe **localmente** (whisper.cpp), separa voces,
+Minuta es una app de escritorio (estilo Granola) para macOS, Windows y Linux que graba reuniones, transcribe **localmente** (whisper.cpp), separa voces,
 y con la IA del usuario (hoy Claude vía `claude -p`) genera notas, feedback de comunicación y un mensaje para los participantes.
 Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromisos, fichas de personas, gimnasio de práctica y coach en vivo.
 
@@ -24,7 +24,9 @@ Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromis
 | `build.sh` | Empaqueta e instala en `~/Applications/Minuta.app`. **Cierra la app** (ver Despliegue). |
 | `instalar.sh` | Instalador de un comando para usuarios (`curl … \| bash`): baja la última Release, verifica SHA-256 e instala. Sin Python ni Homebrew. |
 | `.github/workflows/publicar.yml` | Al subir un tag `vX.Y.Z`: compila en macos-15 con `empaquetar.sh` y publica la Release. |
-| `docs/` | Página pública (GitHub Pages): `index.html` (español/inglés) y capturas en `docs/img` hechas con `demo.json`. |
+| `docs/` | Página pública (GitHub Pages): `index.html` (español/inglés, detecta el sistema del visitante) y capturas en `docs/img` hechas con `demo.json`. |
+| `escritorio/` | App de **Windows y Linux** (Electron): misma `ui/` y mismo `bin/`. Ver "Windows y Linux" abajo. |
+| `instalar.ps1` | Instalador de un comando para Windows (`irm … \| iex`). `instalar.sh` sirve para Mac y Linux. |
 | `.claude/agents/` | Agentes especializados (ver abajo). |
 
 Repos relacionados: catálogo público `soydavidcornejo/minuta-catalogo` (universos/, idiomas/, herramientas/).
@@ -49,10 +51,34 @@ estándar de Python: no agregues dependencias de pip. `build.sh` se niega a inst
   Llavero y git lo recibe como encabezado en memoria (`-c http.extraHeader`), nunca en disco. Tras cada nota: `Respaldo.sincronizar()`.
 - **Actualizaciones:** `Actualizaciones.revisar` al abrir y cada 6 h. Instalación de desarrollo (`~/minuta/.git` existe): `git fetch` y,
   al aceptar, `git pull` + `build.sh` + reabrir. Instalación normal: GitHub Releases (`Minuta-macOS.zip` + `.sha256`); un script espera a que la app
-  cierre, reemplaza `Minuta.app` (deja `.anterior` si falla) y la reabre. **Publicar versión:** sube `CFBundleShortVersionString` en
-  `app/Info.plist`, commit, `git tag vX.Y.Z && git push --tags` (el workflow pone la versión del tag). Los datos del usuario viven fuera de `Minuta.app`, por eso actualizar no borra nada.
+  cierre, reemplaza `Minuta.app` (deja `.anterior` si falla) y la reabre. **Publicar versión:** ver "Publicar una versión" abajo. Los datos del usuario viven fuera de `Minuta.app`, por eso actualizar no borra nada.
 
-## Datos en tiempo de ejecución (Mac, nunca en git)
+## Windows y Linux (`escritorio/`)
+
+- Electron 44 con la misma interfaz y el mismo Python. `src/main.js` = AppModel + BarraMenu + VisorWeb + Alerta de Mac: estado `M` y `ACCIONES`
+  (un caso por cada `host.enviar`). **Una acción nueva en Swift también va en `ACCIONES`** (y al revés). La UI detecta `window.MINUTA_HOST`
+  = `"windows"`/`"linux"` (constante `ESCRITORIO` en app.js: ventana rectangular, sin la forma recortada; textos sin "Mac").
+- Grabación: ventana oculta `grabadora.html` (AudioWorklet a 16 kHz) → `yo.grabacion.wav`; sistema: Windows `getDisplayMedia` + loopback,
+  Linux `parec` (`@DEFAULT_MONITOR@`). `procesar.py` acepta `.caf` (Mac) o `.grabacion.wav`. Separación de voces: sherpa-onnx (`voces-*.onnx`).
+- Detección de reuniones: registro de uso del micrófono (Windows) / `pactl list source-outputs` (Linux). Calendario: dirección iCal secreta
+  (Google/Outlook) en Preferencias, cifrada con safeStorage. Recordatorios: abre un `.ics`. Dictado del Gimnasio: whisper local.
+- `escritorio/herramientas/preparar.sh linux|windows` arma `vendor/` (Python portátil, whisper-cli compilado con zig —estático, sin DLLs de
+  Visual C++, glibc 2.27+—, sherpa-onnx). Todo con huella SHA-256 fija.
+- Empaquetar (desde Linux, sin Wine): `npx electron-builder --linux AppImage tar.gz`; `npx electron-builder --win dir && bash herramientas/instalador-windows.sh`
+  (NSIS propio `herramientas/instalador.nsi`, por usuario, `/S` silencioso). Versión en `escritorio/package.json` (igual que `app/Info.plist`).
+- Instalación: Windows en `%LOCALAPPDATA%\Programs\Minuta`; Linux con `instalar.sh` en `~/.local/share/Minuta` (+ lanzador `~/.local/bin/minuta`,
+  que agrega `--no-sandbox` si el sistema restringe user namespaces) o el AppImage. El actualizador de la app maneja los tres casos.
+- Pruebas automáticas en Linux (PulseAudio virtual + Xvfb + Playwright): ver el agente `minuta-escritorio`. **Windows no se puede probar aquí.**
+
+## Publicar una versión
+
+1. Sube la versión en `app/Info.plist` y `escritorio/package.json`; commit y push.
+2. Con GitHub Actions: `git tag vX.Y.Z && git push --tags` (el workflow arma Mac, Windows y Linux y crea el Release).
+3. A mano (si Actions no está disponible): Mac con `bash herramientas/empaquetar.sh` en el Mac; Windows/Linux con los comandos de arriba;
+   cada archivo con su `.sha256`; luego `gh release create vX.Y.Z <archivos>` (desde el Mac del usuario, que tiene `gh` con sesión).
+   Nombres fijos (los usan los instaladores y el actualizador): `Minuta-macOS.zip`, `Minuta-Windows.exe`, `Minuta-Linux.AppImage`, `Minuta-Linux.tar.gz`.
+
+## Datos en tiempo de ejecución (en el computador, nunca en git)
 
 `~/minuta` es a la vez el checkout del repo **y** la carpeta de datos. El `.gitignore` es una lista blanca: solo se versiona lo listado.
 - `perfil.json` (nombre, rol, idiomas, carpeta de notas) · `config.json` (universo elegido) · `ajustes.json` (avisos) · `categorias.json`
@@ -102,6 +128,6 @@ El Mac se maneja con las herramientas `mcp__remote-devices__*` (osascript con `d
 
 ## Agentes
 
-En `.claude/agents/`: `minuta-mac` (Swift y sistema), `minuta-pipeline` (Python, prompts y métricas), `minuta-interfaz` (UI web e idiomas),
+En `.claude/agents/`: `minuta-mac` (Swift y sistema), `minuta-escritorio` (Windows/Linux, Electron), `minuta-pipeline` (Python, prompts y métricas), `minuta-interfaz` (UI web e idiomas),
 `minuta-catalogo` (universos e idiomas descargables), `minuta-despliegue` (instalar en el Mac sin romper una grabación) y `minuta-privacidad`
 (auditoría antes de commitear o publicar). Úsalos para trabajo acotado a su área; el despliegue y la privacidad son obligatorios al cerrar un cambio.

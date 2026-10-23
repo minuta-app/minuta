@@ -45,7 +45,10 @@
   // ───────────────────────── Ventana propia ─────────────────────────
   const RAIZ = document.documentElement;
   const VENTANA = !!window.MINUTA_HOST || /ventana/.test(location.hash);
-  if (VENTANA) RAIZ.classList.add("ventana", "forma");
+  /** Windows y Linux (Electron): ventana rectangular del sistema, sin la forma recortada de cada universo. */
+  const ESCRITORIO = window.MINUTA_HOST === "windows" || window.MINUTA_HOST === "linux";
+  if (VENTANA) RAIZ.classList.add("ventana", ESCRITORIO ? "escritorio" : "forma");
+  if (ESCRITORIO) RAIZ.classList.add(`so-${window.MINUTA_HOST}`);
   if (VENTANA && !window.MINUTA_HOST) RAIZ.classList.add("emulada");
   const TITULO_VENTANA = {
     starwars: "Terminal de misión", harrypotter: "Pensadero", senoranillos: "Crónicas de la Tierra Media", marvel: "Archivo S.H.I.E.L.D.",
@@ -776,8 +779,17 @@
       ${nav}
       ${focoMini()}
       <label class="buscador"><span class="lupa">⌕</span><input id="buscar" type="search" title="Escribe una pregunta y presiona ↵ para preguntarle a Claude (⌘K)" placeholder="${esc(txt("buscar", "Buscar en reuniones"))} · ⌘K pregunta" value="${esc(E.busqueda)}" autocomplete="off"></label>
-      <nav class="lista">${lista || `<div class="vacio-lista"><div>${tema()?.emoji || "🎙️"}</div>${E.notas.length ? "Sin resultados" : "Aún no hay reuniones.<br>Graba una desde la barra de menú."}</div>`}</nav>
+      <nav class="lista">${lista || `<div class="vacio-lista"><div>${tema()?.emoji || "🎙️"}</div>${E.notas.length ? "Sin resultados" : `Aún no hay reuniones.<br>${ESCRITORIO ? "Graba una desde el ícono de Minuta en la bandeja del sistema." : "Graba una desde la barra de menú."}`}</div>`}</nav>
     </aside>`;
+  }
+
+  /** La primera vez que se ve una nota en la sesión, los botones muestran su nombre ~2,5 s (después solo al pasar el mouse). */
+  function presentarAcciones() {
+    if (E._accionesHasta === undefined && innerWidth >= 1320) {
+      E._accionesHasta = Date.now() + 2600;
+      setTimeout(() => document.querySelector(".acciones.presentar")?.classList.remove("presentar"), 2700);
+    }
+    return Date.now() < E._accionesHasta;
   }
 
   function superior() {
@@ -792,13 +804,13 @@
       </div>
       ${enReunion && n ? `<div class="pestanas" role="tablist">${VISTAS.map(([id, nom], i) =>
         `<button role="tab" class="pestana${E.vista === id ? " activa" : ""}" data-vista="${id}" title="⌘${i + 1}">${nom}</button>`).join("")}</div>` : "<div></div>"}
-      <div class="acciones">
-        ${enReunion && n ? `<button class="boton" data-accion="corregir" title="Corregir una palabra en toda la nota (⌘E)">✎</button>
-        <button class="boton" data-accion="copiar" title="Copiar para ti (incluye notas privadas; para enviar a otros usa ✉︎)">⧉</button>
-        <button class="boton" data-accion="enviar" title="Enviar resumen por correo, Teams o WhatsApp">✉︎</button>` : ""}
-        <button class="boton${E.menu ? " activo" : ""}" data-accion="menu" title="Más opciones" aria-haspopup="menu" aria-expanded="${!!E.menu}">⋯</button>
+      <div class="acciones${enReunion && n && presentarAcciones() ? " presentar" : ""}">
+        ${enReunion && n ? `<button class="boton boton-et" style="--i:1" data-accion="copiar" title="Copiar para ti (incluye notas privadas; para enviar a otros usa Enviar)"><i>⧉</i><span>Copiar</span></button>
+        <button class="boton boton-et principal" data-accion="enviar" title="Enviar resumen por correo, Teams o WhatsApp"><i>✉︎</i><span>Enviar</span></button>` : ""}
+        <button class="boton boton-et${E.menu ? " activo" : ""}" style="--i:2" data-accion="menu" title="Más opciones" aria-haspopup="menu" aria-expanded="${!!E.menu}"><i>⋯</i><span>Más</span></button>
         ${E.menu ? `<div class="menu-mas" role="menu">
-          ${enReunion && n ? `<button role="menuitem" data-accion="obsidian"><span>↗</span>Abrir en Obsidian</button>
+          ${enReunion && n ? `<button role="menuitem" data-accion="corregir"><span>✎</span>Corregir una palabra en toda la nota</button>
+          <button role="menuitem" data-accion="obsidian"><span>↗</span>Abrir en Obsidian</button>
           ${E.plataforma === "web" ? "" : `<button role="menuitem" data-accion="finder"><span>▤</span>Mostrar en la carpeta</button>`}<hr>` : ""}
           <button role="menuitem" data-accion="preguntar"><span>✦</span>Pregúntale a tus reuniones<kbd>⌘K</kbd></button>
           <button role="menuitem" data-abrir-gym=""><span>🥊</span>Gimnasio: ensaya una reunión<kbd>⌘G</kbd></button>
@@ -896,7 +908,7 @@
     if (E.seccion === "agenda") return panelAgenda();
     if (E.seccion === "personas") return panelPersonas();
     const n = notaActual();
-    if (!n) return `<div class="vacio grande"><div>${tema()?.emoji || "📝"}</div><h2>Elige una reunión</h2><p>O graba una nueva desde la barra de menú.</p></div>`;
+    if (!n) return `<div class="vacio grande"><div>${tema()?.emoji || "📝"}</div><h2>Elige una reunión</h2><p>${ESCRITORIO ? "O graba una nueva desde el ícono de Minuta en la bandeja del sistema." : "O graba una nueva desde la barra de menú."}</p></div>`;
     const s = secciones(n);
     let h = cabeceraNota(n);
     if (E.vista === "puntos") h += `<article class="notas">${tarjetasSecciones(s.puntos)}</article>`;
@@ -1158,7 +1170,7 @@
       <div class="borrar-ico">🗑</div>
       <h2>¿Borrar esta reunión?</h2>
       <p class="borrar-nota"><span class="tipo-barra t-${esc(n.tipo || "Otra")}"></span><b>${esc(n.titulo)}</b><small>${hhmm(n.fecha)}${n.duracion ? ` · ${Math.round(n.duracion)} min` : ""}${n.tipo ? ` · ${esc(nombreTipo(n.tipo))}` : ""}</small></p>
-      <p class="borrar-det">La nota se va a la <b>Papelera</b> del Mac (puedes recuperarla desde ahí). Tu nivel y tus logros se recalculan sin ella.</p>
+      <p class="borrar-det">La nota se va a la <b>Papelera</b> (puedes recuperarla desde ahí). Tu nivel y tus logros se recalculan sin ella.</p>
       <div class="borrar-botones"><button class="boton-txt" data-accion="cancelar-borrar">Cancelar</button><button class="boton-txt peligro" data-accion="si-borrar">Borrar</button></div>
     </div></div>`;
   }
@@ -1187,7 +1199,7 @@
     const opcion = (lista, actual) => lista.map(([v, n]) => `<option value="${esc(v)}"${v === actual ? " selected" : ""}>${esc(n)}</option>`).join("");
     const notasOtra = p.idioma && !IDIOMAS_NOTAS.some(([v]) => v === p.idioma);
     return `<div class="subtitulo">Tú e idiomas</div>
-      <p class="pref-intro">Con esto Claude sabe a quién le da feedback y en qué idioma escribirte. Se guarda solo en tu Mac.</p>
+      <p class="pref-intro">Con esto Claude sabe a quién le da feedback y en qué idioma escribirte. Se guarda solo en tu computador.</p>
       <section class="card pref-perfil">
         <div class="pp-fila">
           <label class="cat-campo"><span>Tu nombre</span><input data-perfil="nombre" value="${esc(p.nombre || "")}" placeholder="ej: Ana"></label>
@@ -1409,6 +1421,14 @@
     let estado = "";
     if (web) estado = fila(null, "Estado de los permisos", "Disponible en la app de Mac.");
     else if (!a) estado = fila(null, "Revisando permisos…", "");
+    else if (ESCRITORIO) {
+      // Windows y Linux: sin permisos que pedir; el calendario se conecta con su dirección iCal secreta (solo lectura).
+      estado += a.permiso === "si" ? fila(true, "Notificaciones permitidas", "Minuta puede avisarte.")
+        : fila(false, "Notificaciones desactivadas", "Actívalas en la configuración del sistema.", `<button class="boton-txt aplicar" data-av="abrirAjustesAvisos">Abrir configuración</button>`);
+      estado += a.calendario === "si" ? fila(true, "Calendario conectado", "Para avisarte 1 minuto antes y ponerle nombre a las reuniones.", `<button class="boton-txt" data-ics-quitar>Desconectar</button>`)
+        : `${fila(false, a.calendario === "no" ? "No pude leer tu calendario" : "Conecta tu calendario", "Pega la dirección secreta en formato iCal: en Google Calendar, Configuración → tu calendario → «Dirección secreta en formato iCal»; en Outlook, Configuración → Calendario → Calendarios compartidos → Publicar → enlace ICS. Se guarda cifrada en tu computador.")}
+          <div class="av-ics"><input id="ics-url" type="url" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics" autocomplete="off"><button class="boton-txt aplicar" data-ics-conectar>Conectar</button></div>`;
+    }
     else {
       estado += a.permiso === "si" ? fila(true, "Notificaciones permitidas", "Minuta puede avisarte.")
         : a.permiso === "no" ? fila(false, "Notificaciones bloqueadas", "Actívalas en Ajustes del Sistema para recibir los avisos.", `<button class="boton-txt aplicar" data-av="abrirAjustesAvisos">Abrir Ajustes</button>`)
@@ -1914,7 +1934,7 @@
   function filaCompromiso(c, { conNota = true } = {}) {
     return `<li class="ag-comp ${estadoFecha(c)}${c.mio ? " mio" : ""}">
       <button class="ag-check" data-comp-ruta="${esc(c.nota.ruta)}" data-comp-linea="${esc(c.linea)}" aria-label="${c.hecho ? "Marcar como pendiente" : "Marcar como hecho"}">${c.hecho ? "✓" : ""}</button>
-      ${c.hecho ? "" : `<button class="ag-rec" data-recordar="${esc(c.linea)}" title="Agregar a Recordatorios del Mac${c.fecha ? " con su fecha" : ""}">⏰</button>`}
+      ${c.hecho ? "" : `<button class="ag-rec" data-recordar="${esc(c.linea)}" title="${ESCRITORIO ? `Agregar a tu calendario${c.fecha ? " con su fecha" : ""}` : `Agregar a Recordatorios del Mac${c.fecha ? " con su fecha" : ""}`}">⏰</button>`}
       <div class="ag-comp-txt"><span class="ag-que">${inline(c.que)}</span>
         <span class="ag-meta">${c.mio ? `<span class="ag-resp mio">Tú</span>` : c.resp ? `<span class="ag-resp" style="--c:${colorPersona(norm(c.resp))}">${esc(c.resp)}</span>` : ""}${chipFecha(c)}
         ${c.veces > 1 ? `<span class="ag-veces" title="Se mencionó en ${c.veces} reuniones desde el ${fmtFechaCorta(c.primera.fecha)}">↻ ${c.veces} reuniones</span>` : ""}
@@ -1979,8 +1999,8 @@
       </div>
       <div class="subtitulo">Próximas reuniones</div>
       ${lista.length ? `<div class="ag-eventos">${lista.map((ev) => tarjetaBrief(ev, ev.id === E.briefAbierto)).join("")}</div>`
-        : `<div class="ag-vacio">${E.plataforma === "web" ? "En la app de Mac aquí aparecen tus reuniones del calendario." : "No hay reuniones en tu calendario en las próximas 36 horas."}</div>`}
-      <div class="subtitulo ag-tit-comp">Compromisos <button class="ag-nota" data-recordar="mios" title="Crea un recordatorio por cada compromiso tuyo abierto (sin duplicar)">⏰ Mis compromisos a Recordatorios</button>
+        : `<div class="ag-vacio">${E.plataforma === "web" ? "En la app de Mac aquí aparecen tus reuniones del calendario." : ESCRITORIO && E.avisos?.calendario !== "si" ? "Conecta tu calendario en Preferencias (dirección iCal de Google u Outlook) y aquí aparecen tus reuniones." : "No hay reuniones en tu calendario en las próximas 36 horas."}</div>`}
+      <div class="subtitulo ag-tit-comp">Compromisos <button class="ag-nota" data-recordar="mios" title="Crea un recordatorio por cada compromiso tuyo abierto (sin duplicar)">${ESCRITORIO ? "⏰ Mis compromisos a tu calendario" : "⏰ Mis compromisos a Recordatorios"}</button>
         <span class="pestanas ag-filtro">${[["mios", "Míos"], ["otros", "De otros"], ["todos", "Todos"]].map(([k, n]) => `<button class="pestana${ver === k ? " activa" : ""}" data-comp-filtro="${k}">${n}</button>`).join("")}</span></div>
       ${abiertos.length ? grupos.map(([k, n]) => { const g = abiertos.filter((c) => estadoFecha(c) === k).sort((a, b) => (a.fecha ? +a.fecha : 0) - (b.fecha ? +b.fecha : 0)); return g.length ? `<div class="ag-grupo ${k}"><div class="ag-grupo-tit">${n} <small>${g.length}</small></div><ul class="ag-comps">${g.map((c) => filaCompromiso(c)).join("")}</ul></div>` : ""; }).join("")
         : `<div class="ag-vacio">No tienes compromisos abiertos${ver === "mios" ? "" : " en este filtro"}. 🎉</div>`}
@@ -2433,7 +2453,7 @@
     if ($(".lista")) $(".lista").scrollTo({ top: scrollLista, behavior: "instant" });
     contar(app);
     const chat = document.getElementById("gym-chat"); if (chat) chat.scrollTop = chat.scrollHeight;
-    if (foco && /^(buscar|corr-de|corr-a|voto-txt|forja-nombre|forja-notas|busca-persona|preg-txt|gym-txt|gym-propio|env-para|env-asunto|env-cuerpo|env-indic)$/.test(foco)) { const b = document.getElementById(foco); if (b) { b.focus(); try { b.setSelectionRange(b.value.length, b.value.length); } catch {} } }
+    if (foco && /^(buscar|corr-de|corr-a|voto-txt|forja-nombre|forja-notas|busca-persona|preg-txt|gym-txt|gym-propio|env-para|env-asunto|env-cuerpo|env-indic|ics-url)$/.test(foco)) { const b = document.getElementById(foco); if (b) { b.focus(); try { b.setSelectionRange(b.value.length, b.value.length); } catch {} } }
   }
 
   // ───────────────────────── Eventos ─────────────────────────
@@ -2665,6 +2685,8 @@
       host.enviar(d.pn); return;
     }
     if (PANEL && ev.target.closest("[data-accion=galeria]")) { E.panVista = "universos"; render(); return; }
+    if (ev.target.closest("[data-ics-conectar]")) { const u = ($("#ics-url")?.value || "").trim(); if (u) { host.enviar("calendarioICS", { url: u }); toast("Conectando tu calendario…"); } else $("#ics-url")?.focus(); return; }
+    if (ev.target.closest("[data-ics-quitar]")) { host.enviar("calendarioICS", { url: "" }); return; }
     const v = ev.target.closest("[data-ventana]");
     if (v) { host.enviar("ventana", { op: v.dataset.ventana }); return; }
     const b = ev.target.closest("[data-accion],[data-vista],[data-nota],[data-tema],[data-seccion]");
@@ -2763,11 +2785,11 @@
     let cuerpo = "";
     if (paso === "idioma") {
       cuerpo = `<div class="bv-hero"><div class="bv-logo">🎙️</div><h2>Bienvenido a Minuta</h2>
-        <p>Tus reuniones, tu computador, tus notas. El audio nunca sale de tu Mac: se transcribe aquí mismo. Solo el texto va a la IA que tú elijas.</p></div>
+        <p>Tus reuniones, tu computador, tus notas. El audio nunca sale de tu computador: se transcribe aquí mismo. Solo el texto va a la IA que tú elijas.</p></div>
         <label class="cat-campo"><span>Idioma de la app</span><select data-bv-idioma>${(E.idioma.instalados || []).map((x) => `<option value="${esc(x.codigo)}"${x.codigo === E.idioma.codigo ? " selected" : ""}>${esc(x.bandera || "")} ${esc(x.nombre)}</option>`).join("")}</select></label>
         <p class="cat-ayuda">Son 5 pasos cortos. Todo se puede cambiar después en Preferencias.</p>`;
     } else if (paso === "tu") {
-      cuerpo = `<h2>¿Quién eres?</h2><p class="bv-sub">Con esto Claude sabe a quién le da el feedback. Se guarda solo en tu Mac.</p>
+      cuerpo = `<h2>¿Quién eres?</h2><p class="bv-sub">Con esto Claude sabe a quién le da el feedback. Se guarda solo en tu computador.</p>
         <div class="pp-fila"><label class="cat-campo"><span>Tu nombre</span><input data-bv-campo="nombre" value="${esc(p.nombre || "")}" placeholder="ej: Ana"></label>
           <label class="cat-campo"><span>Nombre completo <small>para reconocerte en las invitaciones</small></span><input data-bv-campo="nombre_completo" value="${esc(p.nombre_completo || "")}" placeholder="ej: Ana Pérez"></label></div>
         <label class="cat-campo"><span>Qué haces <small>le da contexto al feedback</small></span><input data-bv-campo="descripcion" value="${esc(p.descripcion || "")}" placeholder="ej: Product Manager en una startup"></label>
@@ -2786,7 +2808,7 @@
         <button class="boton-txt bv-saltar" data-bv-saltar-ia>La configuro después</button>`;
     } else if (paso === "modelo") {
       const m = b.modelos || { lista: [] };
-      cuerpo = `<h2>Transcripción en tu Mac</h2><p class="bv-sub">Se descarga una sola vez el modelo que convierte la voz en texto. Tu audio nunca sale de tu Mac.${m.ram ? ` Tu Mac tiene ${m.ram} GB de memoria.` : ""}</p>
+      cuerpo = `<h2>Transcripción en tu computador</h2><p class="bv-sub">Se descarga una sola vez el modelo que convierte la voz en texto. Tu audio nunca sale de tu computador.${m.ram ? ` Tu Mac tiene ${m.ram} GB de memoria.` : ""}</p>
         <div class="bv-modelos">${m.lista.map((x) => `<button class="bv-modelo${(b.modeloElegido || m.elegido || m.recomendado) === x.id ? " elegido" : ""}" data-bv-modelo="${esc(x.id)}" ${b.descargando ? "disabled" : ""}>
           <b>${esc(x.nombre)} ${x.id === m.recomendado ? `<em>recomendado</em>` : ""}</b><small>${esc(x.detalle)}</small><span>${x.listo ? "✓ Descargado" : `${x.mb} MB`}</span></button>`).join("")}</div>
         ${b.descargando ? `<div class="bv-barra"><i style="width:${b.pct || 0}%"></i></div><p class="cat-ayuda">Descargando… ${b.pct || 0}% · puedes seguir con los demás pasos.</p>`
@@ -2810,10 +2832,15 @@
     } else if (paso === "permisos") {
       const a = E.avisos || {};
       const fila = (ico, t, d, estado, boton) => `<div class="bv-permiso"><span>${ico}</span><div><b>${t}</b><small>${d}</small></div>${estado === "si" ? `<em class="ok">✓</em>` : boton}</div>`;
-      cuerpo = `<h2>Permisos</h2><p class="bv-sub">macOS te pedirá confirmar cada uno. Minuta solo los usa para lo que dice aquí.</p>
+      cuerpo = ESCRITORIO ? `<h2>Permisos</h2><p class="bv-sub">Minuta solo usa esto para lo que dice aquí.</p>
+        ${fila("🎙️", "Micrófono", "Para grabar tu voz en las reuniones.", b.micOk ? "si" : "", `<button class="boton-txt aplicar" data-bv-permiso="microfono">Revisar</button>`)}
+        ${fila("🔊", "Audio de la llamada", "Para grabar a los demás. No necesita permiso.", "si", "")}
+        ${fila("📅", "Calendario", "Opcional: conéctalo después en Preferencias con la dirección iCal de Google u Outlook.", a.calendario, `<small class="bv-luego">después</small>`)}`
+        : `<h2>Permisos</h2><p class="bv-sub">macOS te pedirá confirmar cada uno. Minuta solo los usa para lo que dice aquí.</p>
         ${fila("🎙️", "Micrófono", "Para grabar tu voz en las reuniones.", b.micOk ? "si" : "", `<button class="boton-txt aplicar" data-bv-permiso="microfono">Permitir</button>`)}
         ${fila("🔊", "Audio de la llamada", "Para grabar a los demás. macOS lo pide la primera vez que grabes.", "", `<small class="bv-luego">al grabar</small>`)}
-        ${fila("📅", "Calendario", "Para saber el título y los invitados de cada reunión.", a.calendario, `<button class="boton-txt aplicar" data-av="pedirCalendario">Permitir</button>`)}
+        ${fila("📅", "Calendario", "Para saber el título y los invitados de cada reunión.", a.calendario, `<button class="boton-txt aplicar" data-av="pedirCalendario">Permitir</button>`)}`;
+      cuerpo += `
         ${fila("🔔", "Avisos", "Para avisarte cuando hay notas listas o un logro.", a.permiso, `<button class="boton-txt aplicar" data-av="pedirAvisos">Permitir</button>`)}`;
     } else {
       cuerpo = `<div class="bv-hero"><div class="bv-logo">🎉</div><h2>¡Todo listo${p.nombre ? `, ${esc(p.nombre)}` : ""}!</h2>
@@ -2856,7 +2883,7 @@
     const c = E.coment; c.titulo = ($("#coment-titulo")?.value || "").trim(); c.texto = ($("#coment-texto")?.value || "").trim();
     if (!c.titulo) { $("#coment-titulo")?.focus(); return; }
     const pre = { error: "🐞", idea: "💡", universo: "🌌", otro: "💬" }[c.tipo] || "";
-    const cuerpo = `${c.texto}${c.sistema ? `\n\n---\nMinuta · idioma ${E.idioma.codigo} · ${navigator.userAgent.match(/Mac OS X [\d_]+/)?.[0]?.replace(/_/g, ".") || "macOS"}` : ""}`;
+    const cuerpo = `${c.texto}${c.sistema ? `\n\n---\nMinuta · idioma ${E.idioma.codigo} · ${ESCRITORIO ? (window.MINUTA_HOST === "windows" ? "Windows" : "Linux") : navigator.userAgent.match(/Mac OS X [\d_]+/)?.[0]?.replace(/_/g, ".") || "macOS"}` : ""}`;
     const datos = { titulo: `${pre} ${c.titulo}`, cuerpo, etiqueta: { error: "error", idea: "idea", universo: "universo", otro: "comentario" }[c.tipo] };
     if (E.plataforma === "web") window.open(`https://github.com/soydavidcornejo/minuta-catalogo/issues/new?title=${encodeURIComponent(datos.titulo)}&body=${encodeURIComponent(cuerpo)}&labels=${datos.etiqueta}`, "_blank");
     else host.enviar("comentarios", datos);
@@ -2931,12 +2958,12 @@
     if (E.votoAbierto && ev.target.id === "voto-txt" && ev.key === "Enter") { cerrarComentario(); ev.preventDefault(); return; }
     if (E.votoAbierto && ev.key === "Escape") { E.votoAbierto = null; render({ mantenerScroll: true }); return; }
     if (E.forja && ev.key === "Escape" && E.forja.estado !== "trabajando") { E.forja = null; render({ mantenerScroll: true }); return; }
-    if (!PANEL && ev.metaKey && ev.key.toLowerCase() === "e" && notaActual() && E.seccion === "reuniones") { abrirCorregir(getSelection()?.toString().trim().slice(0, 60) || ""); ev.preventDefault(); return; }
+    if (!PANEL && (ev.metaKey || (ESCRITORIO && ev.ctrlKey)) && ev.key.toLowerCase() === "e" && notaActual() && E.seccion === "reuniones") { abrirCorregir(getSelection()?.toString().trim().slice(0, 60) || ""); ev.preventDefault(); return; }
     if (E.borrar) {
       if (ev.key === "Escape") { E.borrar = null; render({ mantenerScroll: true }); ev.preventDefault(); }
       return;
     }
-    if (!PANEL && ev.metaKey && ev.key === "Backspace" && document.activeElement?.id !== "buscar" && notaActual()) {
+    if (!PANEL && (ev.metaKey || (ESCRITORIO && ev.ctrlKey)) && (ev.key === "Backspace" || (ESCRITORIO && ev.key === "Delete")) && document.activeElement?.id !== "buscar" && notaActual()) {
       E.borrar = notaActual().ruta; render({ mantenerScroll: true }); setTimeout(() => $(".borrar-caja .peligro")?.focus(), 30); ev.preventDefault(); return;
     }
     if (PANEL) {
@@ -2944,8 +2971,8 @@
       if (ev.key === "Escape") { if (E.panVista !== "inicio") { E.panVista = "inicio"; render(); } else host.enviar("cerrarPanel"); }
       return;
     }
-    if (VENTANA && ev.metaKey && !ev.ctrlKey && (ev.key === "w" || ev.key === "m")) { host.enviar("ventana", { op: ev.key === "w" ? "cerrar" : "minimizar" }); ev.preventDefault(); return; }
-    if (VENTANA && ev.metaKey && ev.ctrlKey && ev.key.toLowerCase() === "f") { host.enviar("ventana", { op: "pantalla" }); ev.preventDefault(); return; }
+    if (VENTANA && (ESCRITORIO ? ev.ctrlKey && !ev.altKey : ev.metaKey && !ev.ctrlKey) && (ev.key === "w" || ev.key === "m")) { host.enviar("ventana", { op: ev.key === "w" ? "cerrar" : "minimizar" }); ev.preventDefault(); return; }
+    if (VENTANA && (ESCRITORIO ? ev.key === "F11" : ev.metaKey && ev.ctrlKey && ev.key.toLowerCase() === "f")) { host.enviar("ventana", { op: "pantalla" }); ev.preventDefault(); return; }
     if (ev.key === "Escape" && E.galeria) { E.galeria = false; render({ mantenerScroll: true }); return; }
     if (mod && /^[1-3]$/.test(ev.key)) { if (+ev.key <= VISTAS.length) { E.seccion = "reuniones"; E.vista = VISTAS[+ev.key - 1][0]; render(); } ev.preventDefault(); return; }
     if (mod && ev.key === ",") { E.seccion = "preferencias"; render(); ev.preventDefault(); return; }
@@ -3123,7 +3150,7 @@
     },
     /** Estado de la ventana nativa: { pantalla: bool, activa: bool } */
     ventana(d = {}) {
-      if ("pantalla" in d) { RAIZ.classList.toggle("pantalla", !!d.pantalla); RAIZ.classList.toggle("forma", !d.pantalla); regiones(); }
+      if ("pantalla" in d) { RAIZ.classList.toggle("pantalla", !!d.pantalla); RAIZ.classList.toggle("forma", !d.pantalla && !ESCRITORIO); regiones(); }
       if ("activa" in d) RAIZ.classList.toggle("inactiva", !d.activa);
     },
   };

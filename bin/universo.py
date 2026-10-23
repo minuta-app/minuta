@@ -12,12 +12,11 @@ import subprocess
 import sys
 import unicodedata
 
-from perfil import NOMBRE, QUIEN, IDIOMA, HUMOR, RECURSOS
+from perfil import NOMBRE, QUIEN, IDIOMA, HUMOR, RECURSOS, CLAUDE
 
 HOME = os.path.expanduser("~")
 BASE = os.path.join(HOME, "minuta")
 TEMAS = os.path.join(BASE, "temas")
-os.environ["PATH"] = f"/opt/homebrew/bin:/usr/local/bin:{HOME}/.local/bin:" + os.environ.get("PATH", "")
 
 APARTADOS = ["claridad", "escucha", "preguntas", "cierre"]
 LOGROS = {
@@ -126,7 +125,7 @@ Ejemplo abreviado (Star Wars) para el formato y el tono:
 
 
 def llamar_claude(texto):
-    cmd = ["claude", "-p", "--output-format", "text"]
+    cmd = [CLAUDE, "-p", "--output-format", "text"]
     if os.environ.get("MINUTA_MODELO"):
         cmd += ["--model", os.environ["MINUTA_MODELO"]]
     r = subprocess.run(cmd, input=texto, text=True, capture_output=True, cwd=BASE, timeout=900)

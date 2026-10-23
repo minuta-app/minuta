@@ -76,9 +76,14 @@
   .uni small { opacity: .75; font-size: 12.5px; } .uni .r { margin-top: 8px; font-size: 13px; letter-spacing: 2px; }
   .uni .tag { position: absolute; top: 12px; right: 12px; font-size: 10.5px; font-weight: 700; padding: 3px 7px; border-radius: 999px; background: rgba(0,0,0,.35); color: #fff; }
   /* instalar */
-  .instalar .grilla { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .instalar .grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); } @media (max-width: 720px) { .instalar .grilla { grid-template-columns: 1fr; } }
   .instalar .carta h3 { display: flex; align-items: center; gap: 10px; } .instalar .carta .num { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--acento); color: #111; font-size: 14px; font-weight: 800; }
   .instalar .carta .comando { margin: 14px 0 0; width: 100%; } .instalar .carta .boton { margin-top: 14px; }
+  .sistemas { display: inline-flex; gap: 4px; padding: 4px; border-radius: 14px; border: 1px solid var(--linea); background: var(--fondo2); margin-bottom: 18px; }
+  .sistemas button { border: 0; background: none; color: var(--suave); font: 600 14px Inter, system-ui, sans-serif; padding: 9px 16px; border-radius: 10px; cursor: pointer; }
+  .sistemas button[aria-selected="true"] { background: var(--panel); color: var(--texto); box-shadow: 0 1px 0 rgba(255,255,255,.06) inset; }
+  .instalar .grilla[hidden] { display: none; } .instalar .requisitos { grid-column: 1 / -1; margin-top: 4px; }
+  .carta code { font-size: 12.5px; background: #07070a; padding: 1px 5px; border-radius: 5px; }
   .requisitos { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; } .requisitos span { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--linea); color: var(--suave); font-size: 13.5px; }
   /* preguntas */
   details { border-bottom: 1px solid var(--linea); padding: 16px 0; } summary { cursor: pointer; font-weight: 600; font-size: 17px; list-style: none; display: flex; justify-content: space-between; gap: 20px; }
@@ -100,22 +105,23 @@
 
 <main>
 <section class="heroe"><div class="ancho">
-  <span class="etiqueta"><b>●</b> <span data-es>Gratis · Open source · Tus datos no salen de tu Mac</span><span data-en>Free · Open source · Your data stays on your Mac</span></span>
+  <span class="etiqueta"><b>●</b> <span data-es>Gratis · Open source · Mac, Windows y Linux</span><span data-en>Free · Open source · Mac, Windows and Linux</span></span>
   <h1><span data-es>Tus reuniones, <em>mejor contadas</em></span><span data-en>Your meetings, <em>better told</em></span></h1>
-  <p class="lema"><span data-es>Minuta graba tus reuniones, las transcribe en tu propio Mac y te deja notas, compromisos y un feedback honesto para que cada reunión te salga mejor que la anterior.</span><span data-en>Minuta records your meetings, transcribes them on your own Mac and gives you notes, commitments and honest feedback so every meeting goes better than the last.</span></p>
+  <p class="lema"><span data-es>Minuta graba tus reuniones, las transcribe en tu propio computador y te deja notas, compromisos y un feedback honesto para que cada reunión te salga mejor que la anterior.</span><span data-en>Minuta records your meetings, transcribes them on your own computer and gives you notes, commitments and honest feedback so every meeting goes better than the last.</span></p>
   <div class="acciones">
-    <a class="boton principal" href="https://github.com/soydavidcornejo/minuta/releases/latest/download/Minuta-macOS.zip"> <span data-es>Descargar para Mac</span><span data-en>Download for Mac</span></a>
+    <a class="boton principal" id="descarga" href="https://github.com/soydavidcornejo/minuta/releases/latest/download/Minuta-macOS.zip"> <span data-es>Descargar para <b class="so-nombre">Mac</b></span><span data-en>Download for <b class="so-nombre">Mac</b></span></a>
     <a class="boton" href="https://github.com/soydavidcornejo/minuta">★ <span data-es>Ver en GitHub</span><span data-en>View on GitHub</span></a>
   </div>
   <div class="comando"><code id="cmd">curl -fsSL https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.sh | bash</code><button data-copiar="cmd"><span data-es>Copiar</span><span data-en>Copy</span></button></div>
-  <p class="nota-req"><span data-es>Mac con chip Apple · macOS 15 o posterior · tu cuenta de Claude</span><span data-en>Apple silicon Mac · macOS 15 or later · your Claude account</span></p>
+  <p class="nota-req" id="req"><span data-es>Mac con chip Apple · macOS 15 o posterior · tu cuenta de Claude</span><span data-en>Apple silicon Mac · macOS 15 or later · your Claude account</span></p>
+  <p class="nota-req"><a href="#instalar"><span data-es>Otros sistemas: Mac · Windows · Linux</span><span data-en>Other systems: Mac · Windows · Linux</span></a></p>
   <div class="ventana"><div class="puntos"><i></i><i></i><i></i></div><img src="img/notas.jpg" alt="Notas de una reunión en Minuta con el universo Star Wars" width="2560" height="1600"></div>
 </div></section>
 
 <section id="que-hace"><div class="ancho">
   <div class="sec-cab revela"><small><span data-es>Qué hace</span><span data-en>What it does</span></small>
     <h2><span data-es>Como tener un asistente y un coach en cada reunión</span><span data-en>Like having an assistant and a coach in every meeting</span></h2>
-    <p><span data-es>Sin bots que entren a la llamada: Minuta escucha tu micrófono y el audio del Mac.</span><span data-en>No bots joining the call: Minuta listens to your mic and your Mac's audio.</span></p></div>
+    <p><span data-es>Sin bots que entren a la llamada: Minuta escucha tu micrófono y el audio del computador.</span><span data-en>No bots joining the call: Minuta listens to your mic and your computer's audio.</span></p></div>
   <div class="grilla">
     <div class="carta revela"><div class="ico">🔔</div><h3><span data-es>Detecta tus reuniones</span><span data-en>Detects your meetings</span></h3><p><span data-es>Teams, Zoom, Meet, Slack… Te avisa al empezar: un clic y graba. Al terminar te pregunta si cortar.</span><span data-en>Teams, Zoom, Meet, Slack… It alerts you when one starts: one click to record. When it ends, it asks before stopping.</span></p></div>
     <div class="carta revela"><div class="ico">📝</div><h3><span data-es>Notas que sí sirven</span><span data-en>Notes that actually help</span></h3><p><span data-es>Temas, decisiones, pendientes y próximos pasos con responsable y fecha. Quién dijo qué, con las voces separadas.</span><span data-en>Topics, decisions, open items and next steps with owner and date. Who said what, with voices separated.</span></p></div>
@@ -143,8 +149,8 @@
     <h2><span data-es>Todo es tuyo. Siempre.</span><span data-en>Everything is yours. Always.</span></h2>
     <p><span data-es>Sin cuentas de Minuta, sin servidores, sin base de datos. Solo el texto de la reunión va a la IA que tú eliges, con tu propia cuenta.</span><span data-en>No Minuta accounts, no servers, no database. Only the meeting text goes to the AI you choose, with your own account.</span></p></div>
   <div class="flujo revela">
-    <div class="paso"><span class="donde"><span data-es>en tu Mac</span><span data-en>on your Mac</span></span><b><span data-es>Graba</span><span data-en>Record</span></b><p><span data-es>Tu micrófono y el audio de la llamada.</span><span data-en>Your mic and the call audio.</span></p></div>
-    <div class="paso"><span class="donde"><span data-es>en tu Mac</span><span data-en>on your Mac</span></span><b><span data-es>Transcribe</span><span data-en>Transcribe</span></b><p><span data-es>Whisper y separación de voces, en el chip de tu Mac.</span><span data-en>Whisper and speaker separation, on your Mac's chip.</span></p></div>
+    <div class="paso"><span class="donde"><span data-es>en tu equipo</span><span data-en>on your computer</span></span><b><span data-es>Graba</span><span data-en>Record</span></b><p><span data-es>Tu micrófono y el audio de la llamada.</span><span data-en>Your mic and the call audio.</span></p></div>
+    <div class="paso"><span class="donde"><span data-es>en tu equipo</span><span data-en>on your computer</span></span><b><span data-es>Transcribe</span><span data-en>Transcribe</span></b><p><span data-es>Whisper y separación de voces, en tu propio computador.</span><span data-en>Whisper and speaker separation, on your own computer.</span></p></div>
     <div class="paso"><span class="donde fuera"><span data-es>tu IA</span><span data-en>your AI</span></span><b><span data-es>Escribe</span><span data-en>Write</span></b><p><span data-es>Solo el texto va a Claude, con tu suscripción.</span><span data-en>Only text goes to Claude, with your subscription.</span></p></div>
     <div class="paso"><span class="donde"><span data-es>tuyo</span><span data-en>yours</span></span><b><span data-es>Guarda</span><span data-en>Save</span></b><p><span data-es>Archivos Markdown en tu carpeta y, si quieres, en tu repo privado de GitHub o GitLab.</span><span data-en>Markdown files in your folder and, if you want, your private GitHub or GitLab repo.</span></p></div>
   </div>
@@ -164,22 +170,39 @@
   <div class="sec-cab revela"><small><span data-es>Instalar</span><span data-en>Install</span></small>
     <h2><span data-es>Listo en dos minutos</span><span data-en>Ready in two minutes</span></h2>
     <p><span data-es>Al abrirla, un asistente te pregunta lo necesario: quién eres, tu IA, el modelo de transcripción y dónde guardar tus notas.</span><span data-en>When you open it, a short welcome asks what it needs: who you are, your AI, the transcription model and where to keep your notes.</span></p></div>
-  <div class="grilla">
-    <div class="carta revela"><h3><span class="num">1</span><span data-es>Con un comando</span><span data-en>With one command</span></h3><p><span data-es>Abre la Terminal y pega esto. Descarga la última versión, verifica su huella y la abre.</span><span data-en>Open Terminal and paste this. It downloads the latest version, verifies it and opens it.</span></p>
-      <div class="comando"><code id="cmd2">curl -fsSL https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.sh | bash</code><button data-copiar="cmd2"><span data-es>Copiar</span><span data-en>Copy</span></button></div></div>
-    <div class="carta revela"><h3><span class="num">2</span><span data-es>Descargando la app</span><span data-en>By downloading</span></h3><p><span data-es>Descomprime, arrastra Minuta a Aplicaciones y ábrela con clic derecho → Abrir la primera vez (aún no está firmada por Apple).</span><span data-en>Unzip, drag Minuta to Applications and open it with right-click → Open the first time (it isn't signed by Apple yet).</span></p>
-      <a class="boton principal" href="https://github.com/soydavidcornejo/minuta/releases/latest/download/Minuta-macOS.zip"> <span data-es>Descargar Minuta</span><span data-en>Download Minuta</span></a></div>
+  <div class="sistemas revela" role="tablist">
+    <button data-so="mac" role="tab">🍎 Mac</button><button data-so="windows" role="tab">🪟 Windows</button><button data-so="linux" role="tab">🐧 Linux</button>
   </div>
-  <div class="requisitos revela"><span>🍎 <span data-es>Mac con chip Apple (M1 o posterior)</span><span data-en>Apple silicon Mac (M1 or later)</span></span><span>🖥️ macOS 15+</span><span>🤖 <span data-es>Claude Pro o Max con Claude Code</span><span data-en>Claude Pro or Max with Claude Code</span></span><span>💾 <span data-es>~1 GB libre</span><span data-en>~1 GB free</span></span><span>🪟🐧 <span data-es>Windows y Linux: en camino</span><span data-en>Windows and Linux: coming</span></span></div>
+  <div class="grilla" data-panel="mac">
+    <div class="carta"><h3><span class="num">1</span><span data-es>Con un comando</span><span data-en>With one command</span></h3><p><span data-es>Abre la Terminal y pega esto. Descarga la última versión, verifica su huella y la abre.</span><span data-en>Open Terminal and paste this. It downloads the latest version, verifies it and opens it.</span></p>
+      <div class="comando"><code id="cmd-mac">curl -fsSL https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.sh | bash</code><button data-copiar="cmd-mac"><span data-es>Copiar</span><span data-en>Copy</span></button></div></div>
+    <div class="carta"><h3><span class="num">2</span><span data-es>Descargando la app</span><span data-en>By downloading</span></h3><p><span data-es>Descomprime, arrastra Minuta a Aplicaciones y ábrela con clic derecho → Abrir la primera vez (aún no está firmada por Apple).</span><span data-en>Unzip, drag Minuta to Applications and open it with right-click → Open the first time (it isn't signed by Apple yet).</span></p>
+      <a class="boton principal" href="https://github.com/soydavidcornejo/minuta/releases/latest/download/Minuta-macOS.zip"> <span data-es>Descargar para Mac</span><span data-en>Download for Mac</span></a></div>
+    <div class="requisitos"><span>🍎 <span data-es>Chip Apple (M1 o posterior)</span><span data-en>Apple silicon (M1 or later)</span></span><span>🖥️ macOS 15+</span><span>🤖 <span data-es>Claude Pro o Max con Claude Code</span><span data-en>Claude Pro or Max with Claude Code</span></span><span>💾 <span data-es>~1 GB libre</span><span data-en>~1 GB free</span></span></div>
+  </div>
+  <div class="grilla" data-panel="windows" hidden>
+    <div class="carta"><h3><span class="num">1</span><span data-es>Con un comando</span><span data-en>With one command</span></h3><p><span data-es>Abre PowerShell (tecla Windows → «PowerShell») y pega esto. Descarga, verifica la huella e instala solo para tu usuario.</span><span data-en>Open PowerShell (Windows key → “PowerShell”) and paste this. It downloads, verifies and installs just for your user.</span></p>
+      <div class="comando"><code id="cmd-windows">irm https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.ps1 | iex</code><button data-copiar="cmd-windows"><span data-es>Copiar</span><span data-en>Copy</span></button></div></div>
+    <div class="carta"><h3><span class="num">2</span><span data-es>Descargando el instalador</span><span data-en>By downloading the installer</span></h3><p><span data-es>Ábrelo y listo. Como aún no está firmado, Windows puede mostrar «Windows protegió tu PC»: toca «Más información» → «Ejecutar de todas formas».</span><span data-en>Open it and you're done. Since it isn't signed yet, Windows may show “Windows protected your PC”: click “More info” → “Run anyway”.</span></p>
+      <a class="boton principal" href="https://github.com/soydavidcornejo/minuta/releases/latest/download/Minuta-Windows.exe"> <span data-es>Descargar para Windows</span><span data-en>Download for Windows</span></a></div>
+    <div class="requisitos"><span>🪟 <span data-es>Windows 10 u 11 (64 bits)</span><span data-en>Windows 10 or 11 (64-bit)</span></span><span>🤖 <span data-es>Claude Pro o Max con Claude Code</span><span data-en>Claude Pro or Max with Claude Code</span></span><span>💾 <span data-es>~1 GB libre</span><span data-en>~1 GB free</span></span><span>🔁 <span data-es>Git, solo si respaldas en GitHub/GitLab</span><span data-en>Git, only for GitHub/GitLab backup</span></span></div>
+  </div>
+  <div class="grilla" data-panel="linux" hidden>
+    <div class="carta"><h3><span class="num">1</span><span data-es>Con un comando</span><span data-en>With one command</span></h3><p><span data-es>En una terminal. Se instala en tu usuario (sin sudo), con su ícono en el menú de aplicaciones.</span><span data-en>In a terminal. It installs for your user (no sudo), with its icon in the app menu.</span></p>
+      <div class="comando"><code id="cmd-linux">curl -fsSL https://raw.githubusercontent.com/soydavidcornejo/minuta/main/instalar.sh | bash</code><button data-copiar="cmd-linux"><span data-es>Copiar</span><span data-en>Copy</span></button></div></div>
+    <div class="carta"><h3><span class="num">2</span><span data-es>AppImage</span><span data-en>AppImage</span></h3><p><span data-es>Un solo archivo: dale permiso de ejecución y ábrelo. Necesita FUSE (en Ubuntu 22.04+: <code>sudo apt install libfuse2</code>).</span><span data-en>A single file: make it executable and open it. Needs FUSE (on Ubuntu 22.04+: <code>sudo apt install libfuse2</code>).</span></p>
+      <a class="boton principal" href="https://github.com/soydavidcornejo/minuta/releases/latest/download/Minuta-Linux.AppImage"> <span data-es>Descargar AppImage</span><span data-en>Download AppImage</span></a></div>
+    <div class="requisitos"><span>🐧 <span data-es>x86_64 · Ubuntu 18.04+, Fedora, Debian…</span><span data-en>x86_64 · Ubuntu 18.04+, Fedora, Debian…</span></span><span>🔊 <span data-es>PulseAudio o PipeWire</span><span data-en>PulseAudio or PipeWire</span></span><span>🤖 <span data-es>Claude Pro o Max con Claude Code</span><span data-en>Claude Pro or Max with Claude Code</span></span><span>💾 <span data-es>~1 GB libre</span><span data-en>~1 GB free</span></span></div>
+  </div>
 </div></section>
 
 <section><div class="ancho" style="max-width:860px">
   <div class="sec-cab revela"><small><span data-es>Preguntas</span><span data-en>Questions</span></small><h2><span data-es>Preguntas frecuentes</span><span data-en>FAQ</span></h2></div>
   <details><summary><span data-es>¿Cuánto cuesta?</span><span data-en>How much does it cost?</span></summary><p><span data-es>Nada. Minuta es gratis y open source (MIT). Usa la suscripción de IA que ya tienes.</span><span data-en>Nothing. Minuta is free and open source (MIT). It uses the AI subscription you already have.</span></p></details>
   <details><summary><span data-es>¿Dónde quedan mis notas?</span><span data-en>Where do my notes live?</span></summary><p><span data-es>En una carpeta tuya, como archivos Markdown (funcionan con Obsidian). Si quieres, Minuta crea un repositorio privado en tu propia cuenta de GitHub o GitLab y respalda cada reunión.</span><span data-en>In a folder of yours, as Markdown files (they work with Obsidian). If you want, Minuta creates a private repository in your own GitHub or GitLab account and backs up every meeting.</span></p></details>
-  <details><summary><span data-es>¿Qué se envía a internet?</span><span data-en>What gets sent to the internet?</span></summary><p><span data-es>El audio nunca sale de tu Mac. Solo el texto de la transcripción va a la IA que elegiste, con tu cuenta. Minuta no tiene servidores.</span><span data-en>Audio never leaves your Mac. Only the transcript text goes to the AI you chose, with your account. Minuta has no servers.</span></p></details>
+  <details><summary><span data-es>¿Qué se envía a internet?</span><span data-en>What gets sent to the internet?</span></summary><p><span data-es>El audio nunca sale de tu computador. Solo el texto de la transcripción va a la IA que elegiste, con tu cuenta. Minuta no tiene servidores.</span><span data-en>Audio never leaves your computer. Only the transcript text goes to the AI you chose, with your account. Minuta has no servers.</span></p></details>
   <details><summary><span data-es>¿Funciona con ChatGPT o Gemini?</span><span data-en>Does it work with ChatGPT or Gemini?</span></summary><p><span data-es>Hoy funciona con Claude. ChatGPT (Codex) y Gemini vienen pronto: la app ya está preparada para elegir tu IA.</span><span data-en>Today it works with Claude. ChatGPT (Codex) and Gemini are coming soon: the app is already built to let you choose your AI.</span></p></details>
-  <details><summary><span data-es>¿Y Windows o Linux?</span><span data-en>What about Windows or Linux?</span></summary><p><span data-es>Están en camino. La interfaz, la transcripción y el procesamiento ya son multiplataforma; falta la parte que graba el audio en cada sistema.</span><span data-en>They're coming. The interface, transcription and processing are already cross-platform; what's left is the audio capture for each system.</span></p></details>
+  <details><summary><span data-es>¿Funciona en Windows y Linux?</span><span data-en>Does it work on Windows and Linux?</span></summary><p><span data-es>Sí: es la misma app, con las mismas notas, universos y coach. En Windows y Linux la transcripción usa el procesador (en Mac, el chip gráfico), así que es algo más lenta; el modelo «Liviano» va bien en casi cualquier computador. El calendario se conecta pegando la dirección iCal de Google Calendar u Outlook.</span><span data-en>Yes: it's the same app, with the same notes, universes and coach. On Windows and Linux transcription runs on the CPU (on Mac, the GPU), so it's a bit slower; the “Light” model runs well on almost any computer. The calendar connects by pasting your Google Calendar or Outlook iCal address.</span></p></details>
   <details><summary><span data-es>¿Está bien grabar a otras personas?</span><span data-en>Is it OK to record other people?</span></summary><p><span data-es>Depende de tu país y del contexto. Avisa a los participantes y pide su consentimiento antes de grabar: es lo correcto y en muchos lugares es obligatorio.</span><span data-en>It depends on your country and context. Tell participants and ask for consent before recording: it's the right thing to do and required in many places.</span></p></details>
   <details><summary><span data-es>¿Cómo se actualiza?</span><span data-en>How does it update?</span></summary><p><span data-es>Minuta revisa sola si hay una versión nueva y te ofrece actualizar con un clic. Tus notas, perfil y universos no se tocan.</span><span data-en>Minuta checks for new versions on its own and offers a one-click update. Your notes, profile and universes are never touched.</span></p></details>
 </div></section>
@@ -197,6 +220,23 @@
   const poner = (l) => { html.lang = l; boton.textContent = l === "es" ? "EN" : "ES"; document.title = l === "es" ? "Minuta — notas de reuniones y coach de comunicación en tu Mac" : "Minuta — meeting notes and a communication coach on your Mac"; };
   poner(guardado || (navigator.language || "es").toLowerCase().startsWith("es") ? (guardado || "es") : "en");
   boton.onclick = () => { const l = html.lang === "es" ? "en" : "es"; poner(l); try { localStorage.setItem("minuta-idioma", l); } catch (e) {} };
+  // Sistema del visitante: elige la pestaña de instalación, el botón de descarga y el comando del inicio.
+  const SO = /Windows/i.test(navigator.userAgent) ? "windows" : /Linux|X11/i.test(navigator.userAgent) && !/Android/i.test(navigator.userAgent) ? "linux" : "mac";
+  const DESCARGAS = { mac: "Minuta-macOS.zip", windows: "Minuta-Windows.exe", linux: "Minuta-Linux.AppImage" };
+  const NOMBRES = { mac: "Mac", windows: "Windows", linux: "Linux" };
+  const REQ = { mac: ["Mac con chip Apple · macOS 15 o posterior · tu cuenta de Claude", "Apple silicon Mac · macOS 15 or later · your Claude account"],
+    windows: ["Windows 10 u 11 de 64 bits · tu cuenta de Claude", "64-bit Windows 10 or 11 · your Claude account"],
+    linux: ["Linux x86_64 con PulseAudio o PipeWire · tu cuenta de Claude", "x86_64 Linux with PulseAudio or PipeWire · your Claude account"] };
+  const elegirSO = (so) => {
+    document.querySelectorAll("[data-so]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.so === so)));
+    document.querySelectorAll("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== so));
+  };
+  document.querySelectorAll("[data-so]").forEach((b) => (b.onclick = () => elegirSO(b.dataset.so)));
+  elegirSO(SO);
+  document.getElementById("descarga").href = `https://github.com/soydavidcornejo/minuta/releases/latest/download/${DESCARGAS[SO]}`;
+  document.querySelectorAll(".so-nombre").forEach((b) => (b.textContent = NOMBRES[SO]));
+  document.getElementById("cmd").textContent = document.getElementById(`cmd-${SO}`).textContent;
+  const req = document.getElementById("req").children; req[0].textContent = REQ[SO][0]; req[1].textContent = REQ[SO][1];
   // Copiar el comando
   document.querySelectorAll("[data-copiar]").forEach((b) => b.onclick = async () => {
     const t = document.getElementById(b.dataset.copiar).textContent;

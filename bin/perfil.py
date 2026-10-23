@@ -15,6 +15,7 @@ Ejemplo de perfil.json (ver perfil.ejemplo.json en la raíz del repo):
 """
 import json
 import os
+import shutil
 
 HOME = os.path.expanduser("~")
 BASE = os.path.join(HOME, "minuta")
@@ -58,6 +59,22 @@ PAIS = P["pais"].strip()
 HUMOR = f"humor {P['gentilicio'].strip()} sano" if P["gentilicio"].strip() else "humor sano"
 IDIOMA_AUDIO = (P.get("idioma_audio") or "auto").strip().lower() or "auto"
 CARPETA_NOTAS = os.path.expanduser(P["carpeta_notas"].strip() or POR_DEFECTO["carpeta_notas"])
+
+
+def _buscar_claude():
+    """Ruta del CLI de Claude. La app no siempre hereda el PATH de la terminal, así que se busca también
+    donde suelen quedar los instaladores (Mac, Linux y Windows)."""
+    extra = [os.path.join(HOME, ".local", "bin"), os.path.join(HOME, ".claude", "local"), os.path.join(HOME, ".npm-global", "bin"),
+             os.path.join(HOME, ".volta", "bin"), os.path.join(HOME, ".bun", "bin"), "/opt/homebrew/bin", "/usr/local/bin"]
+    if os.name == "nt":
+        extra += [os.path.join(os.environ.get("APPDATA", ""), "npm"), os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "claude")]
+    # Al PATH también (el CLI instalado con npm necesita encontrar `node`).
+    os.environ["PATH"] = os.pathsep.join([os.environ.get("PATH", "")] + [d for d in extra if os.path.isdir(d)])
+    return shutil.which("claude") or "claude"
+
+
+#: Comando de la IA del usuario (hoy Claude Code: `claude -p`).
+CLAUDE = _buscar_claude()
 
 
 def es_usuario(nombre):

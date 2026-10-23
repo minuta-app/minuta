@@ -14,10 +14,9 @@ import subprocess
 import sys
 import time
 
-from perfil import NOMBRE, QUIEN, IDIOMA
+from perfil import NOMBRE, QUIEN, IDIOMA, CLAUDE
 
 HOME = os.path.expanduser("~")
-os.environ["PATH"] = f"/opt/homebrew/bin:/usr/local/bin:{HOME}/.local/bin:" + os.environ.get("PATH", "")
 
 
 def solo_notas(texto):
@@ -59,7 +58,7 @@ Devuelve SOLO JSON: {{"asunto": "<asunto corto y claro>", "texto": "<cuerpo del 
 
 NOTAS PRIVADAS DE {NOMBRE.upper()}:
 {notas}"""
-    r = subprocess.run(["claude", "-p", "--output-format", "text"], input=prompt, text=True, capture_output=True, timeout=300,
+    r = subprocess.run([CLAUDE, "-p", "--output-format", "text"], input=prompt, text=True, capture_output=True, timeout=300,
                        cwd=os.path.join(HOME, "minuta"))
     s = r.stdout.strip()
     if r.returncode != 0 or not s:

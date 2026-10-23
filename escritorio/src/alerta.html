@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>Minuta</title>
+<style>
+  :root { --fondo: #1c1c1f; --panel: #2a2a2e; --texto: #fff; --suave: #a1a1aa; --linea: #3a3a40; --acento: #ef4444; --acento-texto: #fff; --radio: 16px; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: transparent; overflow: hidden; font: 13px/1.35 system-ui, "Segoe UI", Ubuntu, Cantarell, sans-serif; user-select: none; }
+  .tarjeta { margin: 8px; padding: 14px 14px 13px; border-radius: var(--radio); background: var(--fondo); color: var(--texto);
+    border: 1px solid var(--linea); box-shadow: 0 14px 34px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.3); transform: translateX(26px); opacity: 0;
+    transition: transform .28s ease-out, opacity .28s ease-out; }
+  .tarjeta.visible { transform: none; opacity: 1; }
+  .cab { display: flex; gap: 11px; align-items: flex-start; }
+  .icono { position: relative; width: 38px; height: 38px; flex: none; display: grid; place-items: center; font-size: 19px; }
+  .icono::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--acento); opacity: .18; animation: pulso 1.6s ease-in-out infinite alternate; }
+  .icono span { position: relative; }
+  .icono.emoji span { font-size: 21px; animation: baile 1.6s ease-in-out infinite alternate; }
+  @keyframes pulso { from { transform: scale(.92); opacity: .22; } to { transform: scale(1.18); opacity: .1; } }
+  @keyframes baile { from { transform: rotate(-8deg) scale(.96); } to { transform: rotate(8deg) scale(1.12); } }
+  .textos { flex: 1; min-width: 0; }
+  .etiqueta { font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--suave); }
+  .titulo { font-size: 14px; font-weight: 650; margin-top: 3px; overflow-wrap: anywhere; }
+  .detalle { color: var(--suave); margin-top: 3px; }
+  .reloj { color: var(--acento); font-variant-numeric: tabular-nums; font-weight: 600; }
+  .cerrar { border: 0; background: none; color: var(--suave); font-size: 16px; line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+  .cerrar:hover { background: var(--panel); color: var(--texto); }
+  .botones { display: flex; gap: 8px; margin-top: 12px; }
+  button.b { flex: 1; border-radius: calc(var(--radio) * .6); padding: 8px 10px; font: 600 13px inherit; font-family: inherit; cursor: pointer; border: 1px solid var(--linea); }
+  .principal { background: var(--acento); color: var(--acento-texto); border-color: transparent !important; }
+  .principal:hover { filter: brightness(1.08); }
+  .secundario { background: var(--panel); color: var(--texto); }
+  .secundario:hover { filter: brightness(1.15); }
+</style>
+</head>
+<body>
+<div class="tarjeta" id="t">
+  <div class="cab">
+    <div class="icono" id="icono"><span id="ico"></span></div>
+    <div class="textos">
+      <div class="etiqueta" id="etiqueta"></div>
+      <div class="titulo" id="titulo"></div>
+      <div class="detalle"><span id="detalle"></span> <span class="reloj" id="reloj"></span></div>
+    </div>
+    <button class="cerrar" id="cerrar" aria-label="Cerrar">×</button>
+  </div>
+  <div class="botones">
+    <button class="b principal" id="principal"></button>
+    <button class="b secundario" id="secundario"></button>
+  </div>
+</div>
+<script src="alerta.js"></script>
+</body>
+</html>

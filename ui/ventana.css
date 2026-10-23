@@ -363,3 +363,8 @@ html.inactiva #controles:hover .ctl { filter: none; }
 /* Pantalla completa / navegador: sin forma, sin margen */
 html:not(.forma) body { padding: 0; }
 @media (prefers-reduced-motion: reduce) { :root[data-u="cine"] #barra::after, :root[data-u="starwars"] .bt-der::before { animation: none; } }
+
+/* ── Windows y Linux (Electron): ventana rectangular del sistema. Se arrastra desde la barra; el sistema cambia el tamaño. ── */
+html.escritorio #bordes { display: none; }
+html.escritorio #barra { -webkit-app-region: drag; }
+html.escritorio #barra :is(button, input, select, textarea, a, label, [data-accion], [role="button"]) { -webkit-app-region: no-drag; }

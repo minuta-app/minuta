@@ -341,3 +341,7 @@
 .u-votos { margin-left: 8px; font: 700 11px system-ui, sans-serif; padding: 1px 7px; border-radius: 99px; background: rgba(0,0,0,.4); color: #fff; white-space: nowrap; }
 .up-votos { display: flex; gap: 8px; align-items: center; margin-top: 10px; font-size: 13px; color: var(--u-suave); }
 .up-votos span { margin-right: 4px; } .up-cab .up-votos .boton-mini { margin-left: 0; width: auto; padding: 3px 10px; color: var(--u-texto); border: 1px solid color-mix(in srgb, var(--u-texto) 25%, transparent); background: transparent; }
+
+/* Preferencias en Windows/Linux: dirección iCal del calendario */
+.av-ics { display: flex; gap: 8px; margin: -2px 0 10px 34px; }
+.av-ics input { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--linea); background: var(--panel); color: var(--texto); font: inherit; font-size: 13px; }
