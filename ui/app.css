@@ -446,8 +446,10 @@ html.panel .borrar-caja h2 { font-size: 18px; }
   transition: max-width .42s cubic-bezier(.2,.8,.2,1), opacity .3s ease .05s, margin .42s cubic-bezier(.2,.8,.2,1), transform .42s cubic-bezier(.2,.8,.2,1), filter .35s; }
 .boton-et:is(:hover, :focus-visible) span, .acciones.presentar .boton-et span, .boton-et.principal span { max-width: 140px; opacity: 1; margin-left: 7px; transform: none; filter: none; }
 .boton-et:is(:hover, :focus-visible) i { transform: scale(1.15) rotate(-8deg); }
-.boton-et.principal { background: var(--acento); color: var(--sobre-acento); border-color: transparent; }
-.boton-et.principal:hover { background: var(--acento); filter: brightness(1.08); }
+/* :root sube la especificidad: varios universos pintan .boton con su propio fondo y dejaban "Enviar" blanco sobre blanco. */
+:root .boton.boton-et.principal { background: var(--acento); color: var(--sobre-acento); }
+:root .boton.boton-et.principal:hover { background: var(--acento); filter: brightness(1.08); }
+.boton-et.principal { border-color: transparent; }
 .acciones.presentar .boton-et:not(.principal) span { transition-delay: calc(var(--i, 0) * 90ms); }
 /* Efecto base (cine y universos sin efecto propio): barrido de luz */
 .boton-et::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; transform: translateX(-130%);
