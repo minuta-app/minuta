@@ -371,7 +371,7 @@ enum Actualizaciones {
                 guard partes.count == 2 else { return }
                 var d: [String: Any] = ["paso": partes[0], "texto": partes[1], "total": 3]
                 if partes[0] == "2", let log = try? String(contentsOf: archivoProgreso, encoding: .utf8),
-                   let m = log.matches(of: /\[(\d+)\/(\d+)\]/).last, let n = Double(m.1), let t = Double(m.2), t > 0 {
+                   let m = log.matches(of: #/\[(\d+)/(\d+)\]/#).last, let n = Double(m.1), let t = Double(m.2), t > 0 {
                     d["pct"] = Int(n / t * 100)
                 }
                 avisar(d)
