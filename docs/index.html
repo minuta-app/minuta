@@ -3,11 +3,151 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Minuta — notas de reuniones y un coach para comunicarte mejor</title>
-<meta name="description" content="Sal de cada reunión con las notas listas y sabiendo cómo mejorar. Transcribe en tu computador, usa tu propia IA (Claude, ChatGPT o Gemini) y guarda todo en tu propio Git. Gratis y de código abierto.">
-<meta property="og:title" content="Minuta — tus reuniones, tus notas, tu IA">
-<meta property="og:description" content="Notas de reuniones y un coach de comunicación que se juega como tu saga favorita. Sin servidores ni cuentas. Gratis y de código abierto.">
-<meta property="og:image" content="https://minuta-app.github.io/minuta/img/notas.jpg">
+<title>Minuta — notas de reuniones con IA, privadas y gratis | Mac, Windows y Linux</title>
+<meta name="description" content="Notas de reuniones con IA y un coach de comunicación. Transcribe en tu computador, usa tu propia IA (Claude, ChatGPT o Gemini) y guarda todo como Markdown en tu propio Git. Gratis y de código abierto.">
+<meta name="keywords" content="notas de reuniones, IA, transcripción local, whisper, coach de comunicación, código abierto, privacidad, Markdown, Obsidian, Claude, ChatGPT, Gemini, meeting notes">
+<link rel="canonical" href="https://minuta-app.github.io/minuta/">
+<meta name="theme-color" content="#0d0c12">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Minuta">
+<meta property="og:url" content="https://minuta-app.github.io/minuta/">
+<meta property="og:locale" content="es_CL"><meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Minuta — sal de cada reunión con las notas listas y sabiendo cómo mejorar">
+<meta property="og:description" content="Notas de reuniones con IA y un coach de comunicación. Privada (todo en tu computador), gratis, de código abierto y con tu propia IA.">
+<meta property="og:image" content="https://minuta-app.github.io/minuta/img/compartir.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Minuta: notas de reuniones con IA, privadas y gratis">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Minuta — notas de reuniones con IA, privadas y gratis">
+<meta name="twitter:description" content="Transcribe en tu computador, usa tu propia IA y guarda todo en tu Git. Gratis y de código abierto.">
+<meta name="twitter:image" content="https://minuta-app.github.io/minuta/img/compartir.png">
+<script type="application/ld+json">
+[
+ {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Minuta",
+  "description": "Notas de reuniones con IA y un coach de comunicación. Transcribe en tu computador, usa tu propia IA (Claude, ChatGPT o Gemini) y guarda las notas como Markdown en tu propio Git. Gratis y de código abierto.",
+  "applicationCategory": "BusinessApplication",
+  "applicationSubCategory": "Notas de reuniones",
+  "operatingSystem": "macOS 15, Windows 10, Windows 11, Linux",
+  "offers": {
+   "@type": "Offer",
+   "price": "0",
+   "priceCurrency": "USD"
+  },
+  "license": "https://opensource.org/licenses/MIT",
+  "url": "https://minuta-app.github.io/minuta/",
+  "downloadUrl": "https://github.com/minuta-app/minuta/releases/latest",
+  "image": "https://minuta-app.github.io/minuta/img/compartir.png",
+  "screenshot": "https://minuta-app.github.io/minuta/img/notas.jpg",
+  "inLanguage": [
+   "es",
+   "en"
+  ],
+  "isAccessibleForFree": true,
+  "codeRepository": "https://github.com/minuta-app/minuta",
+  "featureList": [
+   "Transcripción local con whisper.cpp",
+   "Separación de voces",
+   "Notas, decisiones y compromisos",
+   "Feedback de comunicación con citas",
+   "Coach en vivo",
+   "Universos con rangos y logros",
+   "Notas en Markdown en tu propio Git"
+  ]
+ },
+ {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+   {
+    "@type": "Question",
+    "name": "¿Es una alternativa a Granola, Otter o Fireflies?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Sí, si buscas notas de reuniones con IA que sean gratis, de código abierto y privadas: Minuta transcribe en tu computador, usa la IA que ya tienes y guarda las notas en tu carpeta y tu Git. Además te entrena para comunicarte mejor, con feedback y logros. Funciona en Mac, Windows y Linux, en español e inglés."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "¿Cuánto cuesta?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Nada. Minuta es gratis y de código abierto (MIT). Usa la IA que ya tienes; con ChatGPT incluso sirve la cuenta gratis."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "¿Necesito saber programar?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "No. Lo único \"técnico\" es instalar tu IA una vez, copiando un par de comandos. La guía te lleva de la mano y el asistente de Minuta comprueba que quedó funcionando."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "¿Funciona con ChatGPT o Gemini?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Sí. Puedes elegir Claude (con Claude Code), ChatGPT (con Codex) o Gemini (con Antigravity CLI, todavía en beta). Lo eliges en el asistente de bienvenida y lo puedes cambiar después. Cómo instalar cada una."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "¿Puedo exportar mis notas o usarlas en otras herramientas?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Sí, sin pedir permiso: son archivos Markdown en tu carpeta y, si activas el respaldo, en tu propio repositorio de GitHub o GitLab. Ábrelas en Obsidian, impórtalas en Notion o Google Docs, procésalas con un script o con tu IA. El formato está documentado."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "¿Alguien más puede leer mis notas?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "No. Minuta no tiene servidores ni cuentas, así que no hay copia en ninguna parte salvo tu computador y, si lo activas, tu propio repositorio privado. Ni los creadores de Minuta pueden verlas."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "¿Qué se envía a internet?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "El audio nunca sale de tu computador. Solo el texto de la transcripción va a la IA que elegiste, con tu cuenta. Además, Minuta consulta si hay una versión nueva y el catálogo público de universos e idiomas. Sin telemetría ni analítica."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "¿Funciona en Windows y Linux?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Sí: es la misma app, con las mismas notas, universos y coach. En Windows y Linux la transcripción usa el procesador (en Mac, el chip gráfico), así que es algo más lenta; el modelo «Liviano» va bien en casi cualquier computador. El calendario se conecta pegando la dirección iCal de Google Calendar u Outlook."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "¿Está bien grabar a otras personas?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Depende de tu país y del contexto. Avisa a los participantes y pide su consentimiento antes de grabar: es lo correcto y en muchos lugares es obligatorio."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "¿Cómo se actualiza?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Minuta revisa sola si hay una versión nueva y te ofrece actualizar con un clic. Tus notas, perfil y universos no se tocan."
+    }
+   }
+  ]
+ }
+]
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -457,6 +597,7 @@ participantes: ["Matías", "Carla"]
 
 <section id="preguntas"><div class="ancho" style="max-width:860px">
   <div class="sec-cab"><h2><span data-es>Preguntas frecuentes</span><span data-en>FAQ</span></h2></div>
+  <details><summary><span data-es>¿Es una alternativa a Granola, Otter o Fireflies?</span><span data-en>Is it an alternative to Granola, Otter or Fireflies?</span></summary><p><span data-es>Sí, si buscas notas de reuniones con IA que sean gratis, de código abierto y privadas: Minuta transcribe en tu computador, usa la IA que ya tienes y guarda las notas en tu carpeta y tu Git. Además te entrena para comunicarte mejor, con feedback y logros. Funciona en Mac, Windows y Linux, en español e inglés.</span><span data-en>Yes, if you want AI meeting notes that are free, open source and private: Minuta transcribes on your computer, uses the AI you already have and keeps notes in your folder and your Git. It also coaches you to communicate better, with feedback and achievements. It runs on Mac, Windows and Linux, in Spanish and English.</span></p></details>
   <details><summary><span data-es>¿Cuánto cuesta?</span><span data-en>How much does it cost?</span></summary><p><span data-es>Nada. Minuta es gratis y de código abierto (MIT). Usa la IA que ya tienes; con ChatGPT incluso sirve la cuenta gratis.</span><span data-en>Nothing. Minuta is free and open source (MIT). It uses the AI you already have; with ChatGPT even the free account works.</span></p></details>
   <details><summary><span data-es>¿Necesito saber programar?</span><span data-en>Do I need to know how to code?</span></summary><p><span data-es>No. Lo único "técnico" es instalar tu IA una vez, copiando un par de comandos. <a href="ia.html">La guía</a> te lleva de la mano y el asistente de Minuta comprueba que quedó funcionando.</span><span data-en>No. The only "technical" bit is installing your AI once by copying a couple of commands. <a href="ia.html">The guide</a> walks you through it and Minuta's welcome checks it works.</span></p></details>
   <details><summary><span data-es>¿Funciona con ChatGPT o Gemini?</span><span data-en>Does it work with ChatGPT or Gemini?</span></summary><p><span data-es>Sí. Puedes elegir Claude (con Claude Code), ChatGPT (con Codex) o Gemini (con Antigravity CLI, todavía en beta). Lo eliges en el asistente de bienvenida y lo puedes cambiar después. <a href="ia.html">Cómo instalar cada una</a>.</span><span data-en>Yes. You can pick Claude (with Claude Code), ChatGPT (with Codex) or Gemini (with Antigravity CLI, still in beta). You choose it in the welcome and can change it later. <a href="ia.html">How to install each one</a>.</span></p></details>
@@ -484,7 +625,7 @@ participantes: ["Matías", "Carla"]
 <script>
   // Idioma: según el navegador, recordado si el visitante lo cambia.
   const html = document.documentElement, boton = document.getElementById("idioma");
-  const TITULOS = { es: "Minuta — notas de reuniones y un coach para comunicarte mejor", en: "Minuta — meeting notes and a coach to communicate better" };
+  const TITULOS = { es: "Minuta — notas de reuniones con IA, privadas y gratis | Mac, Windows y Linux", en: "Minuta — private, free AI meeting notes | Mac, Windows and Linux" };
   let guardado = null; try { guardado = localStorage.getItem("minuta-idioma"); } catch (e) {}
   const poner = (l) => { html.lang = l; boton.textContent = l === "es" ? "EN" : "ES"; document.title = TITULOS[l]; };
   poner(guardado || ((navigator.language || "es").toLowerCase().startsWith("es") ? "es" : "en"));

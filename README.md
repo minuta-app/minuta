@@ -87,6 +87,9 @@ No hay formato cerrado ni exportación pagada: puedes construir encima.
 - **Pregúntale a tu IA por todo tu historial:** abre el repo de notas con Claude Code, Codex o Gemini CLI.
 - **Automatiza en tu repo:** con GitHub Actions o GitLab CI, cada nota nueva puede avisar en Slack, actualizar una planilla, etc.
 
+En [`ejemplos/`](ejemplos/) hay scripts listos para partir (por ejemplo, tus compromisos abiertos de todas las reuniones, o en CSV).
+Si armas algo útil, compártelo en [Discussions → Show and tell](https://github.com/minuta-app/minuta/discussions/categories/show-and-tell).
+
 ### Formato de las notas
 
 Archivo `AAAA-MM-DD HHMM - Título.md`:

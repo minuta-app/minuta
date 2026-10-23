@@ -3,10 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tu IA para Minuta — guía sin tecnicismos</title>
-<meta name="description" content="Qué son Claude Code, Codex y Antigravity CLI (Gemini), cuál te conviene y cómo instalarlos paso a paso en Mac, Windows o Linux para usar Minuta.">
+<title>Cómo instalar Claude Code, Codex o Gemini (Antigravity CLI) — guía de Minuta</title>
+<meta name="description" content="Qué son Claude Code, Codex y Antigravity CLI (Gemini), cuál te conviene y cómo instalarlos paso a paso en Mac, Windows o Linux, sin tecnicismos.">
+<link rel="canonical" href="https://minuta-app.github.io/minuta/ia.html">
+<meta name="theme-color" content="#0d0c12">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Minuta">
+<meta property="og:url" content="https://minuta-app.github.io/minuta/ia.html">
+<meta property="og:locale" content="es_CL"><meta property="og:locale:alternate" content="en_US">
 <meta property="og:title" content="Tu IA para Minuta, explicada sin tecnicismos">
-<meta property="og:image" content="https://minuta-app.github.io/minuta/img/notas.jpg">
+<meta property="og:description" content="Claude Code, Codex o Antigravity CLI: qué son, cuál elegir y cómo dejarlos listos en cinco minutos.">
+<meta property="og:image" content="https://minuta-app.github.io/minuta/img/compartir.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "Tu IA para Minuta: qué son Claude Code, Codex y Antigravity CLI y cómo instalarlos",
+ "description": "Guía sin tecnicismos para instalar Claude Code, Codex (ChatGPT) o Antigravity CLI (Gemini) en Mac, Windows o Linux y usarlos con Minuta.",
+ "inLanguage": "es",
+ "url": "https://minuta-app.github.io/minuta/ia.html",
+ "image": "https://minuta-app.github.io/minuta/img/compartir.png",
+ "isPartOf": {
+  "@type": "WebSite",
+  "name": "Minuta",
+  "url": "https://minuta-app.github.io/minuta/"
+ }
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -236,7 +263,7 @@
 
 <script>
   const html = document.documentElement, boton = document.getElementById("idioma");
-  const TITULOS = { es: "Tu IA para Minuta — guía sin tecnicismos", en: "Your AI for Minuta — a jargon-free guide" };
+  const TITULOS = { es: "Cómo instalar Claude Code, Codex o Gemini (Antigravity CLI) — guía de Minuta", en: "How to install Claude Code, Codex or Gemini (Antigravity CLI) — Minuta guide" };
   let guardado = null; try { guardado = localStorage.getItem("minuta-idioma"); } catch (e) {}
   const poner = (l) => { html.lang = l; boton.textContent = l === "es" ? "EN" : "ES"; document.title = TITULOS[l]; };
   poner(guardado || ((navigator.language || "es").toLowerCase().startsWith("es") ? "es" : "en"));

@@ -144,6 +144,17 @@ class LimpiarNotas(unittest.TestCase):
         self.assertIn("### Próximos pasos", texto)
 
 
+class Ejemplos(unittest.TestCase):
+    def test_compromisos_abiertos(self):
+        carpeta = tempfile.mkdtemp(dir=HOME)
+        with open(os.path.join(carpeta, "n.md"), "w", encoding="utf-8") as f:
+            f.write(NOTA)
+        r = subprocess.run([sys.executable, os.path.join(RAIZ, "ejemplos", "compromisos_abiertos.py"), carpeta, "--csv"],
+                           check=True, capture_output=True, text=True)
+        self.assertIn("Matías,revisar tablero,lunes,,Reunión de prueba,2026-10-20", r.stdout)
+        self.assertNotIn("enviar acta", r.stdout)  # los marcados con [x] no salen
+
+
 class Universos(unittest.TestCase):
     def test_incluidos_validos(self):
         sys.path.insert(0, os.path.join(RAIZ, "bin"))
