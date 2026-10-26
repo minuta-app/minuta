@@ -166,7 +166,8 @@ function mostrarPanel() {
   enviarEstado(true);
   panel.show(); panel.focus();
 }
-const alternarPanel = () => (panel?.isVisible() ? panel.hide() : mostrarPanel());
+// Primera vez: el ícono lleva a la bienvenida (que parte por el idioma), no al panel.
+const alternarPanel = () => (Perfil.falta ? abrirVisor() : panel?.isVisible() ? panel.hide() : mostrarPanel());
 
 function crearBandeja() {
   bandeja = new Tray(icono(ES_WIN ? "bandeja-16.png" : "bandeja-32.png"));
@@ -305,7 +306,8 @@ function reunionDetectada(appNombre) {
   M.detectada = appNombre;
   autoCategoria(appNombre);
   cambio();
-  if (!M.ajustes.avisarDeteccion) return;
+  // Primera vez: nada aparece antes de elegir idioma y terminar la bienvenida.
+  if (!M.ajustes.avisarDeteccion || Perfil.falta) return;
   const ev = Calendario.eventoActual();
   const titulo = ev?.titulo ? f("«{x}» en {x}", ev.titulo, appNombre) : f("Reunión en {x}", appNombre);
   alertaReunion(titulo, "Un clic y empiezo a grabar y tomar notas.", ev?.titulo || "");
@@ -882,7 +884,7 @@ app.whenReady().then(async () => {
   detector.alDetectar = reunionDetectada;
   detector.alTerminar = reunionTerminada;
   detector.iniciar();
-  Calendario.iniciar({ alAviso: (titulo, detalle, tituloEvento) => { if (M.ajustes.avisarCalendario && M.fase === "inactiva") alertaReunion(titulo, detalle, tituloEvento); },
+  Calendario.iniciar({ alAviso: (titulo, detalle, tituloEvento) => { if (M.ajustes.avisarCalendario && M.fase === "inactiva" && !Perfil.falta) alertaReunion(titulo, detalle, tituloEvento); },
     alCambio: () => notasCambiaron(), t, f });
 
   crearBandeja();

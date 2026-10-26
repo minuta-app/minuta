@@ -22,7 +22,21 @@ enum Perfil {
     }
 
     /// Primera vez: no hay perfil todavía → se muestra el asistente de bienvenida.
-    static var falta: Bool { !FileManager.default.fileExists(atPath: archivo.path) }
+    /// Si solo está el idioma (lo primero que se elige), sigue siendo la primera vez: así cerrar la app justo después
+    /// de elegirlo no se salta la bienvenida.
+    static var falta: Bool {
+        guard FileManager.default.fileExists(atPath: archivo.path) else { return true }
+        guard let data = try? Data(contentsOf: archivo),
+              let o = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return false }  // ilegible: no se repite la bienvenida
+        return Set(o.keys).isSubset(of: ["idioma_ui"])
+    }
+
+    /// Lo que está escrito en perfil.json, sin completar con los valores por defecto.
+    static func guardado() -> [String: String] {
+        guard let data = try? Data(contentsOf: archivo),
+              let o = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [:] }
+        return o.compactMapValues { $0 as? String }
+    }
 
     /// Ruta para guardar en el perfil, con ~ en vez de la carpeta personal (así el perfil no lleva el nombre de usuario del Mac).
     static func rutaCorta(_ url: URL) -> String {

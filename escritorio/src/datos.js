@@ -2,7 +2,7 @@
 // Es el equivalente de Perfil.swift, Juego.swift (Temas), Categorias.swift, Extras.swift y Catalogo.swift.
 const fs = require("fs");
 const path = require("path");
-const { net, shell } = require("electron");
+const { app, net, shell } = require("electron");
 const { BASE, recursos, expandir } = require("./rutas");
 
 const leerJSON = (ruta, defecto = null) => { try { return JSON.parse(fs.readFileSync(ruta, "utf8")); } catch { return defecto; } };
@@ -33,13 +33,25 @@ const Perfil = {
     for (const k of Object.keys(this.porDefecto).sort()) if (typeof p[k] === "string") limpio[k] = p[k];
     escribirJSON(this.archivo, limpio);
   },
-  /** Mezcla cambios (solo claves conocidas y de texto). */
+  /** Lo que está escrito en perfil.json, sin completar con los valores por defecto. */
+  guardado() {
+    const o = leerJSON(this.archivo, {}) || {};
+    return Object.fromEntries(Object.entries(o).filter(([, v]) => typeof v === "string"));
+  },
+  /** Mezcla cambios (solo claves conocidas y de texto). En la primera vez (el idioma es lo primero que se elige) se guarda
+   *  solo lo elegido, sin los valores por defecto: así perfil.json no da la bienvenida por hecha (ver `falta`). */
   mezclar(cambios = {}) {
-    const p = this.datos();
+    const p = this.falta ? this.guardado() : this.datos();
     for (const [k, v] of Object.entries(cambios)) if (k in this.porDefecto && typeof v === "string") p[k] = v;
     this.guardar(p);
   },
-  get falta() { return !fs.existsSync(this.archivo); },
+  /** Primera vez: no hay perfil, o solo tiene el idioma (cerrar la app justo después de elegirlo no se salta la bienvenida). */
+  get falta() {
+    if (!fs.existsSync(this.archivo)) return true;
+    const o = leerJSON(this.archivo);
+    if (!o || typeof o !== "object") return false;  // ilegible: no se repite la bienvenida
+    return Object.keys(o).every((k) => k === "idioma_ui");
+  },
   carpetaNotas() {
     const ruta = (this.datos().carpeta_notas || "").trim() || this.porDefecto.carpeta_notas;
     const abs = expandir(ruta);
@@ -258,7 +270,9 @@ const Idioma = {
   },
   paraJS() {
     const c = this.codigo(), p = c === "es" ? null : this.paquete(c);
-    return { codigo: c, textos: p?.textos || {}, palabras: p?.palabras || null, instalados: this.instalados() };
+    // sistema: idioma del computador, para sugerirlo en la pantalla de idioma de la bienvenida.
+    const sistema = (app?.getPreferredSystemLanguages?.() || [])[0] || app?.getLocale?.() || "";
+    return { codigo: c, textos: p?.textos || {}, palabras: p?.palabras || null, instalados: this.instalados(), sistema };
   },
 };
 

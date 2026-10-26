@@ -129,6 +129,8 @@ enum Idioma {
     static var paraJS: [String: Any] {
         let c = codigo
         let p = c == "es" ? nil : paquete(c)
-        return ["codigo": c, "textos": p?["textos"] ?? [:], "palabras": p?["palabras"] ?? NSNull(), "instalados": instalados()]
+        // "sistema": idioma del Mac, para sugerirlo en la pantalla de idioma de la bienvenida.
+        return ["codigo": c, "textos": p?["textos"] ?? [:], "palabras": p?["palabras"] ?? NSNull(), "instalados": instalados(),
+                "sistema": Locale.preferredLanguages.first ?? ""]
     }
 }

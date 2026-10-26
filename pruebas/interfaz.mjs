@@ -88,7 +88,7 @@ for (const [idioma, consulta] of [["español", ""], ["inglés", "?idioma=en"]]) 
   // Bienvenida, paso por paso (en otra página: se abre con ?bienvenida)
   const pb = await pagina(consulta ? consulta + "&bienvenida" : "?bienvenida");
   await pb.waitForTimeout(400);
-  for (let paso = 0; paso < 7; paso++) {
+  for (let paso = 0; paso < 8; paso++) {  // 0 = idioma, 1 = hola … 7 = listo
     await ir(pb, `window.Minuta._probar(E => { if (E.bv) E.bv.paso = ${paso}; })`);
     if (CAPTURAS) await pb.screenshot({ path: path.join(CAPTURAS, `${idioma}-bienvenida-${paso}.png`) });
   }
@@ -101,6 +101,42 @@ for (const [idioma, consulta] of [["español", ""], ["inglés", "?idioma=en"]]) 
   }
   await p.close(); await pb.close();
   console.log(`  ✓ Vistas en ${idioma} sin errores`);
+}
+
+// Bienvenida: lo primero es el idioma (antes de cualquier otro texto), y elegir English deja el resto en inglés.
+{
+  const p = await pagina("?bienvenida");
+  // Anota lo que la interfaz le manda a la app (como el puente de Electron), para ver que se guardó idioma_ui.
+  await p.evaluate(() => { window._enviados = []; window.minutaHost = { enviar: (m) => window._enviados.push(m) }; });
+  const inicio = await p.evaluate(() => ({
+    pantalla: !!document.querySelector(".bienvenida.bv-idioma"),
+    titulo: document.querySelector("#bv-idioma-titulo")?.textContent.replace(/\s+/g, " ").trim(),
+    botones: [...document.querySelectorAll(".bv-lengua b")].map((b) => b.textContent),
+    foco: document.activeElement?.dataset?.bvLengua || "",
+    otroTexto: !!document.querySelector(".bv-cuerpo, .bv-acc, .act-banner"),
+    estado: window.Minuta.estado().bv?.paso,
+  }));
+  if (!inicio.pantalla || inicio.estado !== 0) falla(`con ?bienvenida la primera pantalla no es la de idioma (paso ${inicio.estado})`);
+  if (inicio.titulo !== "Elige tu idioma · Choose your language") falla(`título de la pantalla de idioma: ${JSON.stringify(inicio.titulo)}`);
+  if (JSON.stringify(inicio.botones) !== JSON.stringify(["Español", "English"])) falla(`botones de idioma: ${JSON.stringify(inicio.botones)}`);
+  if (!inicio.foco) falla("la pantalla de idioma no deja el foco en el idioma sugerido");
+  if (inicio.otroTexto) falla("antes de elegir idioma se ve otro paso o un aviso");
+  // Con teclado: flecha para pasar a English y Enter para elegir.
+  await p.focus('[data-bv-lengua="es"]');
+  await p.keyboard.press("ArrowRight");
+  if ((await p.evaluate(() => document.activeElement?.dataset?.bvLengua)) !== "en") falla("la flecha no pasa de Español a English");
+  await p.keyboard.press("Enter");
+  await p.waitForFunction(() => window.Minuta.estado().bv?.paso === 1, null, { timeout: 4000 }).catch(() => falla("elegir English no avanzó al paso siguiente"));
+  await p.waitForTimeout(250);
+  const despues = await p.evaluate(() => ({
+    titulo: document.querySelector(".bv-cuerpo h2")?.textContent, boton: document.querySelector('.bv-acc [data-bv-paso="1"]')?.textContent,
+    guardado: window._enviados.some((m) => m.accion === "perfil" && m.cambios?.idioma_ui === "en"),
+    idiomaUi: window.Minuta.estado().perfil?.idioma_ui, bvIdioma: window.Minuta.estado().bv?.perfil?.idioma_ui, codigo: window.Minuta.estado().idioma.codigo, lang: document.documentElement.lang,
+  }));
+  if (despues.titulo !== "Welcome to Minuta" || !/^Next/.test(despues.boton || "")) falla(`después de elegir English el paso siguiente no está en inglés: ${JSON.stringify(despues)}`);
+  if (!despues.guardado || despues.idiomaUi !== "en" || despues.bvIdioma !== "en" || despues.codigo !== "en") falla(`no quedó guardado idioma_ui = en: ${JSON.stringify(despues)}`);
+  await p.close();
+  console.log("  ✓ Bienvenida: primero el idioma; English cambia lo que sigue y queda en idioma_ui");
 }
 
 // Panel de la barra de menú

@@ -128,7 +128,7 @@ final class BarraMenu: NSObject, WKScriptMessageHandler, WKNavigationDelegate, N
         }
         CoachVivo.shared.alMonologoLargo = { [weak model] seg in
             guard let model, model.ajustes.avisoMonologo else { return }
-            model.avisoVivo("Llevas \(seg / 60):\(String(format: "%02d", seg % 60)) hablando", "Buen momento para una pregunta: «¿cómo lo ven ustedes?»")
+            model.avisoVivo(Idioma.f("Llevas {x} hablando", "\(seg / 60):\(String(format: "%02d", seg % 60))"), Idioma.t("Buen momento para una pregunta: «¿cómo lo ven ustedes?»"))
         }
         suscripcion = model.objectWillChange.sink { [weak self] _ in
             DispatchQueue.main.async { self?.cambio() }
@@ -152,12 +152,14 @@ final class BarraMenu: NSObject, WKScriptMessageHandler, WKNavigationDelegate, N
             img?.isTemplate = true
         }
         boton.image = img
-        boton.toolTip = grabando ? "Minuta · grabando" : "Minuta"
+        boton.toolTip = grabando ? Idioma.t("Minuta · grabando") : "Minuta"
     }
 
     // MARK: Mostrar / ocultar
 
     @objc private func alternar() {
+        // Primera vez: el ícono lleva a la bienvenida (que parte por el idioma), no al panel.
+        if Perfil.falta, let model { ocultar(); VentanaVisor.shared.mostrar(model: model); return }
         panel.isVisible ? ocultar() : mostrar()
     }
 

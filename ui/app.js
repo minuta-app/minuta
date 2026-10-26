@@ -2560,6 +2560,7 @@
     if ($(".lista")) $(".lista").scrollTo({ top: scrollLista, behavior: "instant" });
     contar(app);
     const chat = document.getElementById("gym-chat"); if (chat) chat.scrollTop = chat.scrollHeight;
+    if (enPantallaIdioma() && !document.activeElement?.closest?.(".bv-lenguas")) $(".bv-lengua.sugerido")?.focus();
     if (foco && /^(buscar|corr-de|corr-a|voto-txt|forja-nombre|forja-notas|busca-persona|u-busca|preg-txt|gym-txt|gym-propio|env-para|env-asunto|env-cuerpo|env-indic|ics-url)$/.test(foco)) { const b = document.getElementById(foco); if (b) { b.focus(); try { b.setSelectionRange(b.value.length, b.value.length); } catch {} } }
   }
 
@@ -2607,6 +2608,7 @@
     }
     if (E.bv) {
       const t = ev.target, b = E.bv;
+      const lg = t.closest("[data-bv-lengua]"); if (lg) { elegirIdiomaBV(lg.dataset.bvLengua); return; }
       const ps = t.closest("[data-bv-paso]"); if (ps) { bvPaso(+ps.dataset.bvPaso); return; }
       if (t.closest("[data-bv-fin]")) { terminarBienvenida(); return; }
       const pr = t.closest("[data-bv-probar]");
@@ -2856,11 +2858,6 @@
 
   document.addEventListener("change", (ev) => {
     const el = ev.target;
-    if (el.dataset?.bvIdioma) {
-      const c = el.value; E.bv.perfil.idioma_ui = c; E.perfil = { ...(E.perfil || {}), idioma_ui: c };
-      host.enviar("perfil", { cambios: { idioma_ui: c } }); if (E.plataforma === "web") cambiarIdiomaWeb(c);
-      return;
-    }
     if (el.dataset?.idiomaUi) {
       const c = el.value; E.perfil = { ...(E.perfil || {}), idioma_ui: c };
       host.enviar("perfil", { cambios: { idioma_ui: c } });
@@ -2871,24 +2868,66 @@
   });
   /** En la vista previa del navegador no hay app de Mac: carga el paquete directo (incluido o del catálogo). */
   function cambiarIdiomaWeb(c) {
-    if (c === "es") { E.idioma = { ...E.idioma, codigo: "es", textos: {}, palabras: null }; render(); return; }
+    const listo = () => (E.bv?.lengua === c ? bvTrasIdioma() : render());
+    if (c === "es") { E.idioma = { ...E.idioma, codigo: "es", textos: {}, palabras: null }; listo(); return; }
     fetch(`idiomas/${c}.json`).then((r) => (r.ok ? r.json() : fetch(`${CATALOGO_RAW}idiomas/${c}.json`).then((x) => x.json())))
-      .then((d) => { E.idioma = { ...E.idioma, codigo: c, textos: d.textos || {}, palabras: d.palabras || null }; render(); }).catch(() => toast("No pude cargar ese idioma"));
+      .then((d) => { E.idioma = { ...E.idioma, codigo: c, textos: d.textos || {}, palabras: d.palabras || null }; listo(); }).catch(() => toast("No pude cargar ese idioma"));
   }
 
   // ───────────────────────── Bienvenida (primera vez) ─────────────────────────
   // Pregunta lo necesario para usar Minuta sin tocar archivos: quién eres, tu IA, el modelo de transcripción,
   // dónde están tus notas (o tu repo) y los permisos. Todo queda en ~/minuta/perfil.json y en el Llavero.
+  // Lo primero, antes de cualquier texto, es el idioma: así todo lo que sigue ya se entiende.
   E.bv = null;
-  const BV_PASOS = ["idioma", "tu", "ia", "modelo", "notas", "permisos", "listo"];
-  function abrirBienvenida() {
+  const BV_PASOS = ["idioma", "hola", "tu", "ia", "modelo", "notas", "permisos", "listo"];
+  const enPantallaIdioma = () => !!E.bv && BV_PASOS[E.bv.paso] === "idioma";
+  function abrirBienvenida(pintar = true) {
     E.bv = { paso: 0, perfil: { ...(E.perfil || {}) }, ia: [], modelos: null, carpeta: "", notas: 0, tokens: {}, cargando: true, notasModo: "", respaldoModo: "" };
     if (!E.bv.perfil.idioma_ui) E.bv.perfil.idioma_ui = E.idioma.codigo;
     if (E.plataforma === "web") setTimeout(() => window.Minuta.bienvenida({ ia: [{ id: "claude", nombre: "Claude", ruta: "/opt/homebrew/bin/claude", soportada: true }, { id: "codex", nombre: "ChatGPT (Codex)", ruta: null, soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#codex" }, { id: "gemini", nombre: "Gemini", ruta: null, soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#gemini" }],
       modelos: { recomendado: "turbo", ram: 16, lista: [{ id: "turbo", nombre: "Preciso", mb: 574, detalle: "El mejor para reuniones; recomendado con 8 GB de RAM o más.", listo: false }, { id: "small", nombre: "Liviano", mb: 190, detalle: "Más rápido y pequeño; para Macs con poca memoria.", listo: false }], vadListo: false },
       perfil: E.perfil || {}, carpeta: "~/Documents/Minuta/Reuniones", notas: 0, tokens: {} }), 300);
     else host.enviar("bienvenidaEstado");
+    if (pintar) render({ mantenerScroll: true });
+  }
+  /** Idioma sugerido en la pantalla de idioma: la primera vez, el del sistema; si no, el que ya se usa. */
+  function idiomaSugerido() {
+    if (!E._primeraVez) return E.idioma.codigo;
+    const s = String(E.idioma.sistema || navigator.language || "es").toLowerCase();
+    return s.startsWith("es") ? "es" : "en";
+  }
+  /** La persona eligió idioma: se guarda como en Preferencias y se avanza cuando la traducción ya está cargada. */
+  function elegirIdiomaBV(c) {
+    const b = E.bv; if (!b || b.lengua) return;
+    b.perfil.idioma_ui = c; E.perfil = { ...(E.perfil || {}), idioma_ui: c };
+    host.enviar("perfil", { cambios: { idioma_ui: c } });
+    if (E.idioma.codigo === c) { bvTrasIdioma(); return; }
+    b.lengua = c; render({ mantenerScroll: true });
+    if (E.plataforma === "web") cambiarIdiomaWeb(c);
+    setTimeout(() => { if (E.bv?.lengua === c) bvTrasIdioma(); }, 2500);  // si la traducción no llega, se sigue igual
+  }
+  function bvTrasIdioma() {
+    const b = E.bv; if (!b) return;
+    b.lengua = null;
+    if (BV_PASOS[b.paso] === "idioma") b.paso = 1;
     render({ mantenerScroll: true });
+    setTimeout(() => $('.bv-acc [data-bv-paso="1"]')?.focus(), 30);
+  }
+  /** Paso 0: solo el idioma. Título fijo en los dos idiomas y cada opción escrita en su propio idioma (no pasa por el traductor). */
+  function pantallaIdioma() {
+    const b = E.bv, sug = idiomaSugerido();
+    const lista = [["es", "Español", "Sugerido"], ["en", "English", "Suggested"]];
+    const otro = (E.idioma.instalados || []).find((x) => x.codigo === E.idioma.codigo && !["es", "en"].includes(x.codigo));
+    if (otro) lista.push([otro.codigo, otro.nombre, ""]);
+    return `<div class="bienvenida bv-idioma" role="dialog" aria-modal="true" aria-labelledby="bv-idioma-titulo" data-sin-traducir>
+      <div class="bv-idioma-caja">
+        <div class="bv-logo" aria-hidden="true">🎙️</div>
+        <h1 id="bv-idioma-titulo"><span lang="es">Elige tu idioma</span><span class="bv-sep" aria-hidden="true"> · </span><span lang="en">Choose your language</span></h1>
+        <div class="bv-lenguas" role="group" aria-labelledby="bv-idioma-titulo">${lista.map(([c, n, s]) => `
+          <button type="button" class="bv-lengua${c === sug ? " sugerido" : ""}" data-bv-lengua="${esc(c)}" lang="${esc(c)}"${b.lengua ? " disabled" : ""}${b.lengua === c ? ` aria-busy="true"` : ""}>
+            <b>${esc(n)}</b>${c === sug && s ? `<small>✓ ${s}</small>` : ""}</button>`).join("")}
+        </div>
+      </div></div>`;
   }
   function bvPaso(d) {
     const b = E.bv; guardarCamposBV();
@@ -2915,18 +2954,18 @@
     const perfil = { ...b.perfil }; delete perfil.carpeta_notas;  // la carpeta ya quedó guardada al elegirla
     E.perfil = { ...(E.perfil || {}), ...b.perfil };
     host.enviar("terminarBienvenida", { perfil, tema: E.temaId });
-    E.bv = null; render({ mantenerScroll: true }); toast("¡Listo! Ya puedes grabar tu primera reunión 🎉");
+    E.bv = null; E._primeraVez = false; render({ mantenerScroll: true }); toast("¡Listo! Ya puedes grabar tu primera reunión 🎉");
   }
   function overlayBienvenida() {
     const b = E.bv; if (!b) return "";
     const paso = BV_PASOS[b.paso], p = b.perfil;
-    const puntos = BV_PASOS.map((_, i) => `<i class="${i === b.paso ? "on" : i < b.paso ? "ok" : ""}"></i>`).join("");
+    const puntos = BV_PASOS.map((_, i) => `<i class="${i === b.paso ? "on" : i < b.paso ? "ok" : ""}"></i>`).slice(1).join("");
     const opc = (lista, actual) => lista.map(([v, n]) => `<option value="${esc(v)}"${v === actual ? " selected" : ""}>${esc(n)}</option>`).join("");
+    if (paso === "idioma") return pantallaIdioma();
     let cuerpo = "";
-    if (paso === "idioma") {
+    if (paso === "hola") {
       cuerpo = `<div class="bv-hero"><div class="bv-logo">🎙️</div><h2>Bienvenido a Minuta</h2>
         <p>Tus reuniones, tu computador, tus notas. El audio nunca sale de tu computador: se transcribe aquí mismo. Solo el texto va a la IA que tú elijas.</p></div>
-        <label class="cat-campo"><span>Idioma de la app</span><select data-bv-idioma>${(E.idioma.instalados || []).map((x) => `<option value="${esc(x.codigo)}"${x.codigo === E.idioma.codigo ? " selected" : ""}>${esc(x.bandera || "")} ${esc(x.nombre)}</option>`).join("")}</select></label>
         <p class="cat-ayuda">Son 5 pasos cortos. Todo se puede cambiar después en Preferencias.</p>`;
     } else if (paso === "tu") {
       cuerpo = `<h2>¿Quién eres?</h2><p class="bv-sub">Con esto tu IA sabe a quién le da el feedback. Se guarda solo en tu computador.</p>
@@ -3007,6 +3046,7 @@
     pasos.forEach(([paso, texto, pct], i) => setTimeout(() => window.Minuta.actualizacionProgreso({ paso, texto, total: 3, ...(pct != null ? { pct } : {}) }), 900 * (i + 1)));
   }
   function bannerActualizacion() {
+    if (enPantallaIdioma()) return "";  // nada antes de elegir idioma
     const pr = E.act.progreso;
     if (pr) {
       // El mismo aviso muestra el avance: paso N de 3, barra y qué está pasando. Sin alertas del sistema.
@@ -3152,6 +3192,14 @@
 
   document.addEventListener("keydown", (ev) => {
     const mod = ev.metaKey || ev.ctrlKey;
+    if (enPantallaIdioma()) {
+      // Pantalla de idioma: flechas y Tab pasan de una opción a otra (sin salir de ella); Enter o espacio elige. Sin atajos hasta elegir.
+      const bs = [...document.querySelectorAll(".bv-lengua")], i = bs.indexOf(document.activeElement);
+      const paso = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[ev.key] ?? (ev.key === "Tab" ? (ev.shiftKey ? -1 : 1) : 0);
+      if (paso && bs.length) { bs[i < 0 ? 0 : (i + paso + bs.length) % bs.length].focus(); ev.preventDefault(); }
+      else if (mod) ev.preventDefault();
+      return;
+    }
     if (E.menuTipo && ev.key === "Escape") { E.menuTipo = null; render({ mantenerScroll: true }); ev.preventDefault(); return; }
     if (E.coment && ev.key === "Escape") { E.coment = null; render({ mantenerScroll: true }); ev.preventDefault(); return; }
     if (E.previa && ev.key === "Escape") { E.previa = null; render({ mantenerScroll: true }); ev.preventDefault(); return; }
@@ -3218,7 +3266,10 @@
       if (datos.idioma) E.idioma = { ...E.idioma, ...datos.idioma };
       if (datos.actualizacion) E.act = { ...E.act, ...datos.actualizacion };
       if (datos.version) E.version = datos.version;
-      if (datos.primeraVez && !E.bv && !E._bvMostrada && !PANEL) { E._bvMostrada = true; setTimeout(abrirBienvenida, 50); }
+      if ("primeraVez" in datos) E._primeraVez = !!datos.primeraVez;
+      // Primera vez: la bienvenida (que parte por el idioma) se abre en este mismo pintado, sin mostrar antes la app.
+      if (datos.primeraVez && !E.bv && !E._bvMostrada && !PANEL) { E._bvMostrada = true; abrirBienvenida(false); if (E.cargado) render({ mantenerScroll: true }); }
+      if (E.bv?.lengua && E.idioma.codigo === E.bv.lengua) bvTrasIdioma();
       if (datos.avisos || datos.ajustes || datos.agenda) {
         const antes = JSON.stringify([E.avisos, E.ajustes, E.agenda]);
         if (datos.avisos) E.avisos = datos.avisos;
@@ -3227,7 +3278,7 @@
         const soloAvisos = Object.keys(datos).every((k) => k === "avisos" || k === "ajustes" || k === "agenda");
         if (soloAvisos) { if (E.cargado && (PANEL || ["preferencias", "agenda"].includes(E.seccion)) && antes !== JSON.stringify([E.avisos, E.ajustes, E.agenda])) render({ mantenerScroll: true }); return; }
       }
-      const firma = JSON.stringify([datos.temaId, datos.seleccion, datos.vista, datos.seccion,
+      const firma = JSON.stringify([E.idioma.codigo, datos.temaId, datos.seleccion, datos.vista, datos.seccion,
         (datos.notas || []).map((n) => n.ruta + ":" + n.texto.length), (datos.temas || []).length]);
       let catCambio = false;
       const estable = (v) => JSON.stringify(v, (k, x) => (x && typeof x === "object" && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => a.localeCompare(b))) : x));
@@ -3426,7 +3477,7 @@
     fetch("demo.json").then((r) => r.json()).then((d) => {
       E.idioma.instalados = [...E.idioma.instalados, { codigo: "en", nombre: "English", bandera: "🇬🇧", incluido: true }];
       const lang = new URLSearchParams(location.search).get("idioma"); if (lang) setTimeout(() => cambiarIdiomaWeb(lang), 50);
-      if (new URLSearchParams(location.search).has("bienvenida")) setTimeout(abrirBienvenida, 200);
+      if (new URLSearchParams(location.search).has("bienvenida")) { E._primeraVez = true; setTimeout(abrirBienvenida, 200); }
       if (new URLSearchParams(location.search).has("actualizacion")) E.act = { hay: true, detalle: "• Bienvenida nueva\n• Transcripción dentro de la app" };
       try { d.temaId = new URLSearchParams(location.search).get("tema") || localStorage.getItem("minuta.tema") || d.temaId; } catch {}
       const v = new URLSearchParams(location.search).get("vista");

@@ -66,18 +66,10 @@ final class AppModel: ObservableObject {
         for d in ["", "temas", "models", "grabaciones", "idiomas"] {
             try? FileManager.default.createDirectory(at: Temas.base.appendingPathComponent(d), withIntermediateDirectories: true)
         }
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        // La primera vez, lo primero es elegir el idioma: el permiso de avisos se pide después, en la bienvenida (paso Permisos).
+        if !Perfil.falta { UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in } }
         UNUserNotificationCenter.current().delegate = delegadoNotificaciones
-        let grabarAccion = UNNotificationAction(identifier: "GRABAR", title: "Grabar ahora", options: [])
-        let ahoraNo = UNNotificationAction(identifier: "AHORA_NO", title: "Ahora no", options: [])
-        let detenerAccion = UNNotificationAction(identifier: "DETENER", title: "Detener y generar notas", options: [])
-        let seguir = UNNotificationAction(identifier: "SEGUIR", title: "Sigue grabando", options: [])
-        UNUserNotificationCenter.current().setNotificationCategories([
-            UNNotificationCategory(identifier: "REUNION", actions: [grabarAccion, ahoraNo], intentIdentifiers: [], options: [.customDismissAction]),
-            UNNotificationCategory(identifier: "FIN", actions: [detenerAccion, seguir], intentIdentifiers: [], options: []),
-            UNNotificationCategory(identifier: "PRUEBA", actions: [], intentIdentifiers: [], options: []),
-            UNNotificationCategory(identifier: "PREP", actions: [], intentIdentifiers: [], options: []),
-        ])
+        registrarAccionesAvisos()
         delegadoNotificaciones.alResponder = { [weak self] categoria, accion, info in
             Task { @MainActor in self?.responderNotificacion(categoria: categoria, accion: accion, info: info) }
         }
@@ -144,6 +136,20 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Botones de los avisos del sistema, en el idioma de la app. Se vuelve a llamar cuando cambia el idioma.
+    func registrarAccionesAvisos() {
+        let grabarAccion = UNNotificationAction(identifier: "GRABAR", title: Idioma.t("Grabar ahora"), options: [])
+        let ahoraNo = UNNotificationAction(identifier: "AHORA_NO", title: Idioma.t("Ahora no"), options: [])
+        let detenerAccion = UNNotificationAction(identifier: "DETENER", title: Idioma.t("Detener y generar notas"), options: [])
+        let seguir = UNNotificationAction(identifier: "SEGUIR", title: Idioma.t("Sigue grabando"), options: [])
+        UNUserNotificationCenter.current().setNotificationCategories([
+            UNNotificationCategory(identifier: "REUNION", actions: [grabarAccion, ahoraNo], intentIdentifiers: [], options: [.customDismissAction]),
+            UNNotificationCategory(identifier: "FIN", actions: [detenerAccion, seguir], intentIdentifiers: [], options: []),
+            UNNotificationCategory(identifier: "PRUEBA", actions: [], intentIdentifiers: [], options: []),
+            UNNotificationCategory(identifier: "PREP", actions: [], intentIdentifiers: [], options: []),
+        ])
+    }
+
     // MARK: Detección de reuniones (como Granola)
 
     private var avisados: Set<String> = []
@@ -207,7 +213,8 @@ final class AppModel: ObservableObject {
         detectada = app
         autoCategoria(app: app)
         let ev = eventoActual()
-        guard ajustes.avisarDeteccion else { return }
+        // Primera vez: nada aparece antes de elegir idioma y terminar la bienvenida.
+        guard ajustes.avisarDeteccion, !Perfil.falta else { return }
         let titulo = ev?.titulo.isEmpty == false ? Idioma.f("«{x}» en {x}", ev!.titulo, app) : Idioma.f("Reunión en {x}", app)
         alertaReunion(titulo, "Un clic y empiezo a grabar y tomar notas.", tituloEvento: ev?.titulo ?? "")
     }
@@ -295,8 +302,8 @@ final class AppModel: ObservableObject {
                 avisados.insert("prep:" + id)
                 let titulo = ev["titulo"] as? String ?? "Reunión"
                 BarraMenu.shared.textoJS("window.Minuta && window.Minuta.briefTexto(\(Self.json(id)))") { [weak self] texto in
-                    let cuerpo = (texto?.isEmpty == false ? texto! : "Toca para ver tu preparación.")
-                    self?.notificar("Prepárate: «\(titulo)» en \(max(1, Int(falta / 60))) min", cuerpo, id: "prep", categoria: "PREP", extra: ["evento": id])
+                    let cuerpo = (texto?.isEmpty == false ? texto! : Idioma.t("Toca para ver tu preparación."))
+                    self?.notificar(Idioma.f("Prepárate: «{x}» en {n} min", titulo, "\(max(1, Int(falta / 60)))"), cuerpo, id: "prep", categoria: "PREP", extra: ["evento": id])
                 }
             }
         }
@@ -306,7 +313,7 @@ final class AppModel: ObservableObject {
             UserDefaults.standard.set(hoy, forKey: "minuta.resumenCompromisos")
             BarraMenu.shared.textoJS("window.Minuta && window.Minuta.resumenCompromisos()") { [weak self] texto in
                 guard let texto, !texto.isEmpty else { return }
-                self?.notificar("Tus compromisos de hoy", texto, id: "compromisos", categoria: "PREP", extra: ["evento": ""])
+                self?.notificar(Idioma.t("Tus compromisos de hoy"), texto, id: "compromisos", categoria: "PREP", extra: ["evento": ""])
             }
         }
     }
@@ -367,7 +374,7 @@ final class AppModel: ObservableObject {
                   ini / 1000 <= ahora, (fin / 1000 - ahora) > 8.5 * 60, (fin / 1000 - ahora) <= 10.5 * 60, !avisados.contains("hab:" + id) else { continue }
             avisados.insert("hab:" + id)
             BarraMenu.shared.textoJS("window.Minuta && window.Minuta.habitoActual()") { [weak self] h in
-                self?.avisoVivo("Quedan 10 minutos", (h?.isEmpty == false) ? "Tu hábito: \(h!)" : "Buen momento para cerrar: quién hace qué y para cuándo.")
+                self?.avisoVivo(Idioma.t("Quedan 10 minutos"), (h?.isEmpty == false) ? Idioma.f("Tu hábito: {x}", h!) : Idioma.t("Buen momento para cerrar: quién hace qué y para cuándo."))
             }
         }
     }
@@ -375,7 +382,7 @@ final class AppModel: ObservableObject {
     private func revisarCalendario() {
         recordarHabito()
         revisarPreparacion()
-        guard ajustes.avisarCalendario, fase == .inactiva, EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return }
+        guard ajustes.avisarCalendario, fase == .inactiva, !Perfil.falta, EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return }
         let ahora = Date()
         let eventos = calendario.events(matching: calendario.predicateForEvents(withStart: ahora.addingTimeInterval(-60),
                                                                                end: ahora.addingTimeInterval(90), calendars: nil))
@@ -523,7 +530,7 @@ final class AppModel: ObservableObject {
             try? await Task.sleep(for: .seconds(4))
             if case .grabando = fase, carpeta == dir, sistema.firstBuffer == nil {
                 estado = "⚠️ No llega el audio de los demás. Revisa Ajustes > Privacidad > Grabación de pantalla y audio del sistema > Minuta."
-                notificar("Minuta no está grabando a los demás", "Revisa el permiso de audio del sistema.")
+                notificar(Idioma.t("Minuta no está grabando a los demás"), Idioma.t("Revisa el permiso de audio del sistema."))
             }
         }
     }
@@ -599,7 +606,7 @@ final class AppModel: ObservableObject {
                 Respaldo.sincronizar()
             } else {
                 self.estado = "Falló el procesamiento de «\(siguiente.titulo)». Revisa procesar.log en \(dir.lastPathComponent)."
-                self.notificar("Minuta: error al procesar", "Revisa procesar.log")
+                self.notificar(Idioma.t("Minuta: error al procesar"), Idioma.t("Revisa procesar.log"))
             }
         }
     }
@@ -733,7 +740,7 @@ final class AppModel: ObservableObject {
             if ok, linea.hasPrefix("OK ") {
                 let partes = linea.dropFirst(3).split(separator: " ", maxSplits: 1).map(String.init)
                 let id = partes.first ?? "", nombreFinal = partes.count > 1 ? partes[1] : nombre
-                self.notificar("Universo listo: \(nombreFinal)", "Ábrelo en la galería de universos.")
+                self.notificar("\(Idioma.t("Universo listo")): \(nombreFinal)", Idioma.t("Ábrelo en la galería de universos."))
                 alTerminar(true, id, nombreFinal)
             } else {
                 alTerminar(false, "", String(linea.dropFirst(6)))

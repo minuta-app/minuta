@@ -328,6 +328,27 @@
 .bv-luego { color: var(--suave); }
 .bv-universos { grid-template-columns: repeat(4, 1fr); } .bv-universos .universo { min-height: 96px; }
 .bv-acc { display: flex; justify-content: space-between; margin-top: 18px; } .bv-acc .boton-txt { width: auto; padding: 10px 20px; }
+/* Pantalla de idioma (paso 0): opaca, nada de la app detrás; dos opciones grandes, cada una en su idioma. */
+.bienvenida.bv-idioma { background: radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--acento) 14%, var(--fondo)), var(--fondo) 70%); backdrop-filter: none; overflow: auto; }
+.bv-idioma-caja { width: min(620px, 100%); text-align: center; color: var(--texto); animation: subir .25s ease both; }
+.bv-idioma-caja .bv-logo { font-size: 54px; margin-bottom: 10px; }
+/* Neutro en todos los universos (algunos decoran los h1 con mayúsculas, trazos o adornos): aquí manda que se lea. */
+.bienvenida.bv-idioma .bv-idioma-caja h1 { margin: 0 0 28px; font: 700 clamp(22px, 5.4vw, 30px)/1.3 system-ui, sans-serif; letter-spacing: normal; text-transform: none;
+  color: var(--texto); background: none; -webkit-text-stroke: 0; text-shadow: none; }
+.bienvenida.bv-idioma .bv-idioma-caja h1::after { content: none; }
+.bv-idioma-caja h1 [lang] { display: inline-block; } .bv-idioma-caja h1 .bv-sep { color: var(--suave); }
+.bv-lenguas { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+.bv-lengua { display: grid; gap: 6px; place-items: center; min-height: 128px; padding: 22px 18px; border-radius: 20px; cursor: pointer;
+  border: 2px solid color-mix(in srgb, var(--texto) 28%, var(--linea)); background: var(--panel); color: var(--texto); font: inherit; transition: border-color .15s, transform .15s, box-shadow .15s; }
+.bv-lengua b { font-size: 26px; font-weight: 700; letter-spacing: .01em; }
+.bv-lengua small { font-size: 13px; font-weight: 600; color: var(--texto); opacity: .85; }
+.bv-lengua:hover { border-color: color-mix(in srgb, var(--acento) 60%, var(--linea)); transform: translateY(-1px); }
+.bv-lengua.sugerido { border-color: var(--acento); }
+.bv-lengua:focus-visible { outline: 3px solid var(--acento); outline-offset: 4px; box-shadow: 0 0 0 1px var(--fondo); }
+.bv-lengua:disabled { cursor: progress; opacity: .6; } .bv-lengua[aria-busy="true"] { opacity: 1; border-color: var(--acento); }
+@media (max-width: 640px) { .bv-idioma-caja h1 [lang] { display: block; } .bv-idioma-caja h1 .bv-sep { display: none; } }
+@media (max-width: 480px) { .bv-lenguas { grid-template-columns: 1fr; } .bv-lengua { min-height: 96px; } .bv-idioma-caja h1 { margin-bottom: 20px; } }
+@media (prefers-reduced-motion: reduce) { .bv-idioma-caja, .bv-lengua { animation: none; transition: none; } }
 /* ───── Actualizaciones ───── */
 .act-banner { position: fixed; right: 18px; bottom: 18px; z-index: 250; display: flex; gap: 12px; align-items: center; max-width: 440px; padding: 12px 14px;
   border-radius: 16px; background: var(--fondo); border: 1px solid color-mix(in srgb, var(--acento) 50%, var(--linea)); box-shadow: 0 20px 50px -15px rgba(0,0,0,.6); animation: subir .3s ease both; }

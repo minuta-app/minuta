@@ -361,6 +361,7 @@ private struct WebHost: NSViewRepresentable {
                 for (k, v) in (datos["perfil"] as? [String: Any] ?? [:]) where Perfil.porDefecto.keys.contains(k) { if let s = v as? String { p[k] = s } }
                 Perfil.guardar(p)
                 Idioma.olvidar()
+                model.registrarAccionesAvisos()
                 if let tema = datos["tema"] as? String { model.temaID = tema }
                 enviarTodo()
                 NotificationCenter.default.post(name: .minutaNotasCambiaron, object: nil)
@@ -398,10 +399,13 @@ private struct WebHost: NSViewRepresentable {
                 }
             case "perfil":
                 // Cambios del perfil desde Preferencias (idioma, nombre…): se mezclan con lo que ya hay.
-                var p = Perfil.datos()
+                // En la primera vez (el idioma es lo primero que se elige) se guarda solo lo elegido, sin los valores por
+                // defecto: así perfil.json no da la bienvenida por hecha (ver Perfil.falta).
+                var p = Perfil.falta ? Perfil.guardado() : Perfil.datos()
                 for (k, v) in (datos["cambios"] as? [String: Any] ?? [:]) where Perfil.porDefecto.keys.contains(k) { if let s = v as? String { p[k] = s } }
                 if let d = try? JSONSerialization.data(withJSONObject: p, options: [.prettyPrinted, .sortedKeys]) { try? d.write(to: Perfil.archivo, options: .atomic) }
                 Idioma.olvidar()
+                model.registrarAccionesAvisos()
                 enviarTodo()
                 NotificationCenter.default.post(name: .minutaNotasCambiaron, object: nil)
             case "comentariosCuenta":

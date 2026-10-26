@@ -50,7 +50,13 @@ estándar de Python: no agregues dependencias de pip. `build.sh` se niega a inst
 
 ## Primera vez, respaldo y actualizaciones (`Bienvenida.swift`)
 
-- **Bienvenida:** se abre si no existe `perfil.json` (o desde Preferencias). Pasos: idioma → quién eres → IA (`IA.buscar`/`IA.probar`
+- **Bienvenida:** se abre si no existe `perfil.json` o si solo tiene `idioma_ui` (`Perfil.falta`; también desde Preferencias). **Lo primero es el idioma**:
+  una pantalla propia (`pantallaIdioma()` en `app.js`) con título fijo «Elige tu idioma · Choose your language» y dos botones escritos cada uno en su
+  idioma (`data-sin-traducir`), el del sistema sugerido (`idioma.sistema`). Al elegir se guarda `idioma_ui` con la acción `perfil` (en la primera vez
+  solo esa clave, así cerrar la app ahí no se salta la bienvenida), se carga la traducción y recién ahí se avanza. Antes de elegir no aparece nada más:
+  sin permiso de avisos al abrir (se pide en el paso Permisos), sin alertas de reunión ni de calendario, sin aviso de actualización, y el ícono de la
+  barra de menú/bandeja abre la bienvenida en vez del panel. Los botones de los avisos del sistema se registran con `Idioma.t`
+  (`registrarAccionesAvisos`) y se vuelven a registrar al cambiar el idioma. Pasos: idioma → hola → quién eres → IA (`IA.buscar`/`IA.probar`
   detectan y prueban `claude`, `codex` o `agy`/`gemini`; la elegida queda en `perfil.json` → `ia`) → modelo (`Modelos`: turbo/small según RAM, descarga verificada por
   SHA-256 desde Hugging Face) → notas (carpeta nueva, carpeta existente o `git clone` de su repo) → respaldo opcional → permisos → universo.
 - **Respaldo:** `Respaldo.crearRepo` crea un repo **privado en la cuenta del usuario** (GitHub o GitLab) con su token; el token va al

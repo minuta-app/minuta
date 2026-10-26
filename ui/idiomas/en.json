@@ -863,7 +863,16 @@
   "✓ Estás en la última versión.": "✓ You're on the latest version.",
   "Hay una versión nueva de Minuta ✨": "There's a new version of Minuta ✨",
   "No pude revisar si hay versiones nuevas. Revisa tu conexión.": "I couldn't check for new versions. Check your connection.",
-  "Buscando…": "Searching…"
+  "Buscando…": "Searching…",
+  "Sigue grabando": "Keep recording",
+  "Toca para ver tu preparación.": "Tap to see your prep.",
+  "Prepárate: «{x}» en {n} min": "Get ready: «{x}» in {n} min",
+  "Tus compromisos de hoy": "Your commitments for today",
+  "Quedan 10 minutos": "10 minutes left",
+  "Tu hábito: {x}": "Your habit: {x}",
+  "Buen momento para cerrar: quién hace qué y para cuándo.": "Good moment to wrap up: who does what, and by when.",
+  "Minuta no está grabando a los demás": "Minuta isn't recording the others",
+  "Revisa el permiso de audio del sistema.": "Check the system audio permission."
  },
  "palabras": {
   "lunes": "Monday",
