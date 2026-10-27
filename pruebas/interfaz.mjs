@@ -144,8 +144,18 @@ for (const [idioma, consulta] of [["español", ""], ["inglés", "?idioma=en"]]) 
   const p = await pagina("", "#panel", 372);
   await ir(p, "window.Minuta._probar(E => { E.pan.actualizacion = { hay: true }; })");
   if (CAPTURAS) await p.screenshot({ path: path.join(CAPTURAS, "panel.png"), fullPage: true });
+  // Teclas 1–9 (#17): eligen el tipo en el orden del menú; al escribir en el título no hacen nada.
+  const tipo = () => p.evaluate(() => { let t; window.Minuta._probar((E) => { t = { tipo: E.pan.tipo, ids: E.categorias.map((c) => c.id) }; }); return t; });
+  await p.locator("body").click({ position: { x: 2, y: 2 } });
+  await p.keyboard.press("2");
+  let t = await tipo();
+  if (t.tipo !== t.ids[1]) falla(`Panel: la tecla 2 debería elegir «${t.ids[1]}» y quedó «${t.tipo}»`);
+  await p.locator("#pn-titulo").focus();
+  await p.keyboard.press("1");
+  t = await tipo();
+  if (t.tipo !== t.ids[1]) falla("Panel: escribir un número en el título no debe cambiar el tipo");
   await p.close();
-  console.log("  ✓ Panel sin errores");
+  console.log("  ✓ Panel sin errores y teclas 1–9");
 }
 
 // Nombres: mismos resultados que Python

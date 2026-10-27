@@ -99,7 +99,7 @@ def main():
     pregunta, salida = sys.argv[1], sys.argv[2]
     notas = leer_notas()
     if not notas:
-        json.dump({"respuesta": "Aún no tienes reuniones grabadas.", "fuentes": []}, open(salida, "w"), ensure_ascii=False)
+        json.dump({"respuesta": "Aún no tienes reuniones grabadas.", "fuentes": []}, open(salida, "w", encoding="utf-8"), ensure_ascii=False)
         return
     top = [n for s, n in puntuar(notas, pregunta)[:7] if s > 0] or notas[-5:]
     fuentes = []
