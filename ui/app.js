@@ -1121,6 +1121,11 @@
       <span class="pn-nivel-logros" title="${logros} logros desbloqueados"><b>${logros}</b>🏅</span>
       <i class="pn-nivel-barra" style="--p:${Math.max(0.03, Math.min(1, prog))}"></i></button>`;
   }
+  /** Elige el tipo de reunion desde el panel (clic o teclas 1–9). */
+  function elegirTipoPanel(id) {
+    E.pan.tipo = id; E.pan.tipoAuto = false; E.pnTipoMenu = false;
+    host.enviar("tipo", { tipo: id }); render({ mantenerScroll: true });
+  }
   function panelInicio() {
     const t = tema(), p = E.pan, vv = t?.estilo?.ventana || {};
     const [verbo, parar] = GRABAR[t?.id] || [vv.grabar || "Grabar reunión", vv.parar || "Detener"];
@@ -1143,8 +1148,8 @@
         <div class="pn-fila-titulo">
           <label class="buscador pn-campo"><span class="lupa">✎</span><input id="pn-titulo" placeholder="Título (opcional)" value="${esc(p.titulo)}" autocomplete="off" aria-label="Título de la reunión (opcional, lo saco del calendario)"></label>
           <div class="pn-tipo-sel">${(() => { const c = categoria(p.tipo); return `<button class="pestana activa pn-tipo-btn" data-pn-tipomenu aria-haspopup="menu" aria-expanded="${!!E.pnTipoMenu}" title="Tipo de reunión · tu IA evaluará: ${esc(c.descripcion || c.nombre)}"><span class="pn-emo">${esc(c.emoji || "💬")}</span><span class="pn-tipo-nom">${esc(c.nombre || "Tipo")}</span>${p.tipoAuto ? '<sup title="Elegido solo por el calendario o la app">auto</sup>' : ""}<span class="pn-flecha">▾</span></button>`; })()}
-            ${E.pnTipoMenu ? `<div class="menu-mas pn-tipo-menu" role="menu" aria-label="Tipo de reunión">${E.categorias.map((c) =>
-              `<button role="menuitemradio" aria-checked="${p.tipo === c.id}" data-pn-tipo="${esc(c.id)}"><span>${esc(c.emoji)}</span><span class="pn-tm-txt"><b>${esc(c.nombre)}</b><small>Tu IA evaluará: ${esc(c.descripcion || "comunicación general")}</small></span>${p.tipo === c.id ? "<kbd>✓</kbd>" : ""}</button>`).join("")}
+            ${E.pnTipoMenu ? `<div class="menu-mas pn-tipo-menu" role="menu" aria-label="Tipo de reunión">${E.categorias.map((c, i) =>
+              `<button role="menuitemradio" aria-checked="${p.tipo === c.id}" data-pn-tipo="${esc(c.id)}"><span>${esc(c.emoji)}</span><span class="pn-tm-txt"><b>${esc(c.nombre)}</b><small>Tu IA evaluará: ${esc(c.descripcion || "comunicación general")}</small></span>${p.tipo === c.id ? "<kbd>✓</kbd>" : ""}${i < 9 ? `<kbd>${i + 1}</kbd>` : ""}</button>`).join("")}
               <hr><button data-pn="preferencias"><span>✎</span>Editar tipos de reunión</button></div>` : ""}</div>
         </div>
         <button class="pn-grabar" data-pn="grabar"><span class="pn-rec"></span><span class="pn-verbo">${esc(verbo)}</span></button>`;
@@ -2815,7 +2820,7 @@
     if (pn) {
       const d = pn.dataset;
       if (d.pnVista) { E.panVista = d.pnVista; render(); return; }
-      if (d.pnTipo) { E.pan.tipo = d.pnTipo; E.pan.tipoAuto = false; E.pnTipoMenu = false; host.enviar("tipo", { tipo: d.pnTipo }); render(); return; }
+      if (d.pnTipo) { elegirTipoPanel(d.pnTipo); return; }
       if (d.pnNota) { host.enviar("visor", { ruta: d.pnNota }); return; }
       if (d.pn === "inicio") { E.pan.inicio = !E.pan.inicio; host.enviar("inicio", { activo: E.pan.inicio }); render(); return; }
       if (d.pn === "grabar") { host.enviar("grabar", { titulo: E.pan.titulo, tipo: E.pan.tipo }); return; }
@@ -3239,6 +3244,12 @@
     if (PANEL) {
       if (ev.key === "Enter" && ev.target.id === "pn-titulo" && E.pan.fase === "inactiva") { host.enviar("grabar", { titulo: E.pan.titulo, tipo: E.pan.tipo }); ev.preventDefault(); }
       if (ev.key === "Escape") { if (E.panVista !== "inicio") { E.panVista = "inicio"; render(); } else host.enviar("cerrarPanel"); }
+      // Teclas 1–9: eligen el tipo de reunión en el orden del menu (no al escribir ni con ⌘/Ctrl/Alt).
+      const enCampo = /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName || "") || ev.target.isContentEditable;
+      if (/^[1-9]$/.test(ev.key) && !ev.metaKey && !ev.ctrlKey && !ev.altKey && !enCampo && E.panVista === "inicio" && (E.pan.fase === "inactiva" || E.pan.fase === "grabando")) {
+        const c = E.categorias[+ev.key - 1];
+        if (c) { elegirTipoPanel(c.id); ev.preventDefault(); }
+      }
       return;
     }
     if (VENTANA && (ESCRITORIO ? ev.ctrlKey && !ev.altKey : ev.metaKey && !ev.ctrlKey) && (ev.key === "w" || ev.key === "m")) { host.enviar("ventana", { op: ev.key === "w" ? "cerrar" : "minimizar" }); ev.preventDefault(); return; }
