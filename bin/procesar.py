@@ -604,10 +604,17 @@ TRANSCRIPCIÓN:
 
 
 def llamar_claude(prompt, cwd):
-    r = ejecutar_ia(prompt, timeout=1200, cwd=cwd)
-    if r.returncode != 0 or not r.stdout.strip():
-        raise RuntimeError(f"{NOMBRE_IA} falló ({r.returncode}): {r.stderr.strip()[:500]}")
-    return r.stdout.strip()
+    # Un tropiezo pasajero de la IA (sesión que se renueva, límite por un rato) no debe dejar la reunión sin notas:
+    # se reintenta una vez. El CLI a veces explica el error por la salida estándar y no por stderr: se muestran ambos.
+    for intento in (1, 2):
+        r = ejecutar_ia(prompt, timeout=1200, cwd=cwd)
+        if r.returncode == 0 and r.stdout.strip():
+            return r.stdout.strip()
+        motivo = (r.stderr.strip() or r.stdout.strip())[:500]
+        if intento == 1:
+            log("Reintentando:", NOMBRE_IA, f"falló ({r.returncode})", motivo)
+            time.sleep(30)
+    raise RuntimeError(f"{NOMBRE_IA} falló ({r.returncode}): {motivo}")
 
 
 def nombre_archivo(texto):
