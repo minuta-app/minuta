@@ -17,8 +17,9 @@ jobs:
   comun:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: 22 }
       - name: Sintaxis
         run: |
@@ -37,25 +38,25 @@ jobs:
         run: python3 pruebas/evaluar_ia.py
       - name: Pruebas de la interfaz
         run: |
-          npm i --no-save --prefix "$RUNNER_TEMP/pw" playwright@1.56.1
+          npm i --no-save --ignore-scripts --prefix "$RUNNER_TEMP/pw" playwright@1.56.1
           "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install --with-deps chromium
           mkdir -p capturas
           PLAYWRIGHT="$RUNNER_TEMP/pw/node_modules/playwright" CAPTURAS=capturas node pruebas/interfaz.mjs
       - name: Capturas para revisar a ojo
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with: { name: capturas, path: capturas, retention-days: 14, if-no-files-found: ignore }
 
   mac:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with: { persist-credentials: false, fetch-depth: 0 }
       - name: ¿Cambió algo de la app de Mac?
         id: cambio
+        env: { ANTES: "${{ github.event.before }}", EVENTO: "${{ github.event_name }}" }
         run: |
-          ANTES="${{ github.event.before }}"
-          if [ "${{ github.event_name }}" != "push" ] || ! git cat-file -e "$ANTES" 2>/dev/null || git diff --name-only "$ANTES" HEAD | grep -qE '^(app/|herramientas/empaquetar\.sh|build\.sh)'; then echo "si=1" >> "$GITHUB_OUTPUT"; fi
+          if [ "$EVENTO" != "push" ] || ! git cat-file -e "$ANTES" 2>/dev/null || git diff --name-only "$ANTES" HEAD | grep -qE '^(app/|herramientas/empaquetar\.sh|build\.sh)'; then echo "si=1" >> "$GITHUB_OUTPUT"; fi
       - name: Compilar
         if: steps.cambio.outputs.si == '1'
         run: cd app && swift build -c release

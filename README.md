@@ -188,6 +188,8 @@ Minuta es gratis y abierta, y la hacemos entre todos. Casi ninguna forma de suma
   (Claude Code, Codex, Gemini/Antigravity). Empieza por [CONTRIBUTING.md](CONTRIBUTING.md) y los issues
   [`good first issue`](https://github.com/minuta-app/minuta/labels/good%20first%20issue).
 
+🔒 ¿Encontraste una falla de seguridad? Avísanos en privado: [SECURITY.md](SECURITY.md).
+
 Al participar aceptas el [código de conducta](CODE_OF_CONDUCT.md).
 
 ---
@@ -207,6 +209,8 @@ Windows (PowerShell): `irm https://raw.githubusercontent.com/minuta-app/minuta/m
 or download from the [latest release](https://github.com/minuta-app/minuta/releases/latest). Requires one of Claude Code, Codex or Antigravity CLI with your own account ([setup guide](https://minuta-app.github.io/minuta/ia.html));
 Mac needs Apple silicon and macOS 15+, Windows 10/11 64-bit, Linux x86_64 with PulseAudio or PipeWire.
 The interface ships in Spanish and English (more languages downloadable). The code and comments are in Spanish.
+
+Security issues: please report them privately, see [SECURITY.md](SECURITY.md).
 
 ## Licencia / License
 

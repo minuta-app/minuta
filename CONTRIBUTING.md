@@ -39,6 +39,8 @@ Si algo falta te lo pedimos con un comentario; casi nunca cerramos un aporte sin
 ¿Buscas por dónde empezar? Mira los issues con la etiqueta
 [`good first issue`](https://github.com/minuta-app/minuta/labels/good%20first%20issue) o pregunta en Discussions.
 
+**Fallas de seguridad:** nunca en un issue público. Avísanos en privado como explica [SECURITY.md](SECURITY.md).
+
 Al participar aceptas el [código de conducta](CODE_OF_CONDUCT.md).
 
 ---
@@ -54,3 +56,4 @@ Al participar aceptas el [código de conducta](CODE_OF_CONDUCT.md).
   `ui/idiomas/en.json`; never commit personal data.
 - **Review:** everything goes through a pull request and a maintainer merges it. We check tests, privacy and the note format;
   universes and languages must be data only, and translations get a review from a native speaker.
+- **Security issues:** never in a public issue; report them privately as described in [SECURITY.md](SECURITY.md).

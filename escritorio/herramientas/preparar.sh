@@ -16,6 +16,10 @@ mkdir -p "$CACHE" "$DESTINO/herramientas"
 
 PY_TAG=20261003; PY_VER=3.13.16
 WHISPER_VER=v1.8.3
+# Commit exacto de esa etiqueta (una etiqueta se puede mover; el commit no): si no coincide, no se compila.
+WHISPER_COMMIT=2eeeba56e9edd762b4b38467bab96c2517163158
+# zig (compilador) desde PyPI con versión fija.
+ZIG_VER=0.17.0
 SHERPA_VER=v1.13.8
 GH=https://github.com
 if [ "$OS" = linux ]; then
@@ -61,8 +65,9 @@ cp "$CACHE/$HUELLA" "$DESTINO/herramientas/voces-huella.onnx"
 
 # ── whisper-cli: compilado con zig → un solo ejecutable sin dependencias (Linux: glibc 2.27+; Windows 10+) ──
 if [ ! -x "$CACHE/whisper-$OS/whisper-cli$EXE" ]; then
-  python3 -m ziglang version >/dev/null 2>&1 || python3 -m pip install --user --break-system-packages -q ziglang 2>/dev/null || python3 -m pip install --user -q ziglang
+  python3 -m ziglang version >/dev/null 2>&1 || python3 -m pip install --user --break-system-packages -q "ziglang==$ZIG_VER" 2>/dev/null || python3 -m pip install --user -q "ziglang==$ZIG_VER"
   [ -d "$CACHE/whisper.cpp" ] || git clone -q --depth 1 --branch "$WHISPER_VER" https://github.com/ggml-org/whisper.cpp "$CACHE/whisper.cpp"
+  [ "$(git -C "$CACHE/whisper.cpp" rev-parse HEAD)" = "$WHISPER_COMMIT" ] || { echo "whisper.cpp $WHISPER_VER no es el commit esperado"; exit 1; }
   Z="$CACHE/zig-$OS"; mkdir -p "$Z"
   OBJETIVO=$([ "$OS" = linux ] && echo x86_64-linux-gnu.2.28 || echo x86_64-windows-gnu)
   for h in cc c++; do printf '#!/bin/bash\nexec python3 -m ziglang %s -target %s "$@"\n' "$h" "$OBJETIVO" > "$Z/$h"; done

@@ -1,0 +1,23 @@
+# Dependabot: propone (nunca junta solo) actualizaciones de las actions de GitHub y de los paquetes de npm de la app de
+# escritorio. «cooldown» espera unos días desde que sale una versión: la mayoría de los paquetes comprometidos se detectan y
+# retiran en ese plazo. Las actualizaciones de seguridad (alertas de Dependabot) no esperan.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "Dependencias"
+  - package-ecosystem: "npm"
+    directory: "/escritorio"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "Dependencias"
