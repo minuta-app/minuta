@@ -3,6 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Política de contenido: solo corre el código de la app (nada en línea ni de afuera) y solo se conecta al catálogo
+       público y a GitHub. Si algo llegara a colarse en el HTML (una nota, un universo), el navegador no lo ejecuta.
+       file: es para la app de Mac (carga la interfaz desde el disco); minuta: es el protocolo de Windows/Linux. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file: minuta:; script-src 'self' file: minuta:; style-src 'self' 'unsafe-inline' file: minuta:; img-src 'self' data: blob: file: minuta:; media-src 'self' data: blob: file: minuta:; font-src 'self' data: file: minuta:; connect-src 'self' file: minuta: https://raw.githubusercontent.com https://api.github.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
   <title>Minuta</title>
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="universos.css">

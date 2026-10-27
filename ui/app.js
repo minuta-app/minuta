@@ -90,7 +90,50 @@
 
   // ───────────────────────── Utilidades ─────────────────────────
   const $ = (s, r = document) => r.querySelector(s);
-  const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+  // ───────────────────────── Universos: solo datos ─────────────────────────
+  // Los universos vienen de afuera (catálogo público, propuestas de la comunidad, la IA de la persona) y varias partes de la
+  // interfaz los pintan como HTML o CSS. Por eso se limpian al entrar: en los textos (y claves) < > " pasan a ‹ › “ ”, sin `
+  // ni caracteres de control, y el estilo solo lleva valores CSS esperados (colores, números, fuentes y patrones conocidos).
+  // Así un universo nunca ejecuta nada.
+  const COLOR_CSS = /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([\d\s.,%/+-]{1,60}\)|[a-z]{3,20})$/i;
+  function limpiarDato(v, prof = 0) {
+    if (typeof v === "string") {
+      let abre = true; // "cita" → “cita”: se ve igual y no puede cerrar un atributo HTML
+      return v.replace(/"/g, () => ((abre = !abre) ? "”" : "“")).replace(/</g, "‹").replace(/>/g, "›").replace(/[`\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "");
+    }
+    if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+    if (typeof v === "boolean" || v == null) return v;
+    if (prof > 6) return null;
+    if (Array.isArray(v)) return v.slice(0, 200).map((x) => limpiarDato(x, prof + 1));
+    if (typeof v === "object") {
+      const o = {};
+      for (const [k, x] of Object.entries(v)) if (k !== "__proto__" && k !== "constructor" && k !== "prototype") o[limpiarDato(k)] = limpiarDato(x, prof + 1);
+      return o;
+    }
+    return null;
+  }
+  function limpiarEstilo(e) {
+    if (!e || typeof e !== "object") return e;
+    const o = { ...e };
+    for (const k of ["fondo", "fondo2", "panel", "texto", "suave", "linea", "acento", "acento_texto", "acento2"])
+      if (k in o && !(typeof o[k] === "string" && COLOR_CSS.test(o[k].trim()))) delete o[k];
+    for (const k of ["radio", "peso"]) if (k in o) { const n = Number(o[k]); if (Number.isFinite(n)) o[k] = Math.max(0, Math.min(k === "peso" ? 1000 : 60, n)); else delete o[k]; }
+    if ("fuente" in o && !(typeof o.fuente === "string" && /^[\p{L}\p{N} _-]{1,40}$/u.test(o.fuente))) o.fuente = "ui-rounded";
+    if ("modo" in o && o.modo !== "claro") o.modo = "oscuro";
+    if ("patron" in o && typeof o.patron !== "string") delete o.patron;
+    return o;
+  }
+  function limpiarUniverso(u) {
+    if (!u || typeof u !== "object" || Array.isArray(u)) return null;
+    const o = limpiarDato(u);
+    o.id = String(o.id ?? "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 40);
+    if (!o.id) return null;
+    if (o.estilo) o.estilo = limpiarEstilo(o.estilo);
+    return o;
+  }
+  const limpiarUniversos = (lista) => (Array.isArray(lista) ? lista.map(limpiarUniverso).filter(Boolean) : []);
   const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
   const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -671,7 +714,7 @@
       "--cursiva": e.cursiva ? "italic" : "normal", "--sobre-acento": sobreAcento(e.acento || "#888888"),
     };
     Object.entries(vars).forEach(([k, v]) => v !== undefined && r.setProperty(k, v));
-    const [img, tam] = (PATRONES[e.patron] || (() => ["", ""]))();
+    const [img, tam] = (Object.hasOwn(PATRONES, e.patron || "") ? PATRONES[e.patron] : () => ["", ""])();
     r.setProperty("--patron", img || "none");
     r.setProperty("--patron-tam", tam || "auto");
     document.documentElement.dataset.modo = e.modo || "oscuro";
@@ -957,7 +1000,7 @@
 
   /** Variables CSS para pintar una tarjeta con los colores de un universo (instalado o del catálogo). */
   function varsUniverso(e = {}) {
-    const [img, tam] = (PATRONES[e.patron] || (() => ["", ""]))();
+    const [img, tam] = (Object.hasOwn(PATRONES, e.patron || "") ? PATRONES[e.patron] : () => ["", ""])();
     return `--u-fondo:${e.fondo};--u-fondo2:${e.fondo2};--u-texto:${e.texto};--u-suave:${e.suave};--u-acento:${e.acento};--u-acento2:${e.acento2};--u-radio:${e.radio}px;--u-fuente:${e.fuente === "ui-rounded" ? "ui-rounded" : `'${e.fuente}'`};--u-mayus:${e.mayusculas ? "uppercase" : "none"};--u-cursiva:${e.cursiva ? "italic" : "normal"};--u-patron:${img || "none"};--u-patron-tam:${tam || "auto"}`;
   }
   E.catU = { estado: "", lista: [] };
@@ -974,7 +1017,7 @@
   function descargarUniverso(id, usar) {
     E.catU.bajando = id; render({ mantenerScroll: true });
     if (E.plataforma === "web") {
-      fetch(`${CATALOGO_RAW}universos/${id}.json`).then((r) => r.json()).then((t) => { E.temas.push({ ...t, descargado: true }); window.Minuta.descargado({ tipo: "universo", id, ok: true, usar }); })
+      fetch(`${CATALOGO_RAW}universos/${id}.json`).then((r) => r.json()).then((t) => { const u = limpiarUniverso(t); if (!u) throw new Error("formato"); E.temas.push({ ...u, descargado: true }); window.Minuta.descargado({ tipo: "universo", id, ok: true, usar }); })
         .catch((e) => window.Minuta.descargado({ tipo: "universo", id, ok: false, error: String(e) }));
     } else host.enviar("descargarUniverso", { id, usar: !!usar });
   }
@@ -3304,7 +3347,7 @@
       if (datos.plataforma) E.plataforma = datos.plataforma;
       if (datos.temas) {
         const estilos = datos.estilos || {};
-        E.temas = datos.temas.map((t) => ({ ...t, estilo: t.estilo || estilos[t.id] }))
+        E.temas = limpiarUniversos(datos.temas.map((t) => ({ ...t, estilo: t?.estilo || estilos[t?.id] })))
           .sort((a, b) => (a.id === "cine" ? "zzz" : a.nombre).localeCompare(b.id === "cine" ? "zzz" : b.nombre));
       }
       if (datos.temaId) E.temaId = datos.temaId;
@@ -3369,7 +3412,7 @@
     /** Índice del catálogo público (universos o idiomas). */
     catalogo(r) {
       const c = r.tipo === "idiomas" ? (E.catI ||= {}) : E.catU;
-      Object.assign(c, { estado: "listo", lista: r.lista || [], error: r.error || "" });
+      Object.assign(c, { estado: "listo", lista: r.tipo === "idiomas" ? (Array.isArray(r.lista) ? limpiarDato(r.lista) : []) : limpiarUniversos(r.lista), error: r.error || "" });
       render({ mantenerScroll: true });
     },
     /** Terminó una descarga del catálogo. */
@@ -3454,7 +3497,7 @@
     ir(seccion) { E.seccion = seccion; render(); if (seccion === "preferencias") host.enviar("estadoAvisos"); },
     /** Solo para pruebas automáticas (recorrer todas las vistas). */
     /** Para las pruebas automáticas (pruebas/interfaz.mjs): funciones puras de la interfaz. */
-    _pruebas: { limpiarNombre: (t) => limpiarNombre(t), leerParticipantes: (t) => leerParticipantes(t), nombreValido: (t) => nombreValido(t) },
+    _pruebas: { limpiarNombre: (t) => limpiarNombre(t), leerParticipantes: (t) => leerParticipantes(t), nombreValido: (t) => nombreValido(t), limpiarUniverso: (u) => limpiarUniverso(u) },
     _probar(cambios) { if (typeof cambios === "function") cambios(E); else Object.assign(E, cambios); render(); return E.notas.map((n) => n.ruta); },
     /** Resultado del creador de universos: { ok, id, nombre, error } */
     forjado(r) {

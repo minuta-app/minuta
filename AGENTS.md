@@ -125,6 +125,12 @@ aparece solo: se abre únicamente cuando la persona lo pide (⋯ → Enviar come
 - Nunca pongas el contenido de las notas en una ruta de traducción: usa `data-sin-traducir` o una clase de `NO_TRADUCIR`.
 - Lo que se envía a otras personas (correo/Teams) **siempre** lo redacta la IA del usuario con `redactar.py`, sin feedback, opiniones ni la sección `## Personas`.
 - Universos y paquetes de idioma son datos: nunca agregues campos que se ejecuten o se inyecten como HTML sin `esc()`.
+- **Seguridad** (ver `SECURITY.md`): los universos entran a la interfaz por `limpiarUniverso()` (textos sin HTML, estilo solo con
+  valores CSS esperados) y `ui/index.html` tiene una CSP sin código en línea: no agregues `onclick=`, `<script>` en línea ni
+  recursos de otros dominios. La IA corre solo con texto (`perfil.CLAUDE_SOLO_TEXTO`: sin herramientas ni MCP), porque las
+  transcripciones traen lo que dijeron otras personas. Las acciones del puente que abren cosas (`abrir`, `obsidian`, `finder`)
+  solo aceptan esquemas conocidos o notas de la carpeta de reuniones. En los workflows: actions fijadas por SHA (Dependabot
+  las sube), permisos mínimos, `persist-credentials: false`, nunca `pull_request_target` ni `${{ … }}` dentro de `run:`.
 - Interfaz: usa `render({ mantenerScroll: true })` para no saltar; el contenedor de página usa `data-pagina` (no `data-vista`, que dispara navegación).
 - Antes de terminar un cambio de UI: `node --check ui/app.js` y prueba en navegador (`cd ui && python3 -m http.server 8765` → `http://localhost:8765/index.html`; `#panel` para el panel, `?idioma=en` para inglés, `window.Minuta._probar({...})` para saltar a cualquier vista).
 - Python: `python3 -m py_compile bin/*.py`. Swift: solo compila en el Mac (`build.sh`).

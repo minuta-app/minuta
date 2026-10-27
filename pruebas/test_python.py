@@ -91,6 +91,34 @@ class Nombres(unittest.TestCase):
                 self.assertEqual(lista, esperado)
 
 
+def cli_falso(guion):
+    ruta = os.path.join(BIN_FALSO, "claude")
+    with open(ruta, "w", encoding="utf-8") as f:
+        f.write("#!/bin/bash\n" + guion)
+    os.chmod(ruta, 0o755)
+    perfil.CLAUDE = ruta  # perfil busca el CLI al importarse: aquí se usa el falso (nunca una IA de verdad)
+
+
+class IASoloTexto(unittest.TestCase):
+    """La IA responde solo con texto: sin herramientas ni MCP (una transcripción no puede hacerla ejecutar nada)."""
+    def test_sin_herramientas(self):
+        args = os.path.join(HOME, "args.txt")
+        cli_falso(f'printf "%s\\n" "$@" > "{args}"\ncat > /dev/null\necho listo\n')
+        r = perfil.ejecutar_ia("hola", timeout=30)
+        self.assertEqual(r.stdout.strip(), "listo")
+        with open(args, encoding="utf-8") as f:
+            recibidos = f.read().split("\n")
+        self.assertIn("--strict-mcp-config", recibidos)
+        i = recibidos.index("--tools")
+        self.assertEqual(recibidos[i + 1], "")
+
+    def test_cli_antiguo_sin_tools(self):
+        # Un Claude Code antiguo que no conoce --tools: se reintenta sin esas opciones y responde igual.
+        cli_falso('for a in "$@"; do [ "$a" = "--tools" ] && { echo "error: unknown option \'--tools\'" >&2; exit 1; }; done\n'
+                  'cat > /dev/null\necho listo\n')
+        self.assertEqual(perfil.ejecutar_ia("hola", timeout=30).stdout.strip(), "listo")
+
+
 class Corregir(unittest.TestCase):
     def setUp(self):
         self.ruta = os.path.join(NOTAS, "nota.md")

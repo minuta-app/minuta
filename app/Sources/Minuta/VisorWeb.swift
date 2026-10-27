@@ -251,7 +251,9 @@ private struct WebHost: NSViewRepresentable {
             case "seleccion":
                 if let ruta = datos["ruta"] as? String { ultimaSeleccion = ruta; model.notaSeleccionada = URL(fileURLWithPath: ruta) }
             case "abrir":
-                if let url = (datos["url"] as? String).flatMap(URL.init(string:)) { NSWorkspace.shared.open(url) }
+                // Solo enlaces web, correo, Teams y Obsidian (igual que en Windows/Linux): nunca file:// ni otros esquemas que abran apps.
+                if let url = (datos["url"] as? String).flatMap(URL.init(string:)), let esquema = url.scheme?.lowercased(),
+                   ["https", "mailto", "msteams", "obsidian"].contains(esquema) { NSWorkspace.shared.open(url) }
             case "reescribir":
                 if let ruta = datos["ruta"] as? String, let texto = datos["texto"] as? String, Extras.reescribir(ruta, texto) {
                     NotificationCenter.default.post(name: .minutaNotasCambiaron, object: nil)
@@ -529,7 +531,8 @@ private struct WebHost: NSViewRepresentable {
 
         func webView(_ webView: WKWebView, decidePolicyFor accion: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             if accion.navigationType == .linkActivated, let url = accion.request.url, url.scheme != "file" {
-                NSWorkspace.shared.open(url)
+                // Los enlaces se abren fuera solo si son web o correo; cualquier otro esquema se ignora.
+                if let esquema = url.scheme?.lowercased(), ["https", "http", "mailto"].contains(esquema) { NSWorkspace.shared.open(url) }
                 decisionHandler(.cancel)
             } else {
                 decisionHandler(.allow)
@@ -597,7 +600,12 @@ private struct WebHost: NSViewRepresentable {
             if let url = c.url, NSWorkspace.shared.urlForApplication(toOpen: url) != nil {
                 NSWorkspace.shared.open(url)
             } else {
-                NSWorkspace.shared.open(URL(fileURLWithPath: ruta))
+                // Sin Obsidian: se abre la nota con la app de siempre, pero solo si es una nota .md de la carpeta de reuniones
+                // (así la interfaz nunca puede abrir un programa u otro archivo del computador).
+                let nota = URL(fileURLWithPath: ruta).standardizedFileURL
+                guard nota.pathExtension == "md",
+                      nota.deletingLastPathComponent().standardizedFileURL.path == Papelera.carpeta.standardizedFileURL.path else { return }
+                NSWorkspace.shared.open(nota)
             }
         }
     }

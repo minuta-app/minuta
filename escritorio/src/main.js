@@ -22,6 +22,13 @@ app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 // La interfaz se sirve desde minuta://ui/… (así fetch() de archivos relativos funciona igual que en Mac).
 protocol.registerSchemesAsPrivileged([{ scheme: "minuta", privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }]);
 
+/** Archivos temporales en una carpeta propia (solo la persona puede leerla): en Linux /tmp es compartida con otros usuarios. */
+let carpetaTemporal = null;
+function temporal(nombre) {
+  if (!carpetaTemporal || !fs.existsSync(carpetaTemporal)) carpetaTemporal = fs.mkdtempSync(path.join(os.tmpdir(), "minuta-"));
+  return path.join(carpetaTemporal, nombre);
+}
+app.on("will-quit", () => { if (carpetaTemporal) try { fs.rmSync(carpetaTemporal, { recursive: true, force: true }); } catch {} });
 const ICONOS = path.join(__dirname, "..", "iconos");
 const icono = (n) => nativeImage.createFromPath(path.join(ICONOS, n));
 
@@ -90,7 +97,8 @@ const t = (s) => Idioma.t(s);
 const f = (s, ...v) => Idioma.f(s, ...v);
 
 // ───────────────────────── Ventanas ─────────────────────────
-const webPrefs = (extra = []) => ({ preload: path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: false, additionalArguments: extra, spellcheck: false });
+// sandbox: la interfaz no tiene acceso a Node; solo habla con el proceso principal por el puente (preload.js).
+const webPrefs = (extra = []) => ({ preload: path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: true, additionalArguments: extra, spellcheck: false });
 
 function abrirVisor(ruta) {
   if (ruta) M.notaSeleccionada = ruta;
@@ -436,7 +444,7 @@ function ejecutar(script, args, log) {
 }
 async function correrScriptJSON(script, args) {
   const id = Math.random().toString(36).slice(2);
-  const salida = path.join(os.tmpdir(), `minuta-${id}.json`), log = path.join(os.tmpdir(), `minuta-${script}.log`);
+  const salida = temporal(`minuta-${id}.json`), log = temporal(`minuta-${script}.log`);
   await ejecutar(script, [...args, salida], log);
   const datos = leerJSON(salida);
   let error = "sin respuesta";
@@ -526,7 +534,7 @@ async function terminarDictado(enviar) {
   grabadora.webContents.send("detener");
   if (!enviar || !d.habla) { llamarFuncion(ventana, "dictado", { texto: "", final: true, escuchando: false }); return; }
   llamarFuncion(ventana, "dictado", { texto: t("Transcribiendo…"), escuchando: false });
-  const wav = path.join(os.tmpdir(), `minuta-dictado-${Date.now()}.wav`);
+  const wav = temporal(`minuta-dictado-${Date.now()}.wav`);
   const w = new EscritorWav(wav);
   for (const b of d.trozos) w.escribir(b);
   w.cerrar();
@@ -574,7 +582,7 @@ function crearRecordatorios(lista) {
       d.notas ? `DESCRIPTION:${esc(d.notas)}` : "", "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${esc(d.titulo)}`, "TRIGGER:PT9H", "END:VALARM", "END:VEVENT"].filter(Boolean).join("\r\n");
   });
   if (!eventos.length) return t("No hay compromisos abiertos");
-  const archivo = path.join(os.tmpdir(), `Minuta-compromisos-${sello}.ics`);
+  const archivo = temporal(`Minuta-compromisos-${sello}.ics`);
   fs.writeFileSync(archivo, ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Minuta//ES", ...eventos, "END:VCALENDAR"].join("\r\n"));
   shell.openPath(archivo);
   return f("⏰ {n} compromisos abiertos en tu calendario", String(eventos.length));
@@ -605,7 +613,8 @@ const ACCIONES = {
   copiarFormato: (d) => clipboard.write({ text: String(d.texto || ""), html: typeof d.html === "string" ? d.html : undefined }),
   obsidian: async (d) => {
     if (!d.ruta) return;
-    try { await shell.openExternal(`obsidian://open?path=${encodeURIComponent(d.ruta)}`); } catch { shell.openPath(d.ruta); }
+    // Sin Obsidian se abre con la app de siempre, pero solo si es una nota de la carpeta de reuniones (nunca otro archivo ni un programa).
+    try { await shell.openExternal(`obsidian://open?path=${encodeURIComponent(d.ruta)}`); } catch { if (Extras.esNota(String(d.ruta))) shell.openPath(path.resolve(String(d.ruta))); }
   },
   finder: (d) => d.ruta && shell.showItemInFolder(d.ruta),
   seleccion: (d) => { if (d.ruta) M.notaSeleccionada = d.ruta; },
@@ -732,7 +741,7 @@ const ACCIONES = {
   perfil: (d) => { Perfil.mezclar(d.cambios || {}); Idioma.olvidar(); actualizarBandeja(); notasCambiaron(); },
   corregirIA: async (d, w) => {
     // La IA corrige la nota según lo que la persona dijo en palabras (bin/corregir.py).
-    const archivo = path.join(os.tmpdir(), `minuta-corregir-${Date.now()}.txt`);
+    const archivo = temporal(`minuta-corregir-${Date.now()}.txt`);
     fs.writeFileSync(archivo, String(d.instruccion || ""));
     const r = await correrScriptJSON("corregir.py", [String(d.ruta || ""), archivo]);
     fs.rmSync(archivo, { force: true });
@@ -756,7 +765,7 @@ const ACCIONES = {
   },
   gimnasio: async (d, w) => {
     if (!d.modo || d.entrada == null) return;
-    const archivo = path.join(os.tmpdir(), `minuta-gym-${Date.now()}.json`);
+    const archivo = temporal(`minuta-gym-${Date.now()}.json`);
     fs.writeFileSync(archivo, json(d.entrada));
     const r = await correrScriptJSON("gimnasio.py", [d.modo, archivo]);
     fs.rmSync(archivo, { force: true });
@@ -767,7 +776,7 @@ const ACCIONES = {
     const g = !d.forzar && Extras.mensajeGuardado(d.ruta);
     if (g) return llamarFuncion(w, "redactado", { ok: true, texto: g.texto || "", asunto: g.asunto || "", guardado: true, editado: !!g.editado });
     llamarFuncion(w, "redactando", {});
-    const archivo = path.join(os.tmpdir(), `minuta-indic-${Date.now()}.json`);
+    const archivo = temporal(`minuta-indic-${Date.now()}.json`);
     fs.writeFileSync(archivo, json({ indicaciones: String(d.indicaciones || ""), forzar: !!d.forzar }));
     const r = await correrScriptJSON("redactar.py", [d.ruta, archivo]);
     fs.rmSync(archivo, { force: true });
@@ -827,8 +836,10 @@ const ACCIONES = {
 };
 
 ipcMain.on("minuta", async (e, msg) => {
+  // Solo las páginas propias (minuta://) hablan con el puente, y solo con acciones conocidas.
+  if (!String(e.senderFrame?.url || "").startsWith("minuta://")) return;
   const w = BrowserWindow.fromWebContents(e.sender);
-  const fn = msg && ACCIONES[msg.accion];
+  const fn = msg && Object.hasOwn(ACCIONES, msg.accion) && ACCIONES[msg.accion];
   if (!fn) return;
   try { await fn(msg, w); } catch (err) { console.error("Minuta:", msg.accion, err); }
 });
@@ -856,7 +867,7 @@ app.whenReady().then(async () => {
     const u = new URL(req.url);
     const raiz = u.host === "ui" ? path.join(recursos(), "ui") : u.host === "app" ? __dirname : null;
     const ruta = raiz && path.normalize(path.join(raiz, decodeURIComponent(u.pathname)));
-    if (!ruta || !ruta.startsWith(raiz)) return new Response("no", { status: 404 });
+    if (!ruta || !ruta.startsWith(raiz + path.sep)) return new Response("no", { status: 404 });
     return net.fetch(require("url").pathToFileURL(ruta).toString());
   });
   // Audio del sistema en Windows: getDisplayMedia recibe la pantalla principal + "loopback" (todo lo que suena).

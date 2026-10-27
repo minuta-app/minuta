@@ -171,6 +171,28 @@ for (const [idioma, consulta] of [["español", ""], ["inglés", "?idioma=en"]]) 
   console.log(`  ✓ Nombres: ${casos.limpiar.length + casos.participantes.length} casos revisados`);
 }
 
+// Universos de afuera (catálogo, propuestas, la IA): solo datos. Nada de HTML en los textos ni CSS raro en el estilo,
+// y la galería con un universo así no ejecuta nada.
+{
+  const p = await pagina();
+  const malo = { id: "Malo-1", nombre: 'Malo<img src=x onerror="window.__xss=1">', emoji: "<b>e</b>", xp: 'puntos" onmouseover="window.__xss=2',
+    estilo: { fondo: 'red" onmouseover="window.__xss=3', acento: "#FFE81F", fuente: "x';}body{background:url(https://ejemplo.invalid)}", patron: "constructor", radio: "8px;x" } };
+  const r = await p.evaluate(async (u) => {
+    const l = window.Minuta._pruebas.limpiarUniverso(u);
+    window.Minuta.catalogo({ tipo: "universos", lista: [u] });
+    window.Minuta._probar((E) => { E.galeria = true; });
+    await new Promise((ok) => setTimeout(ok, 300));
+    return { l, xss: window.__xss || 0, frase: window.Minuta._pruebas.limpiarUniverso({ id: "a", nombre: 'Dijo "hola"' }).nombre };
+  }, malo);
+  if (r.xss) falla(`un universo de afuera ejecutó código (${r.xss})`);
+  const textos = (v) => (typeof v === "string" ? [v] : v && typeof v === "object" ? Object.values(v).flatMap(textos) : []);
+  if (r.l.id !== "malo1" || textos(r.l).some((t) => /[<>"]/.test(t))) falla(`limpiarUniverso dejó HTML: ${JSON.stringify(r.l)}`);
+  if ("fondo" in r.l.estilo || r.l.estilo.fuente !== "ui-rounded" || "radio" in r.l.estilo) falla(`limpiarUniverso dejó estilo raro: ${JSON.stringify(r.l.estilo)}`);
+  if (r.frase !== "Dijo “hola”") falla(`las comillas de un universo deberían verse como “”: ${r.frase}`);
+  await p.close();
+  console.log("  ✓ Universos de afuera: solo datos");
+}
+
 // Universos: el botón principal y el de grabar se leen (contraste ≥ 3 entre texto y fondo).
 {
   const p = await pagina();

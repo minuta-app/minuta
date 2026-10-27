@@ -267,9 +267,10 @@ const Actualizaciones = {
       return;
     }
     if (!this._url || !this._huella) throw new Error(Idioma.t("No encontré la descarga de la versión nueva."));
-    const huella = (await (await net.fetch(this._huella)).text()).trim().split(/\s+/)[0];
-    const tmp = path.join(os.tmpdir(), "minuta-actualizacion");
-    fs.mkdirSync(tmp, { recursive: true });
+    const huella = (await (await net.fetch(this._huella)).text()).trim().split(/\s+/)[0].toLowerCase();
+    if (!/^[0-9a-f]{64}$/.test(huella)) throw new Error(Idioma.t("No pude descargar la versión nueva. Revisa tu conexión e intenta de nuevo."));
+    // Carpeta nueva y privada en cada intento (mkdtemp): nadie más puede dejar o cambiar archivos ahí antes de instalar.
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "minuta-actualizacion-"));
     const nuevo = path.join(tmp, ASSET);
     paso(1, T.bajar, 0);
     const total = +((await net.fetch(this._url, { method: "HEAD" }).catch(() => null))?.headers.get("content-length") || 0);
