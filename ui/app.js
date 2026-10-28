@@ -3538,9 +3538,9 @@
       if (v === "progreso" || v === "logros") d.seccion = v; else if (v) d.vista = v;
       const t0 = Date.now(), M = 60000;
       d.agenda = [
-        { id: "demo1", titulo: "Reunión con proveedor de pagos", inicio: t0 + 12 * M, fin: t0 + 57 * M, asistentes: [{ nombre: "Matías Soto", email: "daniel@ejemplo.com" }, { nombre: "Javiera Rojas", email: "eduardo@ejemplo.com" }] },
+        { id: "demo1", titulo: "Reunión con proveedor de pagos", inicio: t0 + 12 * M, fin: t0 + 57 * M, asistentes: [{ nombre: "Matías Soto", email: "matias@ejemplo.com" }, { nombre: "Javiera Rojas", email: "javiera@ejemplo.com" }] },
         { id: "demo2", titulo: "Planificación sprint 52", inicio: t0 + 190 * M, fin: t0 + 220 * M, asistentes: [{ nombre: "Carlos Muñoz", email: "cmunoz@empresa.com" }] },
-        { id: "demo3", titulo: "Demo club Las Condes", inicio: t0 + 26 * 60 * M, fin: t0 + 27 * 60 * M, asistentes: [{ nombre: "Paula Díaz", email: "paula@clublc.cl" }] },
+        { id: "demo3", titulo: "Demo club Los Aromos", inicio: t0 + 26 * 60 * M, fin: t0 + 27 * 60 * M, asistentes: [{ nombre: "Paula Díaz", email: "paula@ejemplo.com" }] },
       ];
       window.Minuta.cargar({ ...d, plataforma: "web" });
     }).catch(() => render());
