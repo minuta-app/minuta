@@ -1,9 +1,11 @@
-<p align="center"><img src="docs/img/notas.jpg" alt="Minuta" width="860"></p>
+<p align="center"><img src="docs/img/logo.png" width="96" alt="Minuta"></p>
 
 <h1 align="center">Minuta</h1>
 <p align="center"><b>Sal de cada reunión con las notas listas y sabiendo cómo mejorar.</b><br>
 Gratis · Open source (MIT) · Mac, Windows y Linux · Funciona con Claude, ChatGPT o Gemini · Tus datos no salen de tu computador</p>
-<p align="center"><a href="https://minuta-app.github.io/minuta/">Sitio</a> · <a href="https://github.com/minuta-app/minuta/releases/latest">Descargar</a> · <a href="https://minuta-app.github.io/minuta/ia.html">Guía de tu IA</a> · <a href="#comunidad">Comunidad</a> · <a href="#english">English</a></p>
+<p align="center"><a href="https://github.com/minuta-app/minuta/releases/latest"><b>Descargar</b></a> · <a href="https://minuta-app.github.io/minuta/"><b>Página</b></a> · <a href="https://minuta-app.github.io/minuta/ia.html">Guía de tu IA</a> · <a href="#comunidad">Comunidad</a> · <a href="CONTRIBUTING.md">Cómo aportar</a> · <a href="#english">English</a></p>
+
+<p align="center"><img src="docs/img/notas.jpg" alt="Las notas de una reunión en Minuta: contexto, decisiones y próximos pasos (datos ficticios)" width="860"></p>
 
 ---
 
@@ -52,7 +54,7 @@ pegando la dirección iCal secreta de Google Calendar u Outlook.
 
 | | |
 |---|---|
-| 🔔 **Detecta tus reuniones** | Te avisa al empezar (un clic y graba) y te pregunta si cortar cuando termina. Puedes grabar otra mientras la anterior se procesa. |
+| 🔔 **Detecta tus reuniones** | Te avisa al empezar (un clic y graba) y te pregunta si cortar cuando termina. En el panel eliges el tipo de reunión con las teclas 1–9, antes o durante la grabación. Puedes grabar otra mientras la anterior se procesa. |
 | 📝 **Notas** | Temas, decisiones, pendientes y próximos pasos con responsable y fecha. Quién dijo qué, con las voces separadas. |
 | 🎯 **Feedback** | Veredicto en una frase, lo que te costó con la cita exacta, qué probar la próxima vez, puntajes y un hábito por reunión. |
 | ⏱️ **Coach en vivo** | Cuánto llevas hablando, tu % de habla y si cortaste a alguien, mientras pasa. |
