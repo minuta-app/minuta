@@ -31,6 +31,7 @@ Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromis
 | `.github/workflows/` | `revisar.yml` (pruebas en cada cambio) y `publicar.yml` (al subir la versión en Info.plist: compila Mac, Windows y Linux y publica la Release). |
 | `pruebas/` | Pruebas automáticas (ver "Pruebas"). |
 | `docs/` | Página pública (GitHub Pages): `index.html` (español/inglés, detecta el sistema del visitante), `ia.html` (guía para instalar Claude Code, Codex o Gemini CLI) y capturas en `docs/img` hechas con `demo.json`. |
+| `CHANGELOG.md` | Lo que cambia para quien usa la app, en palabras simples (ver «Lo que rodea a un cambio»). |
 | `escritorio/` | App de **Windows y Linux** (Electron): misma `ui/` y mismo `bin/`. Ver "Windows y Linux" abajo. |
 | `instalar.ps1` | Instalador de un comando para Windows (`irm … \| iex`). `instalar.sh` sirve para Mac y Linux. |
 | `.claude/agents/` | Agentes especializados (ver abajo). |
@@ -134,6 +135,25 @@ aparece solo: se abre únicamente cuando la persona lo pide (⋯ → Enviar come
 - Interfaz: usa `render({ mantenerScroll: true })` para no saltar; el contenedor de página usa `data-pagina` (no `data-vista`, que dispara navegación).
 - Antes de terminar un cambio de UI: `node --check ui/app.js` y prueba en navegador (`cd ui && python3 -m http.server 8765` → `http://localhost:8765/index.html`; `#panel` para el panel, `?idioma=en` para inglés, `window.Minuta._probar({...})` para saltar a cualquier vista).
 - Python: `python3 -m py_compile bin/*.py`. Swift: solo compila en el Mac (`build.sh`).
+
+## Lo que rodea a un cambio
+Un cambio está listo cuando la app **y lo que la cuenta** dicen lo mismo. Antes de empezar, anota qué tipo de cambio es; al terminar,
+revisa cada fila ("no aplica" se decide, no se supone):
+
+| Si el cambio… | Deja al día |
+|---|---|
+| agrega o cambia una función | la página (`docs/`: funciones, «cómo funciona», comparación, preguntas frecuentes), el README y la guía si la hay |
+| cambia lo que se ve | capturas de la página y del README (datos ficticios, español e inglés, normal y celular) e imagen para compartir si sale esa vista |
+| cambia un flujo o un paso | instrucciones paso a paso, preguntas frecuentes, textos de la bienvenida e instalación si la toca |
+| quita algo | bórralo de la página, el README y las guías: nada que prometa lo que ya no hace |
+| cambia el formato de datos o el puente | la documentación del formato, `ejemplos/` si existe y esta guía |
+| cambia carpetas, reglas o pruebas | esta guía (`AGENTS.md`) y `CONTRIBUTING.md` |
+| resuelve un issue | ciérralo con «Resuelto en …» dando crédito y abre issues para lo que quedó pendiente |
+| lo nota quien usa Minuta | `CHANGELOG.md`: una línea en «Sin publicar», en lenguaje de persona («Ahora puedes…»), en español e inglés |
+
+Todo texto nuevo de la página y del README va en los dos idiomas, sin nada inventado. Antes de cerrar, busca con `grep` en `docs/` y el
+README el nombre o el texto viejo de lo que cambió. Al publicar una versión, las líneas de «Sin publicar» pasan a su número.
+Los issues que abrimos para una tarea traen una sección «Qué actualizar alrededor» con las filas de esta tabla que le tocan.
 
 ## Pruebas (GitHub las corre en cada cambio: `.github/workflows/revisar.yml`)
 
