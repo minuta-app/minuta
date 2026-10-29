@@ -57,6 +57,8 @@ pegando la dirección iCal secreta de Google Calendar u Outlook.
 | 🔔 **Detecta tus reuniones** | Te avisa al empezar (un clic y graba) y te pregunta si cortar cuando termina. En el panel eliges el tipo de reunión con las teclas 1–9, antes o durante la grabación. Puedes grabar otra mientras la anterior se procesa. |
 | 📝 **Notas** | Temas, decisiones, pendientes y próximos pasos con responsable y fecha. Quién dijo qué, con las voces separadas. |
 | 🎯 **Feedback** | Veredicto en una frase, lo que te costó con la cita exacta, qué probar la próxima vez, puntajes y un hábito por reunión. |
+| ✎ **Corrige con tu IA** | Dile en palabras qué está mal («Matías no es el PO, es el Scrum Master») y tu IA arregla la nota; guarda una copia de la anterior y lo recuerda para las próximas reuniones. |
+| 📈 **Tu foco y tu semana** | Tus puntajes reunión a reunión, antes vs. ahora, horas en reuniones por semana y un resumen semanal de tus tendencias que escribe tu IA. |
 | ⏱️ **Coach en vivo** | Cuánto llevas hablando, tu % de habla y si cortaste a alguien, mientras pasa. |
 | 📅 **Agenda y personas** | Prepara cada reunión con lo pendiente y los compromisos abiertos; los compromisos se marcan una vez y quedan al día en todas partes. |
 | 🥊 **Gimnasio** | Ensaya hablando: la IA hace de la otra persona y te evalúa. |
@@ -65,7 +67,7 @@ pegando la dirección iCal secreta de Google Calendar u Outlook.
 | 🪐 **Universos** | Rangos y logros con la estética que te guste. 4 incluidos, más en el [catálogo](https://github.com/minuta-app/minuta-catalogo), o crea el tuyo. |
 | 🌐 **Idiomas** | Español e inglés incluidos; portugués, francés y otros se descargan. |
 
-<p align="center"><img src="docs/img/desempeno.jpg" width="49%"> <img src="docs/img/agenda.jpg" width="49%"></p>
+<p align="center"><img src="docs/img/desempeno.jpg" width="49%" alt="Tu desempeño en una reunión: veredicto, puntajes y hábito para la próxima (datos ficticios)"> <img src="docs/img/agenda.jpg" width="49%" alt="Agenda: la próxima reunión con lo pendiente y los compromisos abiertos (datos ficticios)"></p>
 
 ## Privacidad
 
@@ -157,8 +159,9 @@ cd ui && python3 -m http.server 8765  # vista previa de la interfaz con datos fi
 - `app/` app de macOS en Swift (SwiftPM) · `bin/` procesamiento en Python (solo biblioteca estándar) · `ui/` interfaz web ·
   `universos/` universos incluidos · `herramientas/` empaquetado y revisión de privacidad · `docs/` sitio.
 - Con `~/minuta` como checkout git, la app usa ese código y se actualiza con `git pull`.
-- Publicar una versión: sube la versión en `app/Info.plist` y `git tag vX.Y.Z && git push --tags`; GitHub Actions compila y crea la Release.
+- Publicar una versión: sube la versión en `app/Info.plist` y `escritorio/package.json` y súbelo a `main`; GitHub Actions compila Mac, Windows y Linux y crea la Release.
 - La guía completa para contribuir (arquitectura, reglas, agentes) está en [`AGENTS.md`](AGENTS.md).
+- **Capturas:** `node herramientas/capturas.mjs` rehace las de `docs/img` (y la imagen para compartir) desde la vista previa, con los datos ficticios.
 - **Pruebas:** `bash pruebas/correr.sh` corre lo mismo que GitHub revisa en cada cambio (sintaxis, privacidad, contrato entre la
   interfaz y las apps, pruebas de Python y de la interfaz en español e inglés con todos los universos). `python3 pruebas/evaluar_ia.py --real`
   prueba el prompt de las notas con tu IA y transcripciones ficticias.
@@ -211,6 +214,13 @@ Windows (PowerShell): `irm https://raw.githubusercontent.com/minuta-app/minuta/m
 or download from the [latest release](https://github.com/minuta-app/minuta/releases/latest). Requires one of Claude Code, Codex or Antigravity CLI with your own account ([setup guide](https://minuta-app.github.io/minuta/ia.html));
 Mac needs Apple silicon and macOS 15+, Windows 10/11 64-bit, Linux x86_64 with PulseAudio or PipeWire.
 The interface ships in Spanish and English (more languages downloadable). The code and comments are in Spanish.
+
+**What it does:** detects Teams, Zoom, Meet or Slack meetings and offers to record (no bot joins the call) · notes with topics, decisions
+and next steps with owner and date, with voices separated · feedback with a one-line verdict, exact quotes, scores and one habit for next
+time · live coach (talk time, interruptions) · agenda that prepares each meeting with open commitments, plus a card for each person ·
+a practice gym where your AI plays the other person · ⌘K to ask your meetings, citing the exact minute · a facts-only message for
+participants (never your private feedback) · fix a note by telling your AI what's wrong · your scores over time and a weekly summary ·
+ranks and achievements in universes (Star Wars, Marvel, Harry Potter, movies; more in the [catalog](https://github.com/minuta-app/minuta-catalogo), or create your own).
 
 Security issues: please report them privately, see [SECURITY.md](SECURITY.md).
 
