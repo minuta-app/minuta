@@ -612,7 +612,17 @@
   const icoApartado = (t, a) => t.iconos_apartados?.[a.clave] || a.emoji;
   const icoRango = (t, i) => t.iconos_rangos?.[i] || t.emoji;
 
+  // Los logros se recorren nota por nota y la barra lateral los pide en cada pintada (cada tecla al buscar): se guardan hasta
+  // que cambian las notas (marcarCambioNotas). Quien los usa solo los lee, nunca los modifica.
+  let _cacheLogros = { v: -1, m: new Map() };
   function calcularLogros(notas, hasta) {
+    if (notas !== E.notas) return _calcularLogros(notas, hasta);
+    if (_cacheLogros.v !== _verNotas) _cacheLogros = { v: _verNotas, m: new Map() };
+    const k = hasta ? +hasta : 0;
+    if (!_cacheLogros.m.has(k)) _cacheLogros.m.set(k, _calcularLogros(notas, hasta));
+    return _cacheLogros.m.get(k);
+  }
+  function _calcularLogros(notas, hasta) {
     const est = LOGROS.map((def) => ({ def, progreso: 0, fecha: null, nota: null }));
     const orden = notas.filter((n) => !hasta || n.fecha <= hasta).sort((a, b) => a.fecha - b.fecha);
     const v = {}, racha = {}, mejor = (k, ok) => { racha[k] = ok ? (racha[k] || 0) + 1 : 0; v[k] = Math.max(v[k] || 0, racha[k]); };

@@ -171,6 +171,23 @@ for (const [idioma, consulta] of [["español", ""], ["inglés", "?idioma=en"]]) 
   console.log(`  ✓ Nombres: ${casos.limpiar.length + casos.participantes.length} casos revisados`);
 }
 
+// Logros: se guardan entre pintadas, pero se recalculan apenas cambian las notas.
+{
+  const p = await pagina();
+  const r = await p.evaluate(async () => {
+    const d = await (await fetch("demo.json")).json();
+    const listos = () => { window.Minuta._probar((E) => { E.seccion = "logros"; }); return +document.querySelector(".resumen .metrica .valor")?.firstChild?.textContent; };
+    const todas = listos();
+    window.Minuta.cargar({ notas: d.notas.slice(-1) });
+    const una = listos();
+    window.Minuta.cargar({ notas: d.notas });
+    return { todas, una, deNuevo: listos() };
+  });
+  if (!(r.una < r.todas) || r.deNuevo !== r.todas) falla(`los logros no se recalculan al cambiar las notas: ${JSON.stringify(r)}`);
+  await p.close();
+  console.log("  ✓ Logros: se recalculan al cambiar las notas");
+}
+
 // Universos de afuera (catálogo, propuestas, la IA): solo datos. Nada de HTML en los textos ni CSS raro en el estilo,
 // y la galería con un universo así no ejecuta nada.
 {
