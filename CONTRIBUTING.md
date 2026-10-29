@@ -19,7 +19,7 @@ Minuta es gratis y abierta, y la hacemos entre todos. Hay lugar para cualquiera,
 2. Haz un fork, una rama y tu cambio. La sección "Desarrollo" del [README](README.md#desarrollo) explica cómo correr la app.
 3. Corre `bash pruebas/correr.sh` (lo mismo que revisa GitHub en cada cambio).
 4. Si tu cambio se nota (una función nueva, otra forma de hacer algo, otra pantalla), deja al día lo que lo cuenta: el
-   README, la página (`docs/`), las capturas y [`CHANGELOG.md`](CHANGELOG.md). Si no sabes bien qué tocar, dilo en el pull
+   README, la página (`docs/`), las capturas (`node herramientas/capturas.mjs`) y [`CHANGELOG.md`](CHANGELOG.md). Si no sabes bien qué tocar, dilo en el pull
    request y lo completamos nosotros.
 5. Abre un pull request contando qué cambia para quien usa Minuta y cómo lo probaste.
 
@@ -60,7 +60,7 @@ Al participar aceptas el [código de conducta](CODE_OF_CONDUCT.md).
 - **Code (with or without AI):** read [`AGENTS.md`](AGENTS.md) (works for humans and any coding AI), fork, branch, run
   `bash pruebas/correr.sh` and open a pull request. The code and its comments are in Spanish; UI text needs its English entry in
   `ui/idiomas/en.json`; never commit personal data.
-  If your change is visible, also update the README, the page (`docs/`), screenshots and `CHANGELOG.md`, or say so in the
+  If your change is visible, also update the README, the page (`docs/`), screenshots (`node herramientas/capturas.mjs`) and `CHANGELOG.md`, or say so in the
   pull request and we'll do it.
 - **Review:** everything goes through a pull request and a maintainer merges it. We check tests, privacy and the note format;
   We also check that the README, the page and the docs still describe the app as it is.
