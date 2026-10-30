@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "electron": "44.9.2",
-    "electron-builder": "26.15.3"
+    "electron-builder": "26.18.0"
   },
   "build": {
     "appId": "app.minuta.escritorio",
