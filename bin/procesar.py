@@ -290,11 +290,23 @@ def transcribir(wav, salida):
     if not motor:
         raise SystemExit("No encontré el transcriptor (minuta-transcribir o whisper-cli).")
     hilos = str(max(2, min(8, os.cpu_count() or 4)))  # en Windows/Linux whisper corre en el procesador: usa los núcleos que hay
-    cmd = [motor, "-m", MODELO, "-l", IDIOMA_AUDIO, "-t", hilos, "-f", wav,
-           "-oj", "-of", salida, "-np", "-sns", "-mc", "64", "--prompt", VOCABULARIO]
+    cmd = [motor, "-m", MODELO, "-l", IDIOMA_AUDIO, "-t", hilos, "-f", wav, "-oj", "-of", salida, "-np", "-sns", "-mc", "64"]
+    # El vocabulario (nombres, empresas) va en un archivo, no como argumento: minuta-transcribir (Mac) lo lee con
+    # --prompt-archivo. whisper-cli (Windows/Linux) no sabe leerlo de un archivo; ahí sigue como --prompt para no perderlo.
+    archivo_vocab = salida + ".vocabulario.txt"
+    if os.path.basename(motor).startswith("minuta-transcribir"):
+        with open(archivo_vocab, "w", encoding="utf-8") as f:
+            f.write(VOCABULARIO)
+        cmd += ["--prompt-archivo", archivo_vocab]
+    else:
+        cmd += ["--prompt", VOCABULARIO]
     if os.path.exists(VAD):
         cmd += ["--vad", "-vm", VAD]
-    subprocess.run(cmd, check=True)
+    try:
+        subprocess.run(cmd, check=True)
+    finally:
+        if os.path.exists(archivo_vocab):
+            os.remove(archivo_vocab)
     with open(salida + ".json", encoding="utf-8") as f:
         datos = json.load(f)
     segs = []
