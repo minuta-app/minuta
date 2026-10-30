@@ -66,3 +66,9 @@ Al participar aceptas el [código de conducta](CODE_OF_CONDUCT.md).
   We also check that the README, the page and the docs still describe the app as it is.
   universes and languages must be data only, and translations get a review from a native speaker.
 - **Security issues:** never in a public issue; report them privately as described in [SECURITY.md](SECURITY.md).
+
+## Aportar con los flujos de Pieza
+
+Esta app es parte de la familia de [Pieza](https://github.com/pieza-app/pieza). En Claude Code, instala sus flujos (crear, revisar
+aportes y las reglas de seguridad) con `/plugin marketplace add pieza-app/pieza` y `/plugin install pieza@pieza`; con otra IA,
+sigue `AGENTS.md`. Si mejoras algo que sirve a todas las apps, propónlo en Pieza.

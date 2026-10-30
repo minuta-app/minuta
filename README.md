@@ -217,3 +217,7 @@ Security issues: please report them privately, see [SECURITY.md](SECURITY.md).
 ## Licencia / License
 
 [MIT](LICENSE)
+
+---
+
+[![Hecho con Pieza](https://pieza-app.github.io/pieza/sello.svg)](https://pieza-app.github.io/pieza/) · Las piezas comunes (tu IA, idiomas, actualizaciones…) viven en [Pieza](https://github.com/pieza-app/pieza).
