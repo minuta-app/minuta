@@ -27,6 +27,9 @@ Reglas que importan: código, comentarios y textos en español (todo texto nuevo
 **nada personal** en el repo (nombres, empresas, correos, notas reales: usa datos ficticios); y no romper el formato de las notas,
 porque hay gente con scripts que dependen de él.
 
+**Archivos de piezas:** `bin/nucleo.py` y `bin/ia.py` vienen de [Pieza](https://github.com/pieza-app/pieza) (están en `piezas.json`,
+con el aviso de la MPL-2.0). No los cambies aquí: propón el cambio en Pieza y llega a Minuta con «Pieza al día».
+
 ## Cómo revisamos
 
 Todo entra por pull request y lo junta alguien que mantiene el proyecto: nadie puede subir cambios directo. Revisamos:
@@ -62,6 +65,8 @@ Al participar aceptas el [código de conducta](CODE_OF_CONDUCT.md).
   `ui/idiomas/en.json`; never commit personal data.
   If your change is visible, also update the README, the page (`docs/`), screenshots and `CHANGELOG.md`, or say so in the
   pull request and we'll do it.
+- **Piece files:** `bin/nucleo.py` and `bin/ia.py` come from [Pieza](https://github.com/pieza-app/pieza) (listed in `piezas.json`,
+  MPL-2.0 notice included). Don't change them here: propose the change in Pieza and it arrives through «Pieza al día».
 - **Review:** everything goes through a pull request and a maintainer merges it. We check tests, privacy and the note format;
   We also check that the README, the page and the docs still describe the app as it is.
   universes and languages must be data only, and translations get a review from a native speaker.

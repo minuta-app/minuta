@@ -872,7 +872,17 @@
   "Tu hábito: {x}": "Your habit: {x}",
   "Buen momento para cerrar: quién hace qué y para cuándo.": "Good moment to wrap up: who does what, and by when.",
   "Minuta no está grabando a los demás": "Minuta isn't recording the others",
-  "Revisa el permiso de audio del sistema.": "Check the system audio permission."
+  "Revisa el permiso de audio del sistema.": "Check the system audio permission.",
+  "No encontré {ia} en este computador. Revisa en Ajustes → Tu IA.": "I couldn't find {ia} on this computer. Check Settings → Your AI.",
+  "{ia} se demoró demasiado en responder. Inténtalo de nuevo.": "{ia} took too long to answer. Please try again.",
+  "{ia} no respondió. {detalle}": "{ia} didn't answer. {detalle}",
+  "No conozco esa IA.": "I don't know that AI.",
+  "{x} no respondió. {x}": "{x} didn't answer. {x}",
+  "{x} no respondió.": "{x} didn't answer.",
+  "{x} se demoró demasiado en responder. Inténtalo de nuevo.": "{x} took too long to answer. Please try again.",
+  "No respondió.": "No answer.",
+  "Actualiza {ia} para usarla con {app}: tu versión no conoce las protecciones que necesitamos.": "Update {ia} to use it with {app}: your version doesn't know the protections we need.",
+  "Actualiza {x} para usarla con {x}: tu versión no conoce las protecciones que necesitamos.": "Update {x} to use it with {x}: your version doesn't know the protections we need."
  },
  "palabras": {
   "lunes": "Monday",

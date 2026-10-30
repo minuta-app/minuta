@@ -2,7 +2,7 @@
 # Arma dist/Minuta.app (autosuficiente) y dist/Minuta-macOS.zip + .sha256, sin instalar nada.
 # Lo usan build.sh (en tu Mac) y la acción de GitHub que publica cada versión.
 # Dentro van: la app, minuta-transcribir + whisper.framework, minuta-diarizar, Python portátil y el código
-# (bin/, ui/, universos/) en Contents/Resources/minuta. Los datos del usuario quedan en ~/minuta.
+# (bin/, ui/, universos/ y app.json) en Contents/Resources/minuta. Los datos del usuario quedan en ~/minuta.
 set -euo pipefail
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$PATH
 RAIZ="$(cd "$(dirname "$0")/.." && pwd)"
@@ -28,6 +28,8 @@ ditto "$REL/whisper.framework" "$APP/Contents/Frameworks/whisper.framework"
 tar -xzf "$PY_TGZ" -C "$APP/Contents/Resources"   # → Resources/python/bin/python3
 # Código de la app (sin cachés ni datos de prueba pesados).
 for d in bin ui universos; do ditto "$RAIZ/$d" "$APP/Contents/Resources/minuta/$d"; done
+# app.json: la descripción de la app que leen las piezas de Pieza (bin/nucleo.py la busca junto a bin/).
+cp "$RAIZ/app.json" "$APP/Contents/Resources/minuta/app.json"
 find "$APP/Contents/Resources/minuta" -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true
 rm -f "$APP/Contents/Resources/minuta/bin/minuta-diarizar"* 2>/dev/null || true
 chmod +x "$APP/Contents/Resources/minuta/bin/"*.py

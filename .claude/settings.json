@@ -1,0 +1,10 @@
+{
+ "extraKnownMarketplaces": {
+  "pieza": {
+   "source": {
+    "source": "github",
+    "repo": "pieza-app/pieza"
+   }
+  }
+ }
+}

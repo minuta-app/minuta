@@ -72,9 +72,9 @@ async function descargarVerificado(url, sha256, destino, progreso = () => {}) {
 // ───────────── IA del usuario (su propia cuenta) ─────────────
 const IA = {
   conocidas: [
-    { id: "claude", nombre: "Claude", comando: "claude", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#claude", args: ["-p", "--output-format", "text"] },
-    { id: "codex", nombre: "ChatGPT (Codex)", comando: "codex", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#codex", args: ["exec", "--skip-git-repo-check", "-s", "read-only", "-"] },
-    { id: "gemini", nombre: "Gemini", comando: ["agy", "gemini"], soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#gemini", args: ["-p", "Responde a las instrucciones de arriba.", "-o", "text"] },
+    { id: "claude", nombre: "Claude", comando: "claude", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#claude" },
+    { id: "codex", nombre: "ChatGPT (Codex)", comando: "codex", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#codex" },
+    { id: "gemini", nombre: "Gemini", comando: ["agy", "gemini"], soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#gemini" },
   ],
   /** Carpetas donde suelen quedar estas herramientas (la app no siempre hereda el PATH de la terminal). */
   dirs() {
@@ -94,24 +94,7 @@ const IA = {
   paraJS() { return this.conocidas.map((x) => ({ id: x.id, nombre: x.nombre, ruta: this.buscar(x.comando), soportada: x.soportada, guia: x.guia })); },
   /** PATH completo para los procesos hijos (Python, la IA, git). */
   path() { return [...new Set(this.dirs())].join(path.delimiter); },
-  /** Prueba real: le pide una palabra. Así sabemos que está instalada y con la sesión iniciada. */
-  probar(id) {
-    return new Promise((fin) => {
-      const ia = this.conocidas.find((x) => x.id === id), ruta = ia && this.buscar(ia.comando);
-      if (!ruta) return fin({ ok: false, texto: "No está instalada." });
-      // Antigravity CLI (`agy`) recibe el prompt como argumento.
-      const agy = /^agy(\.exe|\.cmd)?$/i.test(path.basename(ruta));
-      const args = agy ? ["--output-format", "text", "--sandbox", "-p", "Responde solo con la palabra: listo"] : ia.args;
-      const p = lanzar(ruta, args, { env: { ...process.env, PATH: this.path() }, cwd: os.tmpdir() });
-      let out = "", err = "";
-      p.stdout.on("data", (d) => (out += d));
-      p.stderr.on("data", (d) => (err += d));
-      const reloj = setTimeout(() => p.kill(), 90000);
-      p.on("error", (e) => { clearTimeout(reloj); fin({ ok: false, texto: e.message }); });
-      p.on("close", (c) => { clearTimeout(reloj); fin(c === 0 && out.trim() ? { ok: true, texto: out.trim() } : { ok: false, texto: (err || out).slice(0, 300) }); });
-      p.stdin.end(agy ? "" : "Responde solo con la palabra: listo");
-    });
-  },
+  // La prueba real (pedirle una palabra) la hace la pieza «ia»: acción probarIA de main.js → bin/ia.py probar.
 };
 
 /** spawn que también sirve para los .cmd de npm en Windows (necesitan pasar por la consola). */

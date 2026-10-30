@@ -5,6 +5,11 @@ Lo que cambia para quien usa Minuta, en palabras simples. Las versiones anterior
 *What changes for people using Minuta, in plain words. Earlier versions are listed in Releases.*
 
 ## Sin publicar · Unreleased
+- **Por dentro, piezas de Pieza:** tu IA ahora usa la pieza compartida de la familia (`ia`, con `nucleo`). Al probar tu IA en la
+  bienvenida, corre con las mismas protecciones que al escribir tus notas: sin herramientas, sin tu memoria y en una carpeta
+  temporal. Tus notas y tus datos siguen en el mismo lugar. · *Under the hood, Pieza pieces: your AI now uses the family's shared
+  piece (`ia`, with `nucleo`). When you test your AI during setup, it runs with the same protections as when writing your notes:
+  no tools, no memory and in a temporary folder. Your notes and data stay where they were.*
 - **Nueva licencia:** desde esta versión, Minuta es AGPL-3.0, como sus apps hermanas. Sigue siendo gratis y abierta; si alguien la
   modifica y la ofrece a otras personas, tiene que compartir su código. Las versiones hasta la 0.3.1 siguen bajo MIT. · *New license:
   starting with this version, Minuta is AGPL-3.0, like its sister apps. It's still free and open; anyone who modifies it and offers it
