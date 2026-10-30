@@ -19,7 +19,7 @@
     "empaquetar:windows": "bash herramientas/preparar.sh windows && electron-builder --win dir && bash herramientas/instalador-windows.sh"
   },
   "devDependencies": {
-    "electron": "44.9.1",
+    "electron": "44.9.2",
     "electron-builder": "26.15.3"
   },
   "build": {
