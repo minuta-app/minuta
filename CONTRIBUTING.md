@@ -69,6 +69,11 @@ Al participar aceptas el [código de conducta](CODE_OF_CONDUCT.md).
 
 ## Aportar con los flujos de Pieza
 
-Esta app es parte de la familia de [Pieza](https://github.com/pieza-app/pieza). En Claude Code, instala sus flujos (crear, revisar
-aportes y las reglas de seguridad) con `/plugin marketplace add pieza-app/pieza` y `/plugin install pieza@pieza`; con otra IA,
-sigue `AGENTS.md`. Si mejoras algo que sirve a todas las apps, propónlo en Pieza.
+Esta app es parte de la familia de [Pieza](https://github.com/pieza-app/pieza). Instala sus flujos (crear, revisar aportes y las
+reglas de seguridad) en tu IA:
+- **Claude Code:** `/plugin marketplace add pieza-app/pieza` y `/plugin install pieza@pieza`.
+- **Gemini CLI:** `gemini extensions install https://github.com/pieza-app/pieza` (comandos `/pieza:crear` y `/pieza:revisar`).
+- **Codex:** clona Pieza y corre `python3 herramientas/pieza.py skills instalar codex` (quedan en `~/.agents/skills`).
+- **Otra IA:** sigue `AGENTS.md` y la [tabla de equivalencias](https://github.com/pieza-app/pieza/blob/main/docs/otras-ias.md).
+
+Si mejoras algo que sirve a todas las apps, propónlo en Pieza.
