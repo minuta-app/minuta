@@ -225,6 +225,17 @@ const Respaldo = {
 // ───────────── Actualizaciones (sin perder nada: los datos viven fuera de la app) ─────────────
 // Windows: instalador; Linux: el AppImage si se abrió así, si no el .tar.gz que deja instalar.sh en ~/.local/share/Minuta.
 const ASSET = PLATAFORMA === "windows" ? "Minuta-Windows.exe" : process.env.APPIMAGE ? "Minuta-Linux.AppImage" : "Minuta-Linux.tar.gz";
+/** Texto entre comillas simples para bash (igual que comillas() en Bienvenida.swift). */
+const comillas = (x) => "'" + String(x).replace(/'/g, "'\\''") + "'";
+
+/** Solo se descarga desde los Releases de este repo en github.com (GitHub redirige luego a su almacenamiento, por https). */
+function esDescargaNuestra(u) {
+  try {
+    const x = new URL(u);
+    return x.protocol === "https:" && x.host === "github.com" && x.pathname.startsWith("/minuta-app/minuta/releases/download/") && !x.search && !x.username;
+  } catch { return false; }
+}
+
 const Actualizaciones = {
   repoPublico: "minuta-app/minuta",
   get version() { return app.getVersion(); },
@@ -247,7 +258,7 @@ const Actualizaciones = {
       const o = await r.json();
       const tag = String(o.tag_name || "").replace(/^v/, "");
       const url = (n) => (o.assets || []).find((a) => a.name === n)?.browser_download_url;
-      if (!tag || compararVersiones(tag, this.version) <= 0 || !url(ASSET) || !url(ASSET + ".sha256")) return { hay: false, detalle: "" };
+      if (!tag || compararVersiones(tag, this.version) <= 0 || !esDescargaNuestra(url(ASSET)) || !esDescargaNuestra(url(ASSET + ".sha256"))) return { hay: false, detalle: "" };
       this._url = url(ASSET); this._huella = url(ASSET + ".sha256");
       return { hay: true, detalle: `Versión ${tag}\n` + String(o.body || "").split("\n").slice(0, 4).join("\n") };
     } catch { return { hay: false, detalle: "", error: true }; }
@@ -266,7 +277,7 @@ const Actualizaciones = {
       setTimeout(() => { app.relaunch(); app.exit(0); }, 1500);
       return;
     }
-    if (!this._url || !this._huella) throw new Error(Idioma.t("No encontré la descarga de la versión nueva."));
+    if (!esDescargaNuestra(this._url) || !esDescargaNuestra(this._huella)) throw new Error(Idioma.t("No encontré la descarga de la versión nueva."));
     const huella = (await (await net.fetch(this._huella)).text()).trim().split(/\s+/)[0].toLowerCase();
     if (!/^[0-9a-f]{64}$/.test(huella)) throw new Error(Idioma.t("No pude descargar la versión nueva. Revisa tu conexión e intenta de nuevo."));
     // Carpeta nueva y privada en cada intento (mkdtemp): nadie más puede dejar o cambiar archivos ahí antes de instalar.
@@ -294,12 +305,14 @@ const Actualizaciones = {
       const dir = path.dirname(process.execPath);
       const lanzador = path.join(os.homedir(), ".local", "bin", "minuta");
       const guion = path.join(tmp, "actualizar.sh");
+      // Todo lo variable va con comillas(): ninguna ruta se interpreta como código.
+      const q = comillas, nueva = dir + ".nueva", ant = dir + ".anterior";
       fs.writeFileSync(guion, `#!/bin/bash
-while kill -0 ${process.pid} 2>/dev/null; do sleep 0.5; done
-rm -rf "${dir}.nueva" "${dir}.anterior"; mkdir -p "${dir}.nueva"
-tar -xzf "${nuevo}" -C "${dir}.nueva" --strip-components=1 || exit 1
-mv "${dir}" "${dir}.anterior" && mv "${dir}.nueva" "${dir}" && rm -rf "${dir}.anterior" || mv "${dir}.anterior" "${dir}"
-nohup "${fs.existsSync(lanzador) ? lanzador : path.join(dir, "minuta")}" >/dev/null 2>&1 &
+while kill -0 ${Number(process.pid)} 2>/dev/null; do sleep 0.5; done
+rm -rf ${q(nueva)} ${q(ant)}; mkdir -p ${q(nueva)}
+tar -xzf ${q(nuevo)} -C ${q(nueva)} --strip-components=1 || exit 1
+mv ${q(dir)} ${q(ant)} && mv ${q(nueva)} ${q(dir)} && rm -rf ${q(ant)} || mv ${q(ant)} ${q(dir)}
+nohup ${q(fs.existsSync(lanzador) ? lanzador : path.join(dir, "minuta"))} >/dev/null 2>&1 &
 `);
       spawn("bash", [guion], { detached: true, stdio: "ignore" }).unref();
       setTimeout(() => app.exit(0), 500);
@@ -313,4 +326,4 @@ function compararVersiones(a, b) {
   return 0;
 }
 
-module.exports = { Modelos, IA, Respaldo, Actualizaciones, lanzar, descargarVerificado, corta, expandir };
+module.exports = { Modelos, IA, Respaldo, Actualizaciones, esDescargaNuestra, comillas, lanzar, descargarVerificado, corta, expandir };

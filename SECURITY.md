@@ -39,6 +39,9 @@ Solo la última versión publicada en [Releases](https://github.com/minuta-app/m
   de usarse.
 - Lo que viene de afuera (universos, idiomas, transcripciones, respuestas de la IA) es solo dato: se valida, se escapa
   antes de mostrarse y la interfaz tiene una política de contenido (CSP) que no deja ejecutar código que no sea el de la app.
+- La IA de cada persona corre sin herramientas, sin servidores MCP, sin su memoria y sin las variables de la app; si su
+  versión no permite quitarle las herramientas, no se usa. El pedido va por la entrada estándar o en un archivo, nunca como
+  argumento. El puente de la app solo atiende a su propia ventana (marco principal y origen de la app).
 
 ---
 
