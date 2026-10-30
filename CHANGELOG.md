@@ -5,3 +5,7 @@ Lo que cambia para quien usa Minuta, en palabras simples. Las versiones anterior
 *What changes for people using Minuta, in plain words. Earlier versions are listed in Releases.*
 
 ## Sin publicar · Unreleased
+- **Nueva licencia:** desde esta versión, Minuta es AGPL-3.0, como sus apps hermanas. Sigue siendo gratis y abierta; si alguien la
+  modifica y la ofrece a otras personas, tiene que compartir su código. Las versiones hasta la 0.3.1 siguen bajo MIT. · *New license:
+  starting with this version, Minuta is AGPL-3.0, like its sister apps. It's still free and open; anyone who modifies it and offers it
+  to others has to share their code. Versions up to 0.3.1 remain under MIT.*

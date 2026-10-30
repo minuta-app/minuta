@@ -1343,7 +1343,7 @@
     ["🌌", "Catálogo de universos e idiomas", "https://github.com/minuta-app/minuta-catalogo"], ["🤖", "Guía de tu IA", "https://minuta-app.github.io/minuta/ia.html"],
     ["💬", "Comunidad", "https://github.com/minuta-app/minuta/discussions"], ["🙌", "Quiénes la hacen", "https://github.com/minuta-app/minuta/graphs/contributors"]];
   function acercaDe() {
-    return `<section class="card acerca"><div><b>🎙️ Acerca de Minuta</b><p><span data-sin-traducir>Minuta ${esc(E.version || "")}</span> <span>es gratis y de código abierto (licencia MIT), hecha por su comunidad. Sin servidores ni cuentas: todo es tuyo.</span></p></div>
+    return `<section class="card acerca"><div><b>🎙️ Acerca de Minuta</b><p><span data-sin-traducir>Minuta ${esc(E.version || "")}</span> <span>es gratis y de código abierto (licencia AGPL-3.0), hecha por su comunidad. Sin servidores ni cuentas: todo es tuyo.</span></p></div>
       <div class="acerca-enlaces">${ENLACES.map(([i, n, u]) => `<button class="boton-mini" data-bv-url="${u}">${i} ${n}</button>`).join("")}</div>
       <p class="acerca-creditos">Hecha con <b>whisper.cpp</b> (transcripción), <b>${ESCRITORIO ? "sherpa-onnx" : "FluidAudio"}</b> (separación de voces), <b>Python</b>${ESCRITORIO ? " y <b>Electron</b>" : " y <b>SwiftUI</b>"}. Los universos son homenajes de fans creados por la comunidad; las marcas y personajes pertenecen a sus dueños.</p></section>`;
   }

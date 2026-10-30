@@ -2,7 +2,7 @@
 
 <h1 align="center">Minuta</h1>
 <p align="center"><b>Sal de cada reunión con las notas listas y sabiendo cómo mejorar.</b><br>
-Gratis · Open source (MIT) · Mac, Windows y Linux · Funciona con Claude, ChatGPT o Gemini · Tus datos no salen de tu computador</p>
+Gratis · Open source (AGPL-3.0) · Mac, Windows y Linux · Funciona con Claude, ChatGPT o Gemini · Tus datos no salen de tu computador</p>
 <p align="center"><a href="https://github.com/minuta-app/minuta/releases/latest"><b>Descargar</b></a> · <a href="https://minuta-app.github.io/minuta/"><b>Página</b></a> · <a href="https://minuta-app.github.io/minuta/ia.html">Guía de tu IA</a> · <a href="#comunidad">Comunidad</a> · <a href="CONTRIBUTING.md">Cómo aportar</a> · <a href="#english">English</a></p>
 
 <p align="center"><img src="docs/img/notas.jpg" alt="Las notas de una reunión en Minuta: contexto, decisiones y próximos pasos (datos ficticios)" width="860"></p>
@@ -216,7 +216,8 @@ Security issues: please report them privately, see [SECURITY.md](SECURITY.md).
 
 ## Licencia / License
 
-[MIT](LICENSE)
+[AGPL-3.0](LICENSE). Desde la versión que viene después de la 0.3.1, Minuta es AGPL-3.0; las versiones publicadas hasta la 0.3.1 siguen bajo MIT.
+*Starting with the release after 0.3.1, Minuta is AGPL-3.0; versions published up to 0.3.1 remain under MIT.*
 
 ---
 

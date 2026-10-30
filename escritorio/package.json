@@ -4,7 +4,7 @@
   "version": "0.3.1",
   "description": "Notas de reuniones y coach de comunicación que vive en tu computador.",
   "homepage": "https://minuta-app.github.io/minuta/",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "author": {
     "name": "Minuta",
     "email": "soydavidcornejo@users.noreply.github.com"
@@ -25,7 +25,7 @@
   "build": {
     "appId": "app.minuta.escritorio",
     "productName": "Minuta",
-    "copyright": "MIT · Minuta",
+    "copyright": "AGPL-3.0 · Minuta",
     "directories": {
       "output": "dist",
       "buildResources": "iconos"
