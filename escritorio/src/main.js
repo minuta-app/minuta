@@ -281,13 +281,20 @@ function ocultarAlerta(solo) {
   alertaActual = null;
   alertaVentana?.hide();
 }
-ipcMain.on("alerta-respuesta", (_e, boton) => {
+/** Solo el marco principal de una ventana nuestra, con su página propia (minuta://), habla con el puente: nunca un iframe ni otra página. */
+function dePropia(e, ...ventanas) {
+  const w = ventanas.find((v) => v && !v.isDestroyed() && e.sender === v.webContents);
+  return Boolean(w && e.senderFrame && e.senderFrame === e.sender.mainFrame && String(e.senderFrame.url || "").startsWith("minuta://"));
+}
+ipcMain.on("alerta-respuesta", (e, boton) => {
+  if (!dePropia(e, alertaVentana)) return;
   const a = alertaActual;
   ocultarAlerta();
   if (!a) return;
   if (boton === "principal") a.alPrincipal?.(); else a.alSecundario?.();
 });
-ipcMain.on("alerta-alto", (_e, px) => {
+ipcMain.on("alerta-alto", (e, px) => {
+  if (!dePropia(e, alertaVentana)) return;
   if (!alertaVentana || alertaVentana.isDestroyed()) return;
   const b = alertaVentana.getBounds();
   alertaVentana.setBounds({ ...b, height: Math.max(80, Math.min(400, Math.round(px))) });
@@ -383,14 +390,16 @@ function grabarSistemaLinux() {
   probar(0);
 }
 
-ipcMain.on("grabadora-bloque", (_e, pista, buf) => {
+ipcMain.on("grabadora-bloque", (e, pista, buf) => {
+  if (!dePropia(e, grabadora)) return;
   if (pista === "dictado") return dictadoBloque(buf);
   const w = escritores[pista];
   if (!w || M.fase !== "grabando") return;
   w.escribir(buf);
   coach.nivel(pista === "yo", muestras(buf));
 });
-ipcMain.on("grabadora-listo", (_e, r) => {
+ipcMain.on("grabadora-listo", (e, r) => {
+  if (!dePropia(e, grabadora)) return;
   if (process.env.MINUTA_PRUEBAS === "1") console.log("grabadora:", JSON.stringify(r));
   if (dictado?.esperando) { dictado.esperando = false; if (!r.yo) { llamarFuncion(ventana, "dictado", { error: t("No pude usar el micrófono."), escuchando: false }); dictado = null; } return; }
   if (!r.yo) M.estado = r.errores?.yo === "permiso" ? t("Falta permiso de micrófono (Configuración > Privacidad > Micrófono).") : `${t("No pude usar el micrófono")}: ${r.errores?.yo || ""}`;
@@ -836,8 +845,8 @@ const ACCIONES = {
 };
 
 ipcMain.on("minuta", async (e, msg) => {
-  // Solo las páginas propias (minuta://) hablan con el puente, y solo con acciones conocidas.
-  if (!String(e.senderFrame?.url || "").startsWith("minuta://")) return;
+  // Solo la ventana y el panel (marco principal, minuta://) hablan con el puente, y solo con acciones conocidas.
+  if (!dePropia(e, ventana, panel)) return;
   const w = BrowserWindow.fromWebContents(e.sender);
   const fn = msg && Object.hasOwn(ACCIONES, msg.accion) && ACCIONES[msg.accion];
   if (!fn) return;
