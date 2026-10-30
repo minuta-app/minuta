@@ -317,6 +317,14 @@ enum Actualizaciones {
     static var version: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0" }
     /// Repo público de la app. Cada versión es un Release con `Minuta-macOS.zip` y `Minuta-macOS.zip.sha256`.
     static let repoPublico = "minuta-app/minuta"
+
+    /// Solo se descarga desde los Releases de este repo en github.com (GitHub redirige luego a su almacenamiento, por https).
+    static func esDescargaNuestra(_ u: URL) -> Bool {
+        u.scheme == "https" && u.host == "github.com" && u.path.hasPrefix("/\(repoPublico)/releases/download/") && u.query == nil && u.user == nil
+    }
+
+    /// Texto entre comillas simples para bash: nada de lo que va adentro (rutas, URL, textos traducidos) se interpreta como código.
+    static func comillas(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'" }
     private static var raiz: URL { Temas.base }
     /// Instalación de desarrollo: ~/minuta es un checkout de git (se actualiza con git pull + build.sh).
     static var esDesarrollo: Bool { FileManager.default.fileExists(atPath: raiz.appendingPathComponent(".git").path) }
@@ -352,7 +360,8 @@ enum Actualizaciones {
             Task { @MainActor in
                 guard respondio else { fin(false, Actualizaciones.sinConexion); return }
                 guard !tag.isEmpty, tag.compare(version, options: .numeric) == .orderedDescending,
-                      let z = url("Minuta-macOS.zip"), let h = url("Minuta-macOS.zip.sha256") else { fin(false, ""); return }
+                      let z = url("Minuta-macOS.zip"), let h = url("Minuta-macOS.zip.sha256"),
+                      esDescargaNuestra(z), esDescargaNuestra(h) else { fin(false, ""); return }
                 zip = z; huella = h
                 let notas = (o["body"] as? String ?? "").split(separator: "\n").prefix(4).joined(separator: "\n")
                 fin(true, "Versión \(tag)\n" + notas)
@@ -399,44 +408,48 @@ enum Actualizaciones {
         try? "1|\(t1)".write(to: archivoEstado, atomically: true, encoding: .utf8)
         let texto: String
         if esDesarrollo {
+            // Todo lo variable va con comillas(): las traducciones vienen de idiomas descargables y nunca deben poder correr comandos.
             texto = """
             #!/bin/bash
             export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin
-            cd "\(raiz.path)" || exit 1
-            echo "1|\(t1)" > "\(e)"
-            git pull --ff-only || { echo "error|\(tErrBajar)" > "\(e)"; exit 1; }
-            echo "2|\(t2)" > "\(e)"
-            MINUTA_ESTADO="\(e)" MINUTA_ETAPA3="\(t3)" MINUTA_PROGRESO="\(prog)" bash ./build.sh || { echo "error|\(tErrArmar)" > "\(e)"; pgrep -x Minuta >/dev/null || open "$HOME/Applications/Minuta.app"; exit 1; }
-            rm -f "\(e)" "\(prog)"
+            cd \(comillas(raiz.path)) || exit 1
+            echo \(comillas("1|" + t1)) > \(comillas(e))
+            git pull --ff-only || { echo \(comillas("error|" + tErrBajar)) > \(comillas(e)); exit 1; }
+            echo \(comillas("2|" + t2)) > \(comillas(e))
+            MINUTA_ESTADO=\(comillas(e)) MINUTA_ETAPA3=\(comillas(t3)) MINUTA_PROGRESO=\(comillas(prog)) bash ./build.sh || { echo \(comillas("error|" + tErrArmar)) > \(comillas(e)); pgrep -x Minuta >/dev/null || open "$HOME/Applications/Minuta.app"; exit 1; }
+            rm -f \(comillas(e)) \(comillas(prog))
             open "$HOME/Applications/Minuta.app"
             """
         } else {
-            guard let zip, let huella else { fin(false, Idioma.t("No encontré la descarga de la versión nueva.")); return }
-            let app = Bundle.main.bundlePath
+            guard let zip, let huella, esDescargaNuestra(zip), esDescargaNuestra(huella) else {
+                fin(false, Idioma.t("No encontré la descarga de la versión nueva.")); return
+            }
+            let app = Bundle.main.bundlePath, anterior = app + ".anterior"
+            // Todo lo variable va con comillas(): ni una URL ni un texto traducido se interpreta como código.
             texto = """
             #!/bin/bash
             # Baja la versión nueva, verifica su huella, espera a que Minuta se cierre, la reemplaza y la abre.
-            cd "\(tmp.path)"
-            echo "1|\(t1)" > "\(e)"
-            curl -fsSL "\(zip.absoluteString)" -o Minuta-macOS.zip && curl -fsSL "\(huella.absoluteString)" -o Minuta-macOS.zip.sha256 || { echo "error|\(tErrBajar)" > "\(e)"; exit 1; }
-            echo "2|\(t2)" > "\(e)"
-            [ "$(shasum -a 256 Minuta-macOS.zip | cut -d' ' -f1)" = "$(cut -d' ' -f1 Minuta-macOS.zip.sha256)" ] || { echo "error|\(tErrBajar)" > "\(e)"; exit 1; }
-            ditto -x -k Minuta-macOS.zip nueva || { echo "error|\(tErrArmar)" > "\(e)"; exit 1; }
+            cd \(comillas(tmp.path)) || exit 1
+            echo \(comillas("1|" + t1)) > \(comillas(e))
+            curl -fsSL --proto '=https' --proto-redir '=https' \(comillas(zip.absoluteString)) -o Minuta-macOS.zip && curl -fsSL --proto '=https' --proto-redir '=https' \(comillas(huella.absoluteString)) -o Minuta-macOS.zip.sha256 || { echo \(comillas("error|" + tErrBajar)) > \(comillas(e)); exit 1; }
+            echo \(comillas("2|" + t2)) > \(comillas(e))
+            [ "$(shasum -a 256 Minuta-macOS.zip | cut -d' ' -f1)" = "$(cut -d' ' -f1 Minuta-macOS.zip.sha256)" ] || { echo \(comillas("error|" + tErrBajar)) > \(comillas(e)); exit 1; }
+            ditto -x -k Minuta-macOS.zip nueva || { echo \(comillas("error|" + tErrArmar)) > \(comillas(e)); exit 1; }
             xattr -dr com.apple.quarantine nueva/Minuta.app 2>/dev/null || true
-            echo "3|\(t3)" > "\(e)"
+            echo \(comillas("3|" + t3)) > \(comillas(e))
             sleep 1.5
             osascript -e 'tell application id "app.minuta.mac" to quit' 2>/dev/null || true
             while kill -0 \(pid) 2>/dev/null; do sleep 0.5; done
-            rm -rf "\(app).anterior"; mv "\(app)" "\(app).anterior"
-            ditto nueva/Minuta.app "\(app)" && rm -rf "\(app).anterior" || mv "\(app).anterior" "\(app)"
-            rm -f "\(e)"
-            open "\(app)"
+            rm -rf \(comillas(anterior)); mv \(comillas(app)) \(comillas(anterior))
+            ditto nueva/Minuta.app \(comillas(app)) && rm -rf \(comillas(anterior)) || mv \(comillas(anterior)) \(comillas(app))
+            rm -f \(comillas(e))
+            open \(comillas(app))
             """
         }
         do { try texto.write(to: guion, atomically: true, encoding: .utf8) } catch { fin(false, error.localizedDescription); return }
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/bin/bash")
-        p.arguments = ["-c", "nohup /bin/bash '\(guion.path)' > /tmp/minuta-actualizar.log 2>&1 &"]
+        p.arguments = ["-c", "nohup /bin/bash \(comillas(guion.path)) > /tmp/minuta-actualizar.log 2>&1 &"]
         do {
             try p.run(); fin(true, "")
         } catch { fin(false, error.localizedDescription) }
