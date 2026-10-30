@@ -47,7 +47,12 @@ un checkout git con `ui/` (desarrollo), si no `Contents/Resources/minuta`. Los s
 Firma ad hoc con requisito por identificador (`app.minuta.mac`), así los permisos sobreviven a cada actualización. La app lanza los scripts con ese Python y
 les pasa `MINUTA_HERRAMIENTAS` (= `Contents/MacOS`); `procesar.herramienta()` busca ahí, luego en `bin/`, luego en el sistema.
 La conversión de audio usa `afconvert` (viene con macOS); ffmpeg solo se usa en Windows/Linux. Los scripts solo usan la biblioteca
-estándar de Python: no agregues dependencias de pip. `build.sh` se niega a instalar si hay una grabación o un procesamiento en curso.
+estándar de Python: no agregues dependencias de pip.
+**Lo que escribe la persona nunca va como argumento** de un proceso (se ve en la lista de procesos). El vocabulario
+(`vocabulario.txt`) llega al transcriptor en un archivo temporal 0600 que se borra al terminar (`procesar.comando_transcribir`):
+`minuta-transcribir --prompt-archivo <ruta>` en Mac y, con `whisper-cli`, su archivo de argumentos oficial (`whisper-cli @<ruta>`,
+una opción por línea; las rutas en la página de códigos del sistema en Windows y el prompt en UTF-8). La prueba
+`VocabularioPrivado` lo revisa. `build.sh` se niega a instalar si hay una grabación o un procesamiento en curso.
 
 ## Primera vez, respaldo y actualizaciones (`Bienvenida.swift`)
 

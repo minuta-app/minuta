@@ -232,6 +232,87 @@ class Corregir(unittest.TestCase):
         self.assertFalse(self.correr()["ok"])
 
 
+class VocabularioPrivado(unittest.TestCase):
+    """El vocabulario (palabras que escribió la persona) nunca va como argumento del transcriptor: otros programas
+    ven los argumentos en la lista de procesos. Va en un archivo privado que se borra al terminar."""
+    VOCAB = "Reunión de trabajo, Matías Soto, Banco Ejemplo, Kubernetes."
+
+    def transcriptor_falso(self, nombre):
+        """Un transcriptor que guarda su argv, lo que había en el archivo que recibió y sus permisos, y responde un JSON."""
+        carpeta = tempfile.mkdtemp(dir=HOME)
+        self.registro = os.path.join(carpeta, "registro.json")
+        ruta = os.path.join(carpeta, nombre)
+        with open(ruta, "w", encoding="utf-8") as f:
+            f.write(f"""#!{sys.executable}
+import json, os, stat, sys
+args = sys.argv[1:]
+archivos = {{}}
+for a in args:
+    r = a[1:] if a.startswith("@") else a
+    if os.path.isfile(r) and r.endswith(".txt"):
+        archivos[r] = {{"texto": open(r, encoding="utf-8").read(), "modo": stat.S_IMODE(os.stat(r).st_mode)}}
+lineas = args
+if len(args) == 1 and args[0].startswith("@"):  # archivo de argumentos de whisper-cli: una opción por línea
+    lineas = archivos[args[0][1:]]["texto"].split("\\n")
+json.dump({{"argv": args, "archivos": archivos}}, open({self.registro!r}, "w", encoding="utf-8"))
+salida = lineas[lineas.index("-of") + 1]
+json.dump({{"transcription": [{{"offsets": {{"from": 0, "to": 1000}}, "text": "hola"}}]}}, open(salida + ".json", "w"))
+""")
+        os.chmod(ruta, 0o755)
+        os.environ["MINUTA_HERRAMIENTAS"] = carpeta
+        return ruta
+
+    def transcribir(self, nombre):
+        import procesar
+        self.transcriptor_falso(nombre)
+        procesar.VOCABULARIO = self.VOCAB
+        salida = os.path.join(tempfile.mkdtemp(dir=HOME), "ellos")
+        try:
+            segs = procesar.transcribir(os.path.join(HOME, "audio.wav"), salida)
+        finally:
+            os.environ.pop("MINUTA_HERRAMIENTAS", None)
+        self.assertEqual(segs[0]["texto"], "hola")
+        with open(self.registro, encoding="utf-8") as f:
+            return json.load(f)
+
+    def revisar(self, r):
+        for a in r["argv"]:
+            for palabra in ("Matías", "Kubernetes", "Banco Ejemplo"):
+                self.assertNotIn(palabra, a, "el vocabulario quedó en los argumentos del proceso")
+        self.assertEqual(len(r["archivos"]), 1)
+        ruta, archivo = next(iter(r["archivos"].items()))
+        self.assertEqual(archivo["modo"], 0o600, "el archivo con el vocabulario debe ser privado")
+        self.assertIn("Matías Soto", archivo["texto"])
+        self.assertFalse(os.path.exists(ruta), "el archivo temporal debe borrarse al terminar")
+        return archivo["texto"]
+
+    def test_whisper_cli_por_archivo_de_argumentos(self):
+        r = self.transcribir("whisper-cli")
+        self.assertEqual(len(r["argv"]), 1)
+        self.assertTrue(r["argv"][0].startswith("@"))
+        lineas = self.revisar(r).split("\n")
+        self.assertEqual(lineas[lineas.index("--prompt") + 1], self.VOCAB)
+        self.assertIn("-oj", lineas)
+
+    def test_minuta_transcribir_por_archivo(self):
+        r = self.transcribir("minuta-transcribir")
+        self.assertIn("--prompt-archivo", r["argv"])
+        self.assertNotIn("--prompt", r["argv"])
+        self.assertEqual(self.revisar(r), self.VOCAB)
+
+    def test_vocabulario_en_una_linea(self):
+        import procesar
+        cmd, temporales = procesar.comando_transcribir("/x/whisper-cli", "a.wav", "s", "Ana\nPérez\r\n-m otro.bin")
+        try:
+            with open(temporales[0], encoding="utf-8") as f:
+                lineas = f.read().split("\n")
+            self.assertEqual(lineas[lineas.index("--prompt") + 1], "Ana Pérez -m otro.bin")
+            self.assertEqual(lineas.count("-m"), 1, "un salto de línea en el vocabulario no puede agregar opciones")
+        finally:
+            for x in temporales:
+                os.remove(x)
+
+
 class LimpiarNotas(unittest.TestCase):
     def test_ordena_nombres_viejos(self):
         ruta = os.path.join(NOTAS, "vieja.md")

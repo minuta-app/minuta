@@ -16,3 +16,7 @@ Lo que cambia para quien usa Minuta, en palabras simples. Las versiones anterior
   *More security: if your AI is outdated and can't run without tools, Minuta no longer uses it without that protection and
   asks you to update it. The AI no longer gets your memory or the app's variables, and what you ask it is never visible to
   other programs. Updates are only downloaded from Minuta's Releases, and the app only listens to its own window.*
+- En Windows y Linux, tu vocabulario (los nombres y palabras que le enseñas a Minuta para transcribir) ya no queda a la vista
+  de otros programas mientras se transcribe: va en un archivo privado que se borra al terminar, como ya pasaba en Mac.
+  *On Windows and Linux, your vocabulary (the names and words you teach Minuta for transcription) is no longer visible to
+  other programs while transcribing: it goes in a private file that is deleted afterwards, as it already did on Mac.*
