@@ -90,7 +90,7 @@ if IA not in IAS:
 NOMBRE_IA = IAS[IA][1]
 #: Ruta del CLI elegido (se mantiene el nombre CLAUDE por compatibilidad con scripts antiguos).
 CLAUDE = next((r for r in map(shutil.which, IAS[IA][0]) if r), IAS[IA][0][0])
-#: Antigravity CLI recibe el prompt como argumento (no por la entrada estándar).
+#: Antigravity CLI no lee la entrada estándar (el pedido va en un archivo: ver ejecutar_ia).
 ES_AGY = os.path.basename(CLAUDE).lower().split(".")[0] in ("agy", "antigravity")
 
 
@@ -98,52 +98,81 @@ ES_AGY = os.path.basename(CLAUDE).lower().split(".")[0] in ("agy", "antigravity"
 #: transcripción traiga instrucciones escondidas (lo que dijo alguien en la reunión, un correo leído en voz alta…), la IA no
 #: puede ejecutar comandos, leer o cambiar archivos, ni usar otras cuentas conectadas (correo, calendario…).
 CLAUDE_SOLO_TEXTO = ["--strict-mcp-config", "--tools", ""]  # --tools al final: acepta varios valores
+#: Claude Code carga la memoria de la persona (CLAUDE.md, memoria automática) aunque corra sin herramientas: esto la apaga.
+SIN_MEMORIA_CLAUDE = {"CLAUDE_CODE_DISABLE_CLAUDE_MDS": "1", "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"}
+#: Frase fija para Antigravity: el pedido va en instrucciones.md, nunca como argumento (cualquier programa ve los argumentos).
+INSTRUCCION_ARCHIVO = ("Lee el archivo instrucciones.md de esta carpeta y haz exactamente lo que pide. "
+                       "Entrega solo el resultado pedido, sin comentarios. No modifiques ni crees archivos.")
+#: Si el CLI no conoce una protección, no se corre sin ella: se responde este error (código 3).
+IA_DESACTUALIZADA = "Actualiza {ia} para usarla con Minuta: tu versión no permite correrla sin herramientas."
+_ayuda = {}
 
 
-def _opcion_desconocida(r):
-    """¿El CLI es antiguo y no conoce alguna opción de CLAUDE_SOLO_TEXTO? (entonces se reintenta sin ellas)."""
-    err = (r.stderr or "").lower()
-    return r.returncode != 0 and ("unknown option" in err or "unrecognized" in err) and ("--tools" in err or "--strict-mcp-config" in err)
+def _soporta(cmd, opcion):
+    """Si el CLI conoce una opción. Se pregunta `--help` una vez por comando; nunca se reintenta quitando protecciones.
+    Si el CLI no está instalado, sale FileNotFoundError como antes (los scripts ya lo explican)."""
+    if cmd not in _ayuda:
+        try:
+            r = subprocess.run([cmd, "--help"], stdin=subprocess.DEVNULL, capture_output=True, text=True, encoding="utf-8",
+                               errors="replace", timeout=20, env=_entorno())
+            _ayuda[cmd] = (r.stdout or "") + (r.stderr or "")
+        except FileNotFoundError:
+            raise
+        except (OSError, subprocess.SubprocessError):
+            _ayuda[cmd] = ""
+    return re.search(re.escape(opcion) + r"(?![\w-])", _ayuda[cmd]) is not None
+
+
+def _entorno():
+    """La IA no recibe las variables de la app (MINUTA_*: rutas, modos de prueba): solo lo necesario para correr."""
+    return {k: v for k, v in os.environ.items() if not k.upper().startswith("MINUTA_")}
+
+
+def _desactualizada(cmd):
+    return subprocess.CompletedProcess(cmd, 3, "", IA_DESACTUALIZADA.replace("{ia}", NOMBRE_IA))
 
 
 def ejecutar_ia(prompt, timeout=600, cwd=None):
     """Le pasa el prompt a la IA del usuario y devuelve un CompletedProcess (stdout = respuesta en texto).
-    Corre en una carpeta temporal vacía: la IA solo ve el texto que le damos, no archivos del computador."""
-    modelo = os.environ.get("MINUTA_MODELO") if IA == "claude" else None
+    Corre siempre en una carpeta temporal vacía (`cwd` se acepta por compatibilidad y se ignora): la IA solo ve el texto
+    que le damos, no archivos ni configuraciones de proyecto del computador. El pedido nunca va como argumento."""
+    modelo = os.environ.get("MINUTA_MODELO") if IA == "claude" else None  # se lee antes de filtrar el entorno
+    entorno = _entorno()
     with tempfile.TemporaryDirectory(prefix="minuta-ia-") as tmp:
-        donde = cwd if (cwd and IA == "claude") else tmp
         if IA == "codex":
             salida = os.path.join(tmp, "respuesta.txt")
             # Solo lectura y sin repositorio: Codex responde con texto y no toca nada.
             cmd = [CLAUDE, "exec", "--skip-git-repo-check", "-s", "read-only", "-C", tmp, "-o", salida, "-"]
-            r = subprocess.run(cmd, input=prompt, text=True, encoding="utf-8", capture_output=True, timeout=timeout, cwd=tmp)
+            r = subprocess.run(cmd, input=prompt, text=True, encoding="utf-8", capture_output=True, timeout=timeout, cwd=tmp, env=entorno)
             texto = ""
             if os.path.exists(salida):
                 with open(salida, encoding="utf-8") as f:
                     texto = f.read()
             return subprocess.CompletedProcess(cmd, r.returncode, texto or "", r.stderr)
-        if IA == "gemini" and ES_AGY:
-            # Prompts cortos van como argumento; los largos (transcripciones) en un archivo que la IA lee
-            # (la línea de comandos tiene límite, sobre todo en Windows).
-            if len(prompt) < 20000:
-                pedido = prompt
-            else:
-                with open(os.path.join(tmp, "instrucciones.md"), "w", encoding="utf-8") as f:
-                    f.write(prompt)
-                pedido = ("Lee el archivo instrucciones.md de esta carpeta y haz exactamente lo que pide. "
-                          "Entrega solo el resultado pedido, sin comentarios. No modifiques ni crees archivos.")
-            cmd = [CLAUDE, "--output-format", "text", "--sandbox", "--add-dir", tmp, "-p", pedido]
-            return subprocess.run(cmd, stdin=subprocess.DEVNULL, text=True, encoding="utf-8", capture_output=True, timeout=timeout, cwd=tmp)
+        if IA == "gemini" and os.path.basename(CLAUDE).lower().split(".")[0] in ("agy", "antigravity"):
+            # Antigravity no lee la entrada estándar: el pedido va SIEMPRE en un archivo; en -p solo va una frase fija.
+            with open(os.path.join(tmp, "instrucciones.md"), "w", encoding="utf-8") as f:
+                f.write(prompt)
+            cmd = [CLAUDE, "--output-format", "text", "--sandbox", "--add-dir", tmp, "-p", INSTRUCCION_ARCHIVO]
+            return subprocess.run(cmd, stdin=subprocess.DEVNULL, text=True, encoding="utf-8", capture_output=True, timeout=timeout,
+                                  cwd=tmp, env=entorno)
         if IA == "gemini":
             cmd = [CLAUDE, "-p", "Responde a las instrucciones de arriba. Entrega solo el resultado pedido.", "-o", "text"]
+            return subprocess.run(cmd, input=prompt, text=True, encoding="utf-8", capture_output=True, timeout=timeout, cwd=tmp, env=entorno)
+        # Claude Code: sin MCP ni herramientas, o no se corre. Un CLI viejo que no conoce --tools usa --disallowedTools "*".
+        cmd = [CLAUDE, "-p", "--output-format", "text"] + (["--model", modelo] if modelo else [])
+        if not _soporta(CLAUDE, "--strict-mcp-config"):
+            return _desactualizada(cmd)
+        if _soporta(CLAUDE, "--safe-mode"):
+            cmd.append("--safe-mode")
+        if _soporta(CLAUDE, "--tools"):
+            cmd += CLAUDE_SOLO_TEXTO
+        elif _soporta(CLAUDE, "--disallowedTools"):
+            cmd += ["--strict-mcp-config", "--disallowedTools", "*"]
         else:
-            base = [CLAUDE, "-p", "--output-format", "text"] + (["--model", modelo] if modelo else [])
-            r = subprocess.run(base + CLAUDE_SOLO_TEXTO, input=prompt, text=True, encoding="utf-8", capture_output=True,
-                               timeout=timeout, cwd=donde)
-            if _opcion_desconocida(r):
-                r = subprocess.run(base, input=prompt, text=True, encoding="utf-8", capture_output=True, timeout=timeout, cwd=donde)
-            return r
-        return subprocess.run(cmd, input=prompt, text=True, encoding="utf-8", capture_output=True, timeout=timeout, cwd=donde)
+            return _desactualizada(cmd)
+        return subprocess.run(cmd, input=prompt, text=True, encoding="utf-8", capture_output=True, timeout=timeout, cwd=tmp,
+                              env={**entorno, **SIN_MEMORIA_CLAUDE})
 
 
 def es_usuario(nombre):

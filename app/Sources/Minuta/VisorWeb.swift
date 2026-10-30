@@ -237,6 +237,8 @@ private struct WebHost: NSViewRepresentable {
 
         // JS → Mac
         func userContentController(_ c: WKUserContentController, didReceive mensaje: WKScriptMessage) {
+            // Solo la interfaz local (marco principal, archivo de ui/) le pide cosas a la app; un iframe o una página de afuera, nunca.
+            guard mensaje.frameInfo.isMainFrame, mensaje.frameInfo.securityOrigin.protocol == "file" else { return }
             guard let datos = mensaje.body as? [String: Any], let accion = datos["accion"] as? String else { return }
             switch accion {
             case "tema":
