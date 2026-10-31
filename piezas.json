@@ -13,9 +13,9 @@
    }
   },
   "ia": {
-   "version": "0.6.0",
+   "version": "0.6.2",
    "archivos": {
-    "bin/ia.py": "1e65cee46498e99dc9af8ad37567ff6f8279ef2a47c153ef01a75fceb13622dc"
+    "bin/ia.py": "36d6df8fb3097e149e15174406e7d8fd82a4a4c9cac4b2ba8b2505ecb4dcdfef"
    },
    "ficha": {
     "requiere": [
@@ -23,6 +23,37 @@
     ],
     "permisos": {},
     "red": []
+   },
+   "acciones": {
+    "probarIA": {
+     "script": "ia.py",
+     "args": [
+      "probar"
+     ],
+     "entrada": "archivo",
+     "datos": {
+      "ia": {
+       "tipo": "enum",
+       "valores": [
+        "claude",
+        "codex",
+        "gemini"
+       ]
+      }
+     },
+     "responde": "iaProbada",
+     "limite": 120
+    },
+    "listaIA": {
+     "script": "ia.py",
+     "args": [
+      "lista"
+     ],
+     "entrada": null,
+     "datos": {},
+     "responde": "iaLista",
+     "limite": 30
+    }
    }
   },
   "host-ui": {
@@ -37,9 +68,9 @@
    }
   },
   "i18n": {
-   "version": "0.3.0",
+   "version": "0.3.1",
    "archivos": {
-    "ui/i18n.js": "c6169349238b0d94769136b04f1a0cb30a8e8a373ee57f97cad90930084faca7"
+    "ui/i18n.js": "3f4d071fd5b2b137cb0a6413e4d1e588ae79081a61f21e3f7d240cf3cf55bce9"
    },
    "ficha": {
     "requiere": [],
@@ -48,9 +79,9 @@
    }
   },
   "tema": {
-   "version": "0.2.0",
+   "version": "0.2.1",
    "archivos": {
-    "ui/tema.css": "b4d579772dc1023f1d995da83b601df3e0387527846cef554b76c12d4d1a8f68",
+    "ui/tema.css": "1d43c1cf027fafcbd282bd90bc87ae3937059f247fb823cd1aab2a26f7c9363e",
     "ui/tema.js": "b679ecb7bc80556b70e3f3fe768f0e3af0086bdf44c0d73ed0867da6a8f33f6e"
    },
    "sin_config": [
@@ -63,10 +94,10 @@
    }
   },
   "componentes": {
-   "version": "0.2.0",
+   "version": "0.3.0",
    "archivos": {
-    "ui/componentes.js": "b95fd032ab648f3f12d724b0a6354d76ebf66b930c96257772ecd791794bacee",
-    "ui/componentes.css": "ffda7917ec5bac49bd1fea8d5edf239adf0220e7d0e833d2b428cab3ddfbfaf8"
+    "ui/componentes.js": "310712e40f69b674f5d64fc723ccd2dbf2ad114f6ac68ee72a598cf4c36bb76a",
+    "ui/componentes.css": "101586f0fa7aa509f42b626de378c5ad32d176da5a4c0ad85b081a47908fe56f"
    },
    "ficha": {
     "requiere": [
@@ -78,9 +109,9 @@
    }
   },
   "transcribir": {
-   "version": "0.1.0",
+   "version": "0.2.0",
    "archivos": {
-    "bin/transcribir.py": "e7295b58850ed437e62c7aa6c233d14efec5620a990a5b9b040a7a4742bbfb29"
+    "bin/transcribir.py": "7f83840038e1cf4a40025c2597ffb508d16f202b4e29a86a9943248341c05028"
    },
    "ficha": {
     "requiere": [
@@ -112,11 +143,11 @@
    }
   },
   "catalogo": {
-   "version": "0.1.0",
+   "version": "0.2.0",
    "archivos": {
-    "bin/catalogo.py": "e35c7173fbaaaeb0bea23e0db0d7188610b231ecb3afa8b6973f1d1b007fd0bb",
-    "app/Sources/PiezaCatalogo/Catalogo.swift": "47365155074fa4491a90f19957a1eea28cfc9e0e311a32d1ca4b2a7501b42d56",
-    "escritorio/src/catalogo.js": "5fa5b58c637d6a6945b1e8e3b24ecb3435c70ab12858d2b2af089eedfc32bc23"
+    "bin/catalogo.py": "f4e14039756ecb69c3d8f4737cfc1a479e5a61e5aa38bc64ee739d40af7b593b",
+    "app/Sources/PiezaCatalogo/Catalogo.swift": "d46098aa918179363492e76a5712ff17ff802e66dd5bc2c57bdbea8868878ba7",
+    "escritorio/src/catalogo.js": "c76eddcffec1f533cec82e1eebace3642955f1eea52eb4c33f80510fcc56dc96"
    },
    "ficha": {
     "requiere": [
@@ -161,6 +192,21 @@
      },
      "responde": "catalogoQuitado",
      "cola": "escritura",
+     "limite": 30
+    },
+    "catalogoUltima": {
+     "script": "catalogo.py",
+     "args": [
+      "ultima"
+     ],
+     "entrada": "archivo",
+     "datos": {
+      "tipo": {
+       "tipo": "texto",
+       "max": 31
+      }
+     },
+     "responde": "catalogoUltima",
      "limite": 30
     }
    }

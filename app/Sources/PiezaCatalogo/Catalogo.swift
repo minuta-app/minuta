@@ -21,7 +21,8 @@ public enum Catalogo {
     public typealias Correr = @MainActor (_ script: String, _ accion: String, _ datos: [String: Any],
                                           _ fin: @escaping @MainActor ([String: Any]) -> Void) -> Void
 
-    /// Frases en español (claves de traducción): la interfaz las muestra con Tp(plantilla). Las mismas de bin/catalogo.py.
+    /// Frases en español (claves de traducción): la interfaz las muestra con Tp(r.frase). Las mismas de bin/catalogo.py. (No van
+    /// en «plantilla»: un tipo con singular «plantilla» devuelve ahí el objeto descargado.)
     public static let errores: [String: String] = [
         "sin_conexion": "No pude conectarme. Revisa tu conexión.",
         "indice": "No pude leer el catálogo.",
@@ -62,12 +63,16 @@ public enum Catalogo {
         var t: [String: Tipo] = [:]
         for (id, x) in c["tipos"] as? [String: Any] ?? [:] {
             guard calza(id, #"^[a-z][a-z0-9-]{0,30}$"#), let x = x as? [String: Any] else { return false }
-            let indice = x["indice"] as? String ?? "\(id)/index.json"
+            let carpeta = x["carpeta"] as? String ?? id
+            guard calza(carpeta, #"^[a-z][a-z0-9-]{0,30}$"#) else { return false }
+            let indice = x["indice"] as? String ?? "\(carpeta)/index.json"
             guard calza(indice, #"^(?:[a-z0-9-]+/)?[a-z0-9-]+\.json$"#) else { return false }
-            let ident = "[a-z0-9]+(-[a-z0-9]+)*"
+            let categoria = "[a-z0-9]+(-[a-z0-9]+)*"
+            let ident = (x["mayusculas"] as? Bool) == true ? "[A-Za-z0-9]+(-[A-Za-z0-9]+)*" : categoria
+            // <carpeta>/<categoria>/<id>.json, o <carpeta>/<id>.json con "categoria": false (un catálogo plano)
+            let patron = (x["categoria"] as? Bool) == false ? "^\(carpeta)/\(ident)\\.json$" : "^\(carpeta)/\(categoria)/\(ident)\\.json$"
             t[id] = Tipo(id: id, indice: indice, maxBytes: entero(x["max_bytes"], 100 * 1024, 5 * 1024 * 1024),
-                         maxIndice: entero(x["max_indice"], 1024 * 1024, 20 * 1024 * 1024),
-                         patron: "^\(id)/\(ident)/\(ident)\\.json$")
+                         maxIndice: entero(x["max_indice"], 1024 * 1024, 20 * 1024 * 1024), patron: patron)
         }
         base = "https://\(host)/\(repo)/\(rama)/"
         prefijo = "/\(repo)/\(rama)/"
@@ -79,7 +84,7 @@ public enum Catalogo {
 
     private static func error(_ codigo: String, _ extra: [String: Any] = [:]) -> [String: Any] {
         let texto = errores[codigo] ?? errores["no_valido"]!
-        return ["ok": false, "codigo": codigo, "plantilla": texto, "error": texto].merging(extra) { a, _ in a }
+        return ["ok": false, "codigo": codigo, "frase": texto, "error": texto].merging(extra) { a, _ in a }
     }
 
     /// Lo que llega de `pedir`: los datos, «grande» (pasó del máximo: no es lo del índice) o nada (sin conexión).
@@ -113,11 +118,21 @@ public enum Catalogo {
         return u
     }
 
-    /// El índice de un tipo, validado por Python: {ok, tipo, <tipo>: [...]} o {ok: false, codigo, plantilla, error}.
+    /// El índice de un tipo, validado por Python: {ok, tipo, <tipo>: [...]} o {ok: false, codigo, frase, error}. Sin conexión,
+    /// la última lista validada (si hay) con `sin_conexion: true`, `fecha` y la frase: se ve, pero no se descarga.
     public static func listar(_ tipo: String, _ fin: @escaping @MainActor ([String: Any]) -> Void) {
         guard let t = tipos[tipo], let correr else { return fin(error("no_valido", ["tipo": tipo])) }
         pedir(t.indice, maximo: t.maxIndice) { res in
-            guard case .datos(let datos) = res else { return fin(error(res.esGrande ? "indice" : "sin_conexion", ["tipo": tipo])) }
+            if case .nada = res {
+                return correr("catalogo.py", "ultima", ["tipo": tipo]) { r in
+                    guard r["ok"] as? Bool == true, let lista = r[tipo] as? [[String: Any]], !lista.isEmpty else {
+                        return fin(error("sin_conexion", ["tipo": tipo]))
+                    }
+                    let texto = errores["sin_conexion"]!
+                    fin(r.merging(["sin_conexion": true, "codigo": "sin_conexion", "frase": texto]) { _, b in b })
+                }
+            }
+            guard case .datos(let datos) = res else { return fin(error("indice", ["tipo": tipo])) }
             guard let archivo = temporal(datos) else { return fin(error("indice", ["tipo": tipo])) }
             correr("catalogo.py", "indice", ["tipo": tipo, "archivo": archivo.path]) { r in
                 try? FileManager.default.removeItem(at: archivo)

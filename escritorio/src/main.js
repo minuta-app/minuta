@@ -757,18 +757,19 @@ const ACCIONES = {
     // Pieza «catálogo»: el índice con huellas, validado por bin/catalogo.py con el validador de Minuta.
     const pedido = d.tipo === "idiomas" ? "idiomas" : "universos", tipo = Catalogo.tipo(pedido);
     const r = await catalogo().listar(tipo);
-    llamarFuncion(w, "catalogo", { tipo: pedido, lista: r[tipo] || [], ...(r.ok ? {} : { error: t(r.plantilla || "No pude leer el catálogo.") }) });
+    // Sin conexión, la pieza trae la última lista validada (sin_conexion: true): se ve, pero no se descarga.
+    llamarFuncion(w, "catalogo", { tipo: pedido, lista: r[tipo] || [], ...(r.sin_conexion ? { sin_conexion: true } : {}), ...(r.ok ? {} : { error: t(r.frase || "No pude leer el catálogo.") }) });
   },
   descargarUniverso: async (d, w) => {
     // Solo lo del último índice validado, con su tamaño y su huella; Python lo vuelve a validar y lo deja en ~/minuta/temas.
     const r = await catalogo().descargar("temas", String(d.id || ""));
     if (r.ok && d.usar) { M.temaID = d.id; Temas.guardarId(d.id); }
     notasCambiaron();
-    llamarFuncion(w, "descargado", { tipo: "universo", id: d.id, ok: !!r.ok, error: r.ok ? "" : t(r.plantilla || "Eso no es válido.") });
+    llamarFuncion(w, "descargado", { tipo: "universo", id: d.id, ok: !!r.ok, error: r.ok ? "" : t(r.frase || "Eso no es válido.") });
   },
   descargarIdioma: async (d, w) => {
     const r = await catalogo().descargar("idiomas", String(d.codigo || ""));
-    llamarFuncion(w, "descargado", { tipo: "idioma", id: d.codigo, ok: !!r.ok, error: r.ok ? "" : t(r.plantilla || "Eso no es válido."), instalados: Idioma.instalados() });
+    llamarFuncion(w, "descargado", { tipo: "idioma", id: d.codigo, ok: !!r.ok, error: r.ok ? "" : t(r.frase || "Eso no es válido."), instalados: Idioma.instalados() });
   },
   perfil: (d) => { Perfil.mezclar(d.cambios || {}); Idioma.olvidar(); actualizarBandeja(); notasCambiaron(); },
   corregirIA: async (d, w) => {

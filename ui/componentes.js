@@ -28,6 +28,8 @@
   const HTTPS = /^https:\/\/[^\s"'<>]+$/;
   const ENFOCABLES = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
   const MODAL = '[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"]';
+  /** Campos donde se escribe: al volver a pintar, el foco vuelve con el cursor donde estaba. */
+  const CAMPO = 'input:not([type]), input[type="text"], input[type="search"], input[type="url"], input[type="tel"], input[type="email"], input[type="password"], input[type="number"], textarea, [contenteditable="true"]';
   const TIPOS_COMENTARIO = { error: { etiqueta: "error", prefijo: "🐞" }, idea: { etiqueta: "idea", prefijo: "💡" }, otro: { etiqueta: "comentario", prefijo: "💬" } };
   const esHttps = (u) => HTTPS.test(String(u || ""));
 
@@ -168,10 +170,10 @@
     const clasesDe = (clase) => String(clase || "").split(/\s+/).filter((c) => /^[a-z][a-z0-9-]{0,30}$/.test(c)).join(" ");
     /** La caja del diálogo. `id` es el del título (aria-labelledby); `clave` distingue pasos que usan el mismo título (el foco
      *  vuelve al título al cambiar de paso). */
-    function caja({ id, clase, sinEsc, clave, rol = "dialog" }, contenido) {
-      const clases = clasesDe(clase);
+    function caja({ id, clase, claseCapa, sinEsc, clave, rol = "dialog" }, contenido) {
+      const clases = clasesDe(clase), capa = clasesDe(claseCapa);
       const k = CLAVE.test(String(clave ?? "")) ? ` data-pz-clave="${esc(clave)}"` : "";
-      return `<div class="pz-capa" data-pz-capa><div class="pz-dialogo${clases ? " " + clases : ""}" role="${rol}" aria-modal="true" aria-labelledby="${id}" tabindex="-1"${sinEsc ? " data-pz-sin-esc" : ""}${k}>
+      return `<div class="pz-capa${capa ? " " + capa : ""}" data-pz-capa><div class="pz-dialogo${clases ? " " + clases : ""}" role="${rol}" aria-modal="true" aria-labelledby="${id}" tabindex="-1"${sinEsc ? " data-pz-sin-esc" : ""}${k}>
         ${contenido}</div></div>`;
     }
     const botonCerrar = () => `<button type="button" class="pz-boton pz-plano pz-cerrar" data-pz-cerrar aria-label="${L("Cerrar")}"><span aria-hidden="true">✕</span></button>`;
@@ -179,26 +181,29 @@
      *  `titulo`: frase en español (va por T, con `valores`). `tituloHTML`: un título que armaste tú (con esc()), p. ej. bilingüe
      *  y sin traducir. Sin ninguno de los dos, no hay cabecera: el título lo pone la app en `cuerpo` con ese `id` (como `envolver`).
      *  `antes`: HTML antes del título (los puntos de avance de una bienvenida). `cuerpo` y `pie` los arma la app (con esc()).
-     *  `clase: "pz-ancho"`, `cerrable: false` sin ✕, `sinEsc: true` para uno que no se cierra solo, `clave` (ver `caja`). */
-    function dialogo({ id, titulo, tituloHTML, valores = {}, antes = "", cuerpo = "", pie = "", clase = "", cerrable = true, sinEsc = false, clave } = {}) {
+     *  `clase: "pz-ancho"` (en la caja), `claseCapa` (en el velo), `claseTitulo` (en el <h2>), `cerrable: false` sin ✕,
+     *  `sinEsc: true` para uno que no se cierra solo, `clave` (ver `caja`). */
+    function dialogo({ id, titulo, tituloHTML, valores = {}, antes = "", cuerpo = "", pie = "", clase = "", claseCapa = "", claseTitulo = "", cerrable = true, sinEsc = false, clave } = {}) {
       if (!ID.test(String(id || ""))) throw new Error("componentes: el diálogo necesita un id (letras, números y guiones).");
       const conTitulo = typeof tituloHTML === "string" || (typeof titulo === "string" && titulo !== "");
       const h2 = typeof tituloHTML === "string" ? tituloHTML : T(titulo || "", valores);
       const cabeza = conTitulo
-        ? `<div class="pz-cabeza"><h2 id="${id}" tabindex="-1" data-sin-traducir>${h2}</h2>${cerrable ? botonCerrar() : ""}</div>`
+        ? `<div class="pz-cabeza"><h2 id="${id}"${clasesDe(claseTitulo) ? ` class="${clasesDe(claseTitulo)}"` : ""} tabindex="-1" data-sin-traducir>${h2}</h2>${cerrable ? botonCerrar() : ""}</div>`
         : cerrable ? `<div class="pz-cabeza pz-sin-titulo">${botonCerrar()}</div>` : "";
-      return caja({ id, clase, sinEsc, clave }, `${antes}${cabeza}${cuerpo}${pie ? `<div class="pz-pie">${pie}</div>` : ""}`);
+      return caja({ id, clase, claseCapa, sinEsc, clave }, `${antes}${cabeza}${cuerpo}${pie ? `<div class="pz-pie">${pie}</div>` : ""}`);
     }
     /** Un diálogo con todo lo de adentro armado por la app (su propio <h2 id="…">): la pieza pone la capa, la caja accesible, el
-     *  foco y Esc. `id` es el del título que viene en `html`. Sin ✕ (si la quieres: `cerrable: true`). */
-    function envolver(html, { id, clase = "", sinEsc = false, clave, cerrable = false } = {}) {
+     *  foco y Esc. `id` es el del título que viene en `html`. Sin ✕ (si la quieres: `cerrable: true`). `clase` va en la caja y
+     *  `claseCapa` en el velo (p. ej. uno a pantalla completa o más oscuro). */
+    function envolver(html, { id, clase = "", claseCapa = "", sinEsc = false, clave, cerrable = false } = {}) {
       if (!ID.test(String(id || ""))) throw new Error("componentes: envolver necesita el id del título que viene en el html.");
-      return caja({ id, clase, sinEsc, clave }, `${cerrable ? `<div class="pz-cabeza pz-sin-titulo">${botonCerrar()}</div>` : ""}${html}`);
+      return caja({ id, clase, claseCapa, sinEsc, clave }, `${cerrable ? `<div class="pz-cabeza pz-sin-titulo">${botonCerrar()}</div>` : ""}${html}`);
     }
 
     let confirmacion = null;
     /** Pregunta antes de algo que no se deshace. Devuelve una promesa: true (sí) o false (no). Esc y el velo cuentan como «no»;
-     *  con `sinElegir` devuelven ese valor (p. ej. `null` para «Guardar / No guardar / Cancelar»). Con `peligro` el foco empieza
+     *  con `sinElegir` devuelven ese valor (p. ej. `null` para «Guardar / No guardar / Cancelar»). El foco empieza en el título,
+     *  como en todo diálogo (el lector de pantalla anuncia la pregunta y su texto; un Enter apurado no elige nada); con `peligro`,
      *  en «Cancelar» (un Enter apurado nunca borra). */
     function confirmar({ titulo, texto = "", valores = {}, si = "Aceptar", no = "Cancelar", peligro = false, sinElegir = false } = {}) {
       if (confirmacion) { const c = confirmacion; confirmacion = null; c.resolver(c.sinElegir); }
@@ -218,7 +223,7 @@
       const c = confirmacion; if (!c) return "";
       return `<div class="pz-capa" data-pz-capa><div class="pz-dialogo pz-confirmar" role="alertdialog" aria-modal="true" aria-labelledby="pz-t-conf" aria-describedby="pz-d-conf" tabindex="-1">
         <h2 id="pz-t-conf" tabindex="-1" data-sin-traducir>${T(c.titulo || "", c.valores)}</h2>${c.texto ? `<p id="pz-d-conf" data-sin-traducir>${T(c.texto, c.valores)}</p>` : ""}
-        <div class="pz-pie"><button type="button" class="pz-boton" data-pz-confirmar="no"${c.peligro ? " data-autofoco" : ""} data-sin-traducir>${T(c.no)}</button><button type="button" class="pz-boton pz-principal${c.peligro ? " pz-peligro" : ""}" data-pz-confirmar="si"${c.peligro ? "" : " data-autofoco"} data-sin-traducir>${T(c.si)}</button></div></div></div>`;
+        <div class="pz-pie"><button type="button" class="pz-boton" data-pz-confirmar="no"${c.peligro ? " data-autofoco" : ""} data-sin-traducir>${T(c.no)}</button><button type="button" class="pz-boton pz-principal${c.peligro ? " pz-peligro" : ""}" data-pz-confirmar="si" data-sin-traducir>${T(c.si)}</button></div></div></div>`;
     }
 
     // Foco: el de antes de abrir se recuerda por id o por su primer data-* (la app vuelve a pintar todo con innerHTML).
@@ -246,14 +251,61 @@
       return t;
     }
     // Lo último enfocado dentro del diálogo, para volver ahí si la app vuelve a pintar todo (innerHTML) con el diálogo abierto.
+    // Y el último campo donde se escribía (dentro o fuera de un diálogo) con su cursor, para dejarlo donde estaba.
+    let campo = null;   // {sel, clave (la del diálogo, o null fuera de uno), inicio, fin, dir}
+    function anotarCampo(t) {
+      if (!t?.matches?.(CAMPO)) return;
+      const sel = descriptor(t);
+      if (!sel) { campo = null; return; }
+      let inicio = null, fin = null, dir = null;
+      try { inicio = t.selectionStart; fin = t.selectionEnd; dir = t.selectionDirection; } catch { /* email, number: sin selección */ }
+      const d = t.closest?.(MODAL);
+      campo = { sel, clave: d ? claveDe(d) : null, inicio, fin, dir };
+    }
     const doc0 = documento();
     doc0?.addEventListener?.("focusin", (ev) => {
       const t = ev.target, d = t?.closest?.(MODAL);
       if (d && t !== d && d === modal()) focoDentro = { clave: claveDe(d), sel: descriptor(t) };
+      if (t?.matches?.(CAMPO)) anotarCampo(t); else campo = null;
     });
+    // El cursor se mueve al escribir, con las flechas o con el mouse: se anota en cada cambio.
+    for (const tipo of ["input", "keyup", "mouseup", "select"]) doc0?.addEventListener?.(tipo, (ev) => anotarCampo(ev.target));
+    doc0?.addEventListener?.("selectionchange", () => anotarCampo(doc0.activeElement));
+    // Si la persona sale del campo (Tab, un clic en otro lado), ya no se vuelve a él; si lo borró una pintada (el campo ya no está
+    // en el documento), sí. Cambiar a otra ventana no cuenta como salir. Se mira después (Chromium también avisa focusout al
+    // quitar el campo con innerHTML, y en ese momento aún está en el documento).
+    // La ventana se fue (otra app al frente): se sabe con blur/focus de la ventana, no con hasFocus(), que en algunos navegadores
+    // (y sin pantalla) dice false aunque la persona siga ahí. Si la ventana se fue antes de mirar, no se olvida el campo; si no
+    // alcanza a saberse, al volver el navegador mismo devuelve el foco al campo.
+    let ventanaFuera = false;
+    const vista = doc0?.defaultView;
+    vista?.addEventListener?.("blur", () => { ventanaFuera = true; });
+    vista?.addEventListener?.("focus", () => { ventanaFuera = false; });
+    doc0?.addEventListener?.("focusout", (ev) => {
+      const t = ev.target;
+      if (!t?.matches?.(CAMPO)) return;
+      const sel = descriptor(t);
+      // En una microtarea: si fue una pintada (innerHTML), ya terminó y el campo ya no está; si fue la persona, el campo sigue ahí.
+      // (Un setTimeout llegaría tarde: la app puede volver a pintar antes.)
+      Promise.resolve().then(() => { if (!ventanaFuera && t.isConnected && documento()?.activeElement !== t && campo?.sel === sel) campo = null; });
+    });
+    /** Deja el cursor donde estaba (si es el mismo campo) o al final. */
+    function ponerCursor(el) {
+      if (!el?.matches?.(CAMPO) || typeof el.setSelectionRange !== "function") return;
+      const largo = String(el.value ?? "").length;
+      const mismo = campo && campo.sel === descriptor(el) && typeof campo.inicio === "number";
+      try {
+        if (mismo) el.setSelectionRange(Math.min(campo.inicio, largo), Math.min(campo.fin ?? campo.inicio, largo), campo.dir || "none");
+        else el.setSelectionRange(largo, largo);
+      } catch { /* email, number: no aceptan selección */ }
+    }
+    // El focusin del campo nuevo anotaría su cursor (al inicio) antes de ponerlo donde estaba: se guarda el de antes.
+    const enfocar = (el) => { const antes = campo; el?.focus?.({ preventScroll: true }); campo = antes; ponerCursor(el); anotarCampo(el); };
 
     /** Llamar después de cada pintada: al abrir, el foco va al título (o a `[data-autofoco]`, si lo pusiste en un campo); mientras
-     *  está abierto, se queda donde estaba aunque la app vuelva a pintar; al cerrar, vuelve al botón que lo abrió. */
+     *  está abierto, se queda donde estaba aunque la app vuelva a pintar (en un campo, con el cursor donde estaba, o al final si
+     *  es otro); al cerrar, vuelve al botón que lo abrió. Con `crear({mantenerCampos: true})`, lo mismo para un campo fuera de
+     *  un diálogo (un buscador que la app vuelve a pintar mientras se escribe). */
     function despuesDePintar() {
       const doc = documento(); if (!doc) return;
       const d = modal();
@@ -263,12 +315,10 @@
           if (abierto === null) volverA = ultimo || descriptor(doc.activeElement);
           abierto = clave;
           focoDentro = null;
-          const destino = d.querySelector("[data-autofoco]:not([disabled])") || tituloDe(d) || d;
-          destino.focus?.({ preventScroll: true });
+          enfocar(d.querySelector("[data-autofoco]:not([disabled])") || tituloDe(d) || d);
         } else if (doc.activeElement === d || !d.contains(doc.activeElement)) {
           const antes = focoDentro && focoDentro.clave === clave && focoDentro.sel ? d.querySelector(focoDentro.sel) : null;
-          const destino = (antes && !antes.disabled && antes) || d.querySelector("[data-autofoco]:not([disabled])") || tituloDe(d) || d;
-          destino.focus?.({ preventScroll: true });
+          enfocar((antes && !antes.disabled && antes) || d.querySelector("[data-autofoco]:not([disabled])") || tituloDe(d) || d);
         }
       } else if (abierto !== null) {
         abierto = null;
@@ -276,6 +326,10 @@
         const el = volverA ? doc.querySelector(volverA) : null;
         volverA = null;
         el?.focus?.();
+      } else if (opciones.mantenerCampos && campo && campo.clave === null && (!doc.activeElement || doc.activeElement === doc.body)) {
+        // Fuera de un diálogo (un buscador): si la pintada se llevó el campo donde se escribía, el foco y el cursor vuelven.
+        const el = doc.querySelector(campo.sel);
+        if (el?.matches?.(CAMPO) && !el.disabled && !el.closest("[inert]")) enfocar(el);
       }
     }
 
@@ -304,12 +358,13 @@
       pintar();
     }
     function errorIA(r) {
-      if (r.plantilla) return Tp(r.plantilla, r.valores || {}) + (r.ayuda ? " " + tr(r.ayuda) : "");
+      // Sin `ayuda` («Revisa en Ajustes → Tu IA»): esta fila ya está en «Tu IA».
+      if (r.plantilla) return Tp(r.plantilla, r.valores || {});
       return tr(r.error || r.texto || "No respondió.");
     }
-    /** Las filas de Ajustes → Tu IA (y del paso de la bienvenida). `ias`: [{id, nombre, instalada, detalle?}] (de ia.py lista).
+    /** Las filas de Ajustes → Tu IA (y del paso de la bienvenida). `ias`: [{id, nombre, instalada, detalle?, revisable?}] (de ia.py lista).
      *  `detalle`: frase en español que dice por qué no está lista (se traduce con tr). Una no instalada se puede volver a probar
-     *  («Revisar de nuevo»). `principal`: "una" (por defecto: si no hay ninguna en uso, solo la primera instalada lleva el color de
+     *  («Revisar de nuevo»), salvo con `revisable: false` (una que todavía no existe: «muy pronto»). `principal`: "una" (por defecto: si no hay ninguna en uso, solo la primera instalada lleva el color de
      *  acción; así hay uno solo por pantalla), "todas" (cada una sin usar, como en 0.1.0) o false (ninguna). */
     function filasIA({ ias = [], elegida = null, guia = null, principal = "una" } = {}) {
       const lista = (Array.isArray(ias) ? ias : []).filter((x) => x && IA_ID.test(String(x.id)));
@@ -327,6 +382,7 @@
         const marca = probando ? `<span class="pz-giro" role="img" aria-label="${L("Probando…")}"></span>` : r?.ok ? `<span class="pz-ok">${L("Lista")}</span>` : "";
         const esPrincipal = esta && !enUso && (principal === "todas" || id === recomendada);
         const texto = probando ? L("Probando…") : !esta ? L("Revisar de nuevo") : enUso ? L("Probar otra vez") : L("Usar y probar");
+        if (!esta && x.revisable === false) return `<div class="pz-fila"><span class="pz-txt"><b data-sin-traducir>${esc(x.nombre || id)}</b>${estado}</span>${marca}</div>`;
         const boton = `<button type="button" class="pz-boton${esPrincipal ? " pz-principal" : esta ? "" : " pz-plano"}" data-pz-probar-ia="${esc(id)}" ${probando ? "disabled" : ""}>${texto}</button>`;
         return `<div class="pz-fila"><span class="pz-txt"><b data-sin-traducir>${esc(x.nombre || id)}</b>${estado}</span>${marca}${boton}</div>`;
       }).join("")}</div>`;
@@ -336,8 +392,8 @@
     const act = { estado: null, disponible: null };   // estado: null | "buscando" | "al-dia" | "sin-conexion" | {paso, texto, valores, total, pct}
     function buscarActualizacion() { act.estado = "buscando"; enviar("buscarActualizacion", {}); pintar(); }
     function actualizar() { act.estado = { paso: "1", texto: "", valores: {}, total: 3 }; enviar("actualizar", {}); pintar(); }
-    /** Las notas pueden venir como `notas` (pieza «actualizaciones») o `detalle` (apps de antes). `desarrollo: true` (o `hay` sin
-     *  versión) es una instalación de desarrollo: las notas son los commits nuevos. */
+    /** Las notas pueden venir como `notas` (pieza «actualizaciones») o `detalle` (apps de antes). Solo `desarrollo: true` es una
+     *  instalación de desarrollo (las notas son los commits nuevos); un `hay` sin versión sigue siendo una versión nueva. */
     const conNotas = (r) => ({ ...r, notas: r.notas ?? r.detalle ?? "" });
     /** `actualizacionRevisada {hay, version, notas|detalle, sinConexion, texto, valores, desarrollo?}`. `{pintar: false}` no
      *  vuelve a pintar (p. ej. detrás de la pantalla del idioma). */
@@ -368,7 +424,7 @@
       }
       if (a) {
         const titulo = a.texto ? T(a.texto, a.valores || {}) : "";
-        const desarrollo = a.desarrollo === true || (!a.version && !a.texto);
+        const desarrollo = a.desarrollo === true;
         return `<div class="pz-fila pz-act"><span class="pz-txt">${desarrollo ? F("Hay cambios nuevos en el código de {app}", { app }, "b") : F("Hay una versión nueva de {app}", { app }, "b")}${titulo ? `<small data-sin-traducir>${titulo}</small>` : ""}${a.notas ? `<small class="pz-notas" data-sin-traducir>${esc(String(a.notas).slice(0, 2000))}</small>` : ""}<small>${L("Tus datos no se tocan al actualizar.")}</small></span><button type="button" class="pz-boton pz-principal" data-pz-act="instalar">${L("Actualizar ahora")}</button></div>`;
       }
       const estado = v === "buscando" ? L("Buscando…") : v === "al-dia" ? L("Estás en la última versión") : v === "sin-conexion" ? L("No pude revisar: sin conexión") : F("{app} revisa sola si hay versiones nuevas.", { app });

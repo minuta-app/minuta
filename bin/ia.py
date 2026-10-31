@@ -347,9 +347,18 @@ def ejecutar(prompt, *, ia=None, timeout=600, archivos=(), leer=None, no_leer=()
         if ia == "claude":
             _aprender(c["comando"], r.stderr)
         if c["salida"]:
-            texto = open(c["salida"], encoding="utf-8").read() if os.path.exists(c["salida"]) else ""
+            texto = _leer_salida(c["salida"])
             return subprocess.CompletedProcess(c["cmd"], r.returncode, texto, r.stderr)
         return r
+
+
+def _leer_salida(ruta):
+    """Lo que el CLI dejó en su archivo de salida (Codex -o), cerrando el archivo (sin ResourceWarning); "" si no está."""
+    try:
+        with open(ruta, encoding="utf-8", errors="replace") as f:
+            return f.read()
+    except OSError:
+        return ""
 
 
 def _errores(ia):
@@ -514,6 +523,12 @@ def preguntar_vivo(prompt, *, ia=None, timeout=600, archivos=(), leer=None, no_l
         p.wait()
         for h in hilos[1:]:
             h.join(5)
+        for tubo in (p.stdin, p.stdout, p.stderr):  # cerrar las tuberías (sin ResourceWarning al terminar)
+            try:
+                if tubo:
+                    tubo.close()
+            except OSError:
+                pass
         if ia == "claude":
             _aprender(c["comando"], "".join(err))
         if motivo:
@@ -521,7 +536,7 @@ def preguntar_vivo(prompt, *, ia=None, timeout=600, archivos=(), leer=None, no_l
         if c["formato"] == "claude-json":
             texto, es_error = final[0] if final[0] else ("", True)
         elif c["salida"]:
-            texto, es_error = (open(c["salida"], encoding="utf-8").read() if os.path.exists(c["salida"]) else ""), False
+            texto, es_error = _leer_salida(c["salida"]), False
         else:
             texto, es_error = "".join(lineas), False
         if p.returncode != 0 or es_error or not texto.strip():
@@ -547,6 +562,8 @@ def probar(ia):
                 "error": ERRORES["desconocida"]}
     _, error = preguntar("Responde solo con la palabra: listo", ia=ia, timeout=120)
     if error:
+        # Se prueba desde «Tu IA» (bienvenida o Ajustes): «Revisa en Ajustes → Tu IA» de app.json sobra ahí.
+        error = {k: v for k, v in error.items() if k != "ayuda"}
         return {"ia": ia, "ok": False, **error, "error": frase(error)}
     return {"ia": ia, "ok": True}
 

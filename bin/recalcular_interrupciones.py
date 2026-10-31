@@ -21,9 +21,11 @@ def segmentos(carpeta, archivo, quien, meta, audio):
     # Lo que dejó la transcripción: <pista>.segmentos.json ({desde, hasta, texto}) o, en grabaciones de antes, el JSON de whisper.
     nuevo, viejo = (os.path.join(carpeta, archivo + x) for x in (".segmentos.json", ".json"))
     if os.path.exists(nuevo):
-        segs = json.load(open(nuevo, encoding="utf-8"))
+        with open(nuevo, encoding="utf-8") as f:
+            segs = json.load(f)
     elif os.path.exists(viejo):
-        segs = transcribir.segmentos_de(json.load(open(viejo, encoding="utf-8")))
+        with open(viejo, encoding="utf-8") as f:
+            segs = transcribir.segmentos_de(json.load(f))
     else:
         return []
     muestras = None

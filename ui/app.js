@@ -143,7 +143,7 @@
   const NO_TRADUCIR = ".notas, .turnos, .gy-chat, .co-veredicto, .co-habito p, .fila-titulo, .pe-ficha h2, .pe-fila b, .ag-lista, .ag-comps, .ag-txt, .pr-respuesta, .env-caja textarea, .cita, h1.nota-titulo, .rv-carta h2, .rv-carta p, .universo .u-nombre, .u-previa";
   /** Donde ni los atributos se traducen (title con el nombre de una nota, por ejemplo). En el resto de NO_TRADUCIR los
    *  atributos sí se traducen (un botón «Abrir nota» dentro de la agenda). */
-  const i18n = PiezaI18n.crear({ noTraducir: NO_TRADUCIR, noTraducirAtributos: ".notas, .turnos, [data-sin-traducir]" });
+  const i18n = PiezaI18n.crear({ noTraducir: NO_TRADUCIR, noTraducirAtributos: ".notas, .turnos" });
   let _textosUsados = null;
   /** Pasa a la pieza el idioma de E.idioma (lo manda la app en cargar, o lo carga la vista previa) si cambió. */
   function sincronizarIdioma() {
@@ -162,7 +162,8 @@
   }
 
   // Pieza «componentes»: avisos en cola (#toast) y el foco y Esc de las ventanas (role="dialog" con aria-modal).
-  const ui = PiezaComponentes.crear({ i18n, host, app: "Minuta", cerrar: () => cerrarArriba() });
+  // mantenerCampos: si una pintada se lleva el campo donde se escribe (buscador, ⌘K, Gimnasio…), el foco y el cursor vuelven.
+  const ui = PiezaComponentes.crear({ i18n, host, app: "Minuta", cerrar: () => cerrarArriba(), mantenerCampos: true });
   /** Un aviso breve: el texto en español, ya armado (la pieza lo pasa por tr, que reconoce las plantillas). */
   const toast = (texto, o = {}) => ui.aviso(String(texto ?? ""), o);
 
@@ -1031,7 +1032,7 @@
           ${borrable ? `<button class="boton-mini u-quitar" data-forja="borrar-u" data-id="${esc(t.id)}" title="Quitar este universo">🗑</button>` : ""}
           ${t.creado ? `<button class="boton-mini u-proponer" data-proponer-u="${esc(t.id)}" title="Proponerlo al catálogo para que otros lo usen">📤</button>` : ""}</div>`;
       }).join("")}${q || cat ? "" : `<button class="universo u-nuevo" data-forja="abrir"><span class="u-emoji">＋</span><span class="u-nombre">Crear universo</span><span class="u-xp">Con tu IA, en ~5 min</span></button>`}</div>` : ""}
-      ${porBajar.length || !(q || cat) ? `<div class="u-sub">Más universos para descargar ${E.catU.estado === "cargando" ? `<small>cargando…</small>` : E.catU.error && !E.catU.lista.length ? `<small>sin conexión al catálogo</small>` : `<small>${porBajar.length} disponibles · gratis</small>`}</div>
+      ${porBajar.length || !(q || cat) ? `<div class="u-sub">Más universos para descargar ${E.catU.estado === "cargando" ? `<small>cargando…</small>` : E.catU.error && !E.catU.lista.length ? `<small>sin conexión al catálogo</small>` : E.catU.sinConexion ? `<small>sin conexión · la lista de la última vez</small>` : `<small>${porBajar.length} disponibles · gratis</small>`}</div>
       ${porBajar.length ? `<div class="galeria-grid">${porBajar.map((u) => `<div class="u-celda"><button class="universo u-catalogo" data-previa="${esc(u.id)}" style="${varsUniverso(u.estilo)}" title="Ver cómo es">
           <span class="u-emoji">${u.emoji}</span><span class="u-nombre">${esc(u.nombre)}</span><span class="u-xp">XP: ${esc(u.xp)}${chipVotos(u.id)}</span>
           <span class="u-iconos">${(u.muestra?.iconos_rangos || []).slice(0, 7).join(" ")}</span><span class="u-creado">👁 ver</span></button>
@@ -2543,7 +2544,6 @@
     estiloCategorias();
     const scroll = $(".principal")?.scrollTop || 0;
     const scrollLista = $(".lista")?.scrollTop || 0;
-    const foco = document.activeElement?.id;
     const app = $("#app");
     const contexto = PANEL ? `${E.temaId}|${E.panVista}|${E.pan.fase}` : `${E.temaId}|${E.seccion}|${E.vista}|${E.sel}`;
     const animar = contexto !== _ultimoContexto;
@@ -2552,8 +2552,7 @@
       app.className = `modo-panel${animar ? " animar" : " quieto"}`;
       app.innerHTML = panel() + confirmarBorrado();
       traducirDOM(app);
-      ui.despuesDePintar();
-      if (foco === "pn-titulo") { const b = $("#pn-titulo"); b?.focus(); b?.setSelectionRange(b.value.length, b.value.length); }
+      ui.despuesDePintar();  // también devuelve el foco y el cursor al título de la grabación (mantenerCampos)
       tic(); reportarAlto();
       return;
     }
@@ -2567,7 +2566,6 @@
     const chat = document.getElementById("gym-chat"); if (chat) chat.scrollTop = chat.scrollHeight;
     ui.despuesDePintar();  // foco al abrir una ventana, adentro mientras está abierta y de vuelta al cerrarla
     if (enPantallaIdioma() && !document.activeElement?.closest?.(".bv-lenguas")) $(".bv-lengua.sugerido")?.focus();
-    if (foco && /^(buscar|corr-de|corr-a|voto-txt|forja-nombre|forja-notas|busca-persona|u-busca|preg-txt|gym-txt|gym-propio|env-para|env-asunto|env-cuerpo|env-indic|ics-url)$/.test(foco)) { const b = document.getElementById(foco); if (b) { b.focus(); try { b.setSelectionRange(b.value.length, b.value.length); } catch {} } }
   }
 
   // ───────────────────────── Eventos ─────────────────────────
@@ -3375,7 +3373,7 @@
       const c = r.tipo === "idiomas" ? (E.catI ||= {}) : E.catU;
       const lista = Array.isArray(r.lista) ? r.lista : [];
       // El índice (pieza «catálogo») trae cada universo o idioma entero, con su ruta, huella y tamaño: aquí solo lo que se muestra.
-      Object.assign(c, { estado: "listo", error: r.error || "", lista: r.tipo === "idiomas"
+      Object.assign(c, { estado: "listo", error: r.error || "", sinConexion: !!r.sin_conexion, lista: r.tipo === "idiomas"
         ? limpiarDato(lista.filter((x) => x && typeof x === "object").map((x) => ({ codigo: x.codigo, nombre: x.nombre, bandera: x.bandera || "" })))
         : limpiarUniversos(lista.map(paraGaleria)) });
       render({ mantenerScroll: true });

@@ -398,7 +398,9 @@ private struct WebHost: NSViewRepresentable {
                 let tipo = CatalogoPublico.tipo(pedido)
                 Catalogo.listar(tipo) { [weak self] r in
                     var d: [String: Any] = ["tipo": pedido, "lista": r[tipo] as? [[String: Any]] ?? []]
-                    if r["ok"] as? Bool != true { d["error"] = Idioma.t(r["plantilla"] as? String ?? "No pude leer el catálogo.") }
+                    // Sin conexión, la pieza trae la última lista validada (sin_conexion: true): se ve, pero no se descarga.
+                    if r["sin_conexion"] as? Bool == true { d["sin_conexion"] = true }
+                    if r["ok"] as? Bool != true { d["error"] = Idioma.t(r["frase"] as? String ?? "No pude leer el catálogo.") }
                     self?.llamarFuncion("catalogo", d)
                 }
             case "descargarUniverso":
@@ -410,14 +412,14 @@ private struct WebHost: NSViewRepresentable {
                     if ok { self.model.temas = Temas.todos(); if datos["usar"] as? Bool == true { self.model.temaID = id } }
                     self.enviarTodo()
                     self.llamarFuncion("descargado", ["tipo": "universo", "id": id, "ok": ok,
-                                                      "error": ok ? "" : Idioma.t(r["plantilla"] as? String ?? "Eso no es válido.")])
+                                                      "error": ok ? "" : Idioma.t(r["frase"] as? String ?? "Eso no es válido.")])
                 }
             case "descargarIdioma":
                 guard let c = datos["codigo"] as? String else { break }
                 Catalogo.descargar("idiomas", c) { [weak self] r in
                     let ok = r["ok"] as? Bool == true
                     self?.llamarFuncion("descargado", ["tipo": "idioma", "id": c, "ok": ok,
-                                                       "error": ok ? "" : Idioma.t(r["plantilla"] as? String ?? "Eso no es válido."),
+                                                       "error": ok ? "" : Idioma.t(r["frase"] as? String ?? "Eso no es válido."),
                                                        "instalados": Idioma.instalados()])
                 }
             case "perfil":

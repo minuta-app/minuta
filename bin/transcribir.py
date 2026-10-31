@@ -17,11 +17,16 @@
   `whisper-cli @archivo` (una opción por línea). Va en una sola línea (un salto de línea no puede colar otra opción), en un temporal
   0600 fuera de las carpetas de la persona, que se borra siempre al terminar.
 - **Modelos** (`MODELOS`): los mismos en todas las apps, con su tamaño y su SHA-256 fijos. Los descarga el host (verificados);
-  aquí `verificar(id)` los revisa y `ruta_modelo(id)` dice dónde están (`<carpeta de datos>/modelos`).
-- **VAD** (detector de voz, Silero): si está descargado, whisper salta los silencios (menos inventos y más rápido).
-- **Limpieza:** se quitan las marcas ([música], (ruido)), las frases que whisper inventa en silencio («Gracias por ver»,
-  «Subtítulos realizados por la comunidad de Amara.org»…), los bucles (la misma frase 3 veces seguidas) y, si se pasa la energía
-  del audio (`energia(wav)`), lo que cae en silencio.
+  aquí `verificar(id)` los revisa y `ruta_modelo(id)` dice dónde están (`<carpeta de datos>/modelos`, u otra carpeta con
+  `"transcribir": {"modelos": "~/ana/models"}` en app.json). Para pruebas, `<ID>_MODELO_PRUEBA=<archivo>` cuenta como modelo
+  descargado (nunca dentro de la app).
+- **VAD** (detector de voz, Silero): si está descargado, whisper salta los silencios (menos inventos y más rápido). `vad=` acepta
+  True, False o la ruta del modelo; por defecto va con segmentos y no palabra por palabra (corta la palabra justo al borde).
+- **Limpieza:** se quitan las marcas ([música], (ruido)), los créditos que whisper inventa («Subtítulos realizados por la
+  comunidad de Amara.org»: nadie los dice), los bucles (la misma frase 3 veces seguidas) y, si se pasa la energía del audio
+  (`energia(wav)`), lo que cae en silencio. Las frases cortas que whisper inventa en silencio pero que la gente también dice
+  («Gracias», «Thank you», «Gracias por ver») solo se quitan si caen en silencio o casi (con la energía) o si son lo único que
+  hay en toda la transcripción (sin la energía): nunca se pierde un «gracias» dicho en una reunión.
 
 Uso: transcribir.py modelos <salida.json>                       → {ok, modelos: [{id, archivo, bytes, sha256, url, descargado}]}
      transcribir.py verificar <entrada {id}> <salida.json>      → {ok, id, valido}
@@ -55,35 +60,61 @@ MODELOS = {
 }
 SR = 16000
 #: Lo que whisper inventa cuando hay silencio, ruido o música (créditos de los videos con que se entrenó). Ya normalizado.
+#: Coincidencia EXACTA con el segmento entero (normalizado): «Gracias, Ana» nunca es un invento. Como la gente también las dice,
+#: solo se quitan si caen en silencio o casi (con la energía) o si no hay nada más en toda la transcripción.
 ALUCINACIONES = {
     "thank you", "thanks for watching", "thank you for watching", "thank you very much", "bye", "you",
     "gracias", "muchas gracias", "gracias por ver", "gracias por ver el video", "suscribete", "suscribete al canal",
-    "subtitulos realizados por la comunidad de amara org", "subtitulos por la comunidad de amara org", "amara org",
-    "subtitulado por", "obrigado", "merci", "danke",
+    "obrigado", "merci", "danke",
 }
+#: Créditos de subtítulos: nadie los dice, se quitan siempre. Exactos o como palabras completas dentro del segmento (`CREDITOS_EN`).
+CREDITOS = {
+    "subtitulos realizados por la comunidad de amara org", "subtitulos por la comunidad de amara org", "amara org",
+    "subtitulado por",
+}
+CREDITOS_EN = re.compile(r"(?:^| )(?:amara org|subtitulos realizados por)(?: |$)")
 UMBRAL_SILENCIO = 0.004   # energía (RMS normalizado) bajo la cual un tramo es silencio
+UMBRAL_INVENTO = 0.012    # una frase de ALUCINACIONES con menos energía que esto es ruido o música de fondo, no alguien hablando
 CUADRO = 0.1              # segundos por cuadro de energía
 TIEMPO = 4 * 3600         # lo más que puede tardar una transcripción
 
 
 class ErrorTranscribir(RuntimeError):
-    """Algo que la persona puede arreglar: el mensaje es la frase en español (clave de traducción) y `codigo` dice cuál."""
+    """Algo que la persona puede arreglar. str(e) es la frase en español (clave de traducción) y `codigo` dice cuál. Con detalle
+    (lo último que dijo el transcriptor), `frase` ya lo trae puesto y `plantilla` + `valores` sirven para traducir:
+    Tp(e.plantilla, e.valores) o `e.como_dict()` para responder a la interfaz."""
     FRASES = {
         "sin_modelo": "Falta el modelo de transcripción: descárgalo en Ajustes.",
         "sin_transcriptor": "No encontré el transcriptor.",
         "fallo": "La transcripción falló.",
         "ruta": "No puedo transcribir un archivo en una carpeta con saltos de línea en el nombre.",
     }
+    CON_DETALLE = {"fallo": "La transcripción falló: {detalle}"}
 
     def __init__(self, codigo, detalle=""):
         super().__init__(self.FRASES[codigo])
-        self.codigo, self.plantilla, self.detalle = codigo, self.FRASES[codigo], detalle[-300:]
+        self.codigo, self.detalle = codigo, " ".join(str(detalle or "")[-300:].split())
+        self.plantilla = self.CON_DETALLE[codigo] if self.detalle and codigo in self.CON_DETALLE else self.FRASES[codigo]
+        self.valores = {"detalle": self.detalle} if "{detalle}" in self.plantilla else {}
+        self.frase = self.plantilla.replace("{detalle}", self.detalle)
+
+    def como_dict(self):
+        """{ok: false, codigo, plantilla, valores, error}: lo que un script responde a la interfaz."""
+        return {"ok": False, "codigo": self.codigo, "plantilla": self.plantilla, "valores": self.valores, "error": self.frase}
 
 
 # ───────────── Modelos ─────────────
 
 def carpeta_modelos():
-    return nucleo.carpeta_privada(os.path.join(nucleo.carpeta_datos(), "modelos"))
+    """`<carpeta de datos>/modelos`, o la de app.json → "transcribir": {"modelos": "~/ana/models"} (con ~, absoluta o relativa
+    a la carpeta de datos; nunca con ..), para una app que siempre los tuvo en otra parte."""
+    propia = (nucleo.app().get("transcribir") or {}).get("modelos") if isinstance(nucleo.app().get("transcribir"), dict) else None
+    if propia is None:
+        return nucleo.carpeta_privada(os.path.join(nucleo.carpeta_datos(), "modelos"))
+    if not isinstance(propia, str) or not propia.strip() or ".." in propia.replace("\\", "/").split("/") or "\n" in propia:
+        raise RuntimeError("app.json: «transcribir.modelos» es una carpeta (~/…, absoluta o relativa a la de datos), sin «..».")
+    ruta = os.path.expanduser(propia)
+    return nucleo.carpeta_privada(ruta if os.path.isabs(ruta) else os.path.join(nucleo.carpeta_datos(), ruta))
 
 
 def ruta_modelo(id_):
@@ -119,8 +150,17 @@ def modelos():
             for k, v in MODELOS.items()]
 
 
+def modelo_prueba():
+    """`<ID>_MODELO_PRUEBA=<archivo>`: un modelo falso para las pruebas de la app (cualquier tamaño). Nunca dentro de la app: si
+    el host puso `<ID>_RECURSOS`, se ignora."""
+    r = nucleo.entorno("MODELO_PRUEBA", "")
+    return r if r and not nucleo.entorno("RECURSOS") and os.path.isfile(r) else None
+
+
 def modelo_elegido(preferido=None):
     """La ruta del modelo de voz: el preferido si está descargado; si no, el que haya (turbo primero); None si no hay ninguno."""
+    if modelo_prueba():
+        return modelo_prueba()
     for k in ([preferido] if preferido in ("turbo", "small") else []) + ["turbo", "small"]:
         r = ruta_modelo(k)
         if os.path.isfile(r) and os.path.getsize(r) == MODELOS[k]["bytes"]:
@@ -131,13 +171,15 @@ def modelo_elegido(preferido=None):
 # ───────────── El transcriptor ─────────────
 
 def herramienta(*nombres):
-    """El primer ejecutable que exista: el que trae la app (<ID>_PROGRAMAS o <ID>_HERRAMIENTAS), el de bin/ o el del sistema."""
+    """El primer ejecutable que exista. Primero las carpetas de la app (<ID>_PROGRAMAS, <ID>_HERRAMIENTAS, bin/) con TODOS los
+    nombres, y recién después el sistema: un whisper-cli instalado aparte nunca gana sobre el binario que trae la app."""
     dirs = [d for d in (nucleo.entorno("PROGRAMAS"), nucleo.entorno("HERRAMIENTAS"), os.path.join(nucleo.recursos(), "bin")) if d]
-    for nombre in nombres:
-        for d in dirs:
+    for d in dirs:
+        for nombre in nombres:
             for ruta in (os.path.join(d, nombre), os.path.join(d, nombre + ".exe")):
                 if os.path.isfile(ruta) and os.access(ruta, os.X_OK):
                     return ruta
+    for nombre in nombres:
         if shutil.which(nombre):
             return shutil.which(nombre)
     return None
@@ -182,9 +224,23 @@ def hilos():
     return str(max(2, min(8, (os.cpu_count() or 4) - 1)))
 
 
-def transcribir(wav, *, idioma="auto", modelo=None, vocabulario="", palabras=False, vad=True, energia_=None, tiempo=TIEMPO):
+def ruta_vad(vad=None):
+    """El modelo del detector de voz que se usa: `vad` si es una ruta a un archivo, el descargado si `vad` es True o None; si no,
+    None (sin VAD)."""
+    if isinstance(vad, str):
+        return vad if os.path.isfile(vad) else None
+    if vad is False:
+        return None
+    r = ruta_modelo("vad")
+    return r if os.path.isfile(r) else None
+
+
+def transcribir(wav, *, idioma="auto", modelo=None, vocabulario="", palabras=False, vad=None, energia_=None, tiempo=TIEMPO,
+                partir=None):
     """Transcribe un WAV de 16 kHz mono. Devuelve los segmentos ya limpios ({desde, hasta, texto} en segundos) o, con
-    palabras=True, una palabra por elemento ({t, i, f}). `modelo`: ruta, o None para el elegido. Lanza ErrorTranscribir."""
+    palabras=True, una palabra por elemento ({t, i, f}). `modelo`: ruta, o None para el elegido. `vad`: True, False o la ruta
+    del modelo; None (por defecto) = con segmentos sí, palabra por palabra no. `partir(segmentos) -> segmentos` corre antes de
+    limpiar (p. ej. partir por silencios: así cada parte se filtra sola). Lanza ErrorTranscribir."""
     if not isinstance(idioma, str) or not re.fullmatch(r"auto|[a-z]{2,3}", idioma):
         idioma = "auto"
     modelo = modelo or modelo_elegido()
@@ -197,8 +253,9 @@ def transcribir(wav, *, idioma="auto", modelo=None, vocabulario="", palabras=Fal
         salida = os.path.join(tmp, "transcripcion")
         opciones = ["-m", modelo, "-l", idioma, "-t", hilos(), "-f", wav, "-oj", "-of", salida, "-np"]
         opciones += ["-ml", "1", "-sow"] if palabras else ["-sns", "-mc", "64"]
-        if vad and os.path.isfile(ruta_modelo("vad")):
-            opciones += ["--vad", "-vm", ruta_modelo("vad")]
+        vm = ruta_vad(vad if vad is not None else (False if palabras else True))
+        if vm:
+            opciones += ["--vad", "-vm", vm]
         cmd, temporales = comando(binario, opciones, vocabulario)
         try:
             r = subprocess.run(cmd, stdin=subprocess.DEVNULL, capture_output=True, text=True, encoding="utf-8", errors="replace",
@@ -215,8 +272,9 @@ def transcribir(wav, *, idioma="auto", modelo=None, vocabulario="", palabras=Fal
         if r.returncode != 0 or not isinstance(datos, dict):
             raise ErrorTranscribir("fallo", r.stderr or "")
     if palabras:
-        return palabras_de(datos)
-    return limpiar(segmentos_de(datos), energia_)
+        return palabras_de(datos, energia_)
+    segs = segmentos_de(datos)
+    return limpiar(partir(segs) if partir else segs, energia_)
 
 
 # ───────────── Leer y limpiar lo que dice whisper ─────────────
@@ -227,9 +285,28 @@ def normalizar(texto):
     return " ".join(re.sub(r"[^a-z0-9ñ ]+", " ", t).split())
 
 
-def es_alucinacion(texto):
+def es_credito(texto):
+    """Créditos de subtítulos que whisper inventa («… Amara.org»): nadie los dice. Palabras completas: «Tamara organizó» no."""
     t = normalizar(texto)
-    return t in ALUCINACIONES or "amara org" in t
+    return t in CREDITOS or CREDITOS_EN.search(t) is not None
+
+
+def es_alucinacion(texto):
+    """True si el segmento entero (normalizado) es una frase que whisper suele inventar o un crédito. Que lo sea no basta para
+    quitarlo: ver `limpiar`."""
+    return normalizar(texto) in ALUCINACIONES or es_credito(texto)
+
+
+def inventado(seg, energia_=None, solo_inventos=False):
+    """¿Se quita este segmento? Créditos, siempre. Una frase de ALUCINACIONES: con la energía, solo si cae en silencio o casi
+    (bajo UMBRAL_INVENTO); sin la energía, solo si es todo lo que hay (`solo_inventos`: ningún otro segmento dice algo real)."""
+    if es_credito(seg["texto"]):
+        return True
+    if normalizar(seg["texto"]) not in ALUCINACIONES:
+        return False
+    if energia_:
+        return rms(energia_, seg["desde"], seg["hasta"]) < UMBRAL_INVENTO
+    return solo_inventos
 
 
 def _marca(texto):
@@ -237,6 +314,7 @@ def _marca(texto):
 
 
 def segmentos_de(datos):
+    """Los segmentos ({desde, hasta, texto} en segundos) del JSON de whisper (`-oj`), sin marcas como [Música]."""
     r = []
     for s in datos.get("transcription", []) if isinstance(datos, dict) else []:
         try:
@@ -248,8 +326,22 @@ def segmentos_de(datos):
     return r
 
 
-def palabras_de(datos):
-    """Con -ml 1 -sow cada segmento es una palabra. La puntuación suelta va pegada a la anterior; marcas e inventos se descartan."""
+def whisper_de(segs):
+    """Lo inverso de `segmentos_de`: el formato de whisper ({"transcription": [{offsets: {from, to} en ms, text}]}) desde
+    segmentos {desde, hasta, texto} en segundos. Para guardar una transcripción en el formato de siempre y releerla después."""
+    r = []
+    for s in segs or []:
+        try:
+            desde, hasta, texto = float(s["desde"]), float(s["hasta"]), str(s["texto"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        r.append({"offsets": {"from": int(round(desde * 1000)), "to": int(round(hasta * 1000))}, "text": texto})
+    return {"transcription": r}
+
+
+def palabras_de(datos, energia_=None):
+    """Con -ml 1 -sow cada segmento es una palabra. La puntuación suelta va pegada a la anterior; marcas e inventos se descartan
+    (con las mismas reglas que `limpiar`: un «Gracias.» dicho de verdad queda)."""
     r = []
     for s in segmentos_de(datos):
         t, i, f = s["texto"], s["desde"], s["hasta"]
@@ -259,13 +351,18 @@ def palabras_de(datos):
             continue
         if f > i:
             r.append({"t": t, "i": i, "f": f})
-    return [] if es_alucinacion(" ".join(w["t"] for w in r)) else r
+    if r and inventado({"texto": " ".join(w["t"] for w in r), "desde": r[0]["i"], "hasta": r[-1]["f"]}, energia_, True):
+        return []
+    return r
 
 
-def limpiar(segs, energia_=None):
-    """Sin inventos, sin lo que cae en silencio (si se pasa la energía) y sin bucles: la misma frase más de 2 veces seguidas."""
-    buenos = [s for s in segs if not es_alucinacion(s["texto"])
-              and not (energia_ is not None and rms(energia_, s["desde"], s["hasta"]) < UMBRAL_SILENCIO)]
+def limpiar(segs, energia_=None, partir=None):
+    """Sin inventos (ver `inventado`), sin lo que cae en silencio (si se pasa la energía) y sin bucles: la misma frase más de 2
+    veces seguidas. `partir(segmentos) -> segmentos` corre antes de filtrar."""
+    segs = list(partir(segs) if partir else segs)
+    solo = all(es_alucinacion(s["texto"]) for s in segs)
+    buenos = [s for s in segs if not inventado(s, energia_, solo)
+              and not (energia_ and rms(energia_, s["desde"], s["hasta"]) < UMBRAL_SILENCIO)]
     final = []
     for s in buenos:
         if len(final) >= 2 and normalizar(s["texto"]) == normalizar(final[-1]["texto"]) == normalizar(final[-2]["texto"]):

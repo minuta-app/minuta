@@ -92,6 +92,9 @@
 html, body { background: var(--fondo); color: var(--texto); }
 body { font-family: var(--fuente); }
 :focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
-/* Un diálogo recibe el foco cuando lo que lo abrió ya no está: sin anillo alrededor de toda la caja (sí en sus controles). */
-:where([role="dialog"], [role="alertdialog"])[aria-modal="true"]:focus-visible { outline: none; }
+/* Un diálogo recibe el foco cuando lo que lo abrió ya no está: sin anillo alrededor de toda la caja (sí en sus controles). Su título
+   también recibe el foco al abrir (para el lector de pantalla; tabindex="-1", no es un control): sin anillo, en cualquier ventana
+   aria-modal, sea de una pieza o de la app. */
+:where([role="dialog"], [role="alertdialog"])[aria-modal="true"]:focus-visible,
+:where([role="dialog"], [role="alertdialog"])[aria-modal="true"] :where(h1, h2, h3)[tabindex="-1"]:focus { outline: none; }
 ::selection { background: color-mix(in srgb, var(--acento) 30%, transparent); }

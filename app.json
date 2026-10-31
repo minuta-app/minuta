@@ -29,6 +29,9 @@
    "small"
   ]
  },
+ "transcribir": {
+  "modelos": "~/minuta/models"
+ },
  "catalogo": {
   "repo": "minuta-app/minuta-catalogo",
   "rama": "main",
