@@ -1040,6 +1040,19 @@
       ${prev ? previaUniverso(prev) : ""}
     </div></div>`;
   }
+  /** Un universo del índice del catálogo, como lo muestra la galería: la vista previa (`muestra`) sale del universo entero. */
+  function paraGaleria(u) {
+    if (!u || typeof u !== "object" || u.muestra) return u;
+    const ap = u.apartados && typeof u.apartados === "object" ? u.apartados : {};
+    const lista = (v) => (Array.isArray(v) ? v : []);
+    return { id: u.id, nombre: u.nombre, emoji: u.emoji, xp: u.xp, idioma: u.idioma, categorias: u.categorias, autor: u.autor,
+      descripcion: u.descripcion || u.personaje_por_defecto || "", bytes: u.tamano, estilo: u.estilo,
+      muestra: {
+        rangos: lista(u.rangos).map((x) => x?.nombre), iconos_rangos: lista(u.iconos_rangos).slice(0, 10), elogio: lista(u.elogios)[0] || "",
+        arquetipos: ["claridad", "escucha", "preguntas", "cierre"].map((a) => ({ ...(lista(ap[a])[7] || {}), apartado: a })),
+        logros: Object.values(u.logros && typeof u.logros === "object" ? u.logros : {}).slice(0, 4).map((l) => ({ nombre: l?.nombre, descripcion: l?.descripcion })),
+      } };
+  }
   /** Vista previa de un universo del catálogo, con sus colores, rangos, arquetipos y logros, sin descargarlo. */
   function previaUniverso(u) {
     const m = u.muestra || {};
@@ -3360,7 +3373,11 @@
     /** Índice del catálogo público (universos o idiomas). */
     catalogo(r) {
       const c = r.tipo === "idiomas" ? (E.catI ||= {}) : E.catU;
-      Object.assign(c, { estado: "listo", lista: r.tipo === "idiomas" ? (Array.isArray(r.lista) ? limpiarDato(r.lista) : []) : limpiarUniversos(r.lista), error: r.error || "" });
+      const lista = Array.isArray(r.lista) ? r.lista : [];
+      // El índice (pieza «catálogo») trae cada universo o idioma entero, con su ruta, huella y tamaño: aquí solo lo que se muestra.
+      Object.assign(c, { estado: "listo", error: r.error || "", lista: r.tipo === "idiomas"
+        ? limpiarDato(lista.filter((x) => x && typeof x === "object").map((x) => ({ codigo: x.codigo, nombre: x.nombre, bandera: x.bandera || "" })))
+        : limpiarUniversos(lista.map(paraGaleria)) });
       render({ mantenerScroll: true });
     },
     /** Terminó una descarga del catálogo. */
@@ -3489,7 +3506,11 @@
     abrir: (d) => abrirWeb(d.url),
     perfil: (d) => { if (d.cambios?.idioma_ui) cambiarIdiomaWeb(d.cambios.idioma_ui); },
     bienvenidaEstado: (d, c) => c.luego(300, () => c.responder("bienvenida", bienvenidaSimulada())),
-    catalogo: (d, c) => fetch(`${CATALOGO_RAW}${d.tipo}/index.json`).then((r) => r.json()).then((lista) => c.responder("catalogo", { tipo: d.tipo, lista }))
+    // El índice de la pieza «catálogo» (temas/index.json, idiomas/catalogo.json); si aún no está, el de antes.
+    catalogo: (d, c) => fetch(`${CATALOGO_RAW}${d.tipo === "idiomas" ? "idiomas/catalogo.json" : "temas/index.json"}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status)))).then((x) => x[d.tipo === "idiomas" ? "idiomas" : "temas"])
+      .catch(() => fetch(`${CATALOGO_RAW}${d.tipo}/index.json`).then((r) => r.json()))
+      .then((lista) => c.responder("catalogo", { tipo: d.tipo, lista }))
       .catch((e) => c.responder("catalogo", { tipo: d.tipo, lista: [], error: String(e) })),
     descargarUniverso: (d, c) => fetch(`${CATALOGO_RAW}universos/${d.id}.json`).then((r) => r.json())
       .then((t) => { const u = limpiarUniverso(t); if (!u) throw new Error("formato"); E.temas.push({ ...u, descargado: true }); c.responder("descargado", { tipo: "universo", id: d.id, ok: true, usar: d.usar }); })

@@ -14,18 +14,18 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import procesar as P  # noqa: E402
+import transcribir  # noqa: E402
 
 
 def segmentos(carpeta, archivo, quien, meta, audio):
-    js = os.path.join(carpeta, archivo + ".json")
-    if not os.path.exists(js):
+    # Lo que dejó la transcripción: <pista>.segmentos.json ({desde, hasta, texto}) o, en grabaciones de antes, el JSON de whisper.
+    nuevo, viejo = (os.path.join(carpeta, archivo + x) for x in (".segmentos.json", ".json"))
+    if os.path.exists(nuevo):
+        segs = json.load(open(nuevo, encoding="utf-8"))
+    elif os.path.exists(viejo):
+        segs = transcribir.segmentos_de(json.load(open(viejo, encoding="utf-8")))
+    else:
         return []
-    datos = json.load(open(js, encoding="utf-8"))
-    segs = []
-    for s in datos.get("transcription", []):
-        texto = P.corregir(s.get("text", "").strip())
-        if texto:
-            segs.append({"ini": s["offsets"]["from"] / 1000, "fin": s["offsets"]["to"] / 1000, "texto": texto})
     muestras = None
     caf = os.path.join(carpeta, archivo + ".caf")
     if os.path.exists(caf) and os.path.getsize(caf) > 10000:
@@ -41,8 +41,8 @@ def segmentos(carpeta, archivo, quien, meta, audio):
     primer = meta.get(f"{archivo}_primer_buffer") or meta["inicio"]
     desfase = max(0.0, primer - meta["inicio"])
     for s in segs:
-        s["ini"] += desfase
-        s["fin"] += desfase
+        s["desde"] += desfase
+        s["hasta"] += desfase
     if muestras is not None:
         audio[archivo] = (muestras, desfase)
     return segs

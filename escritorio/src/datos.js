@@ -2,7 +2,7 @@
 // Es el equivalente de Perfil.swift, Juego.swift (Temas), Categorias.swift, Extras.swift y Catalogo.swift.
 const fs = require("fs");
 const path = require("path");
-const { app, net, shell } = require("electron");
+const { app, shell } = require("electron");
 const { BASE, recursos, expandir } = require("./rutas");
 
 const leerJSON = (ruta, defecto = null) => { try { return JSON.parse(fs.readFileSync(ruta, "utf8")); } catch { return defecto; } };
@@ -277,45 +277,12 @@ const Idioma = {
 };
 
 // ───────────── Catálogo público (universos e idiomas) ─────────────
+// Bajar, revisar la huella SHA-256 y guardar es de la pieza «catálogo» (src/catalogo.js + bin/catalogo.py; repo y tipos en
+// app.json → catalogo). Aquí queda lo propio de Minuta: el repo para comentarios y votos.
 const Catalogo = {
   repo: "minuta-app/minuta-catalogo",
-  get raiz() { return `https://raw.githubusercontent.com/${this.repo}/main/`; },
-  get urlComentarios() { return `https://github.com/${this.repo}/issues/new`; },
-  cache: path.join(BASE, "catalogo"),
-  async bajar(ruta) {
-    const r = await net.fetch(this.raiz + ruta, { headers: { "User-Agent": "Minuta" }, cache: "no-store" });
-    if (!r.ok) throw new Error(`Respuesta ${r.status}`);
-    return Buffer.from(await r.arrayBuffer());
-  },
-  async indice(tipo) {
-    const copia = path.join(this.cache, `${tipo}.json`);
-    try {
-      const datos = await this.bajar(`${tipo}/index.json`);
-      const lista = JSON.parse(datos.toString("utf8"));
-      fs.mkdirSync(this.cache, { recursive: true });
-      fs.writeFileSync(copia, datos);
-      return { lista };
-    } catch (e) {
-      return { lista: leerJSON(copia, []) || [], error: String(e.message || e) };
-    }
-  },
-  async descargarUniverso(id) {
-    if (!/^[a-z0-9]{2,40}$/.test(id)) return "id inválido";
-    let o;
-    try { o = JSON.parse((await this.bajar(`universos/${id}.json`)).toString("utf8")); } catch (e) { return String(e.message || e); }
-    if (o?.id !== id || !Temas.valido(o)) return "El universo no tiene el formato esperado.";
-    o.descargado = true;
-    try { escribirJSON(path.join(Temas.carpeta, `${id}.json`), o); } catch { return "No pude guardarlo."; }
-    return null;
-  },
-  async descargarIdioma(codigo) {
-    if (!/^[a-z]{2}(-[A-Z]{2})?$/.test(codigo)) return "código inválido";
-    let datos, o;
-    try { datos = await this.bajar(`idiomas/${codigo}.json`); o = JSON.parse(datos.toString("utf8")); } catch (e) { return String(e.message || e); }
-    if (o?.codigo !== codigo || !o.textos || typeof o.textos !== "object" || !Object.keys(o.textos).length) return "El idioma no tiene el formato esperado.";
-    try { fs.mkdirSync(Idioma.dirDescargados, { recursive: true }); fs.writeFileSync(path.join(Idioma.dirDescargados, `${codigo}.json`), datos); } catch { return "No pude guardarlo."; }
-    return null;
-  },
+  /** La interfaz pide «universos» o «idiomas»; los universos son el tipo «temas» (se guardan en ~/minuta/temas). */
+  tipo: (pedido) => (pedido === "idiomas" ? "idiomas" : "temas"),
 };
 
 module.exports = { leerJSON, escribirJSON, Perfil, Temas, Categorias, Extras, Ajustes, Idioma, Catalogo };

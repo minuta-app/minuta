@@ -921,7 +921,20 @@
   "Responde como lo harías en la reunión… (↵ envía)": "Answer as you would in the meeting… (↵ sends)",
   "Detuviste a {ia}.": "You stopped {ia}.",
   "Revisar de nuevo": "Check again",
-  "Hay cambios nuevos en el código de {app}": "There are new changes in {app}'s code"
+  "Hay cambios nuevos en el código de {app}": "There are new changes in {app}'s code",
+  "Falta el modelo de transcripción: descárgalo en Ajustes.": "The transcription model is missing: download it in Settings.",
+  "No encontré el transcriptor.": "I couldn't find the transcriber.",
+  "La transcripción falló.": "Transcription failed.",
+  "No puedo transcribir un archivo en una carpeta con saltos de línea en el nombre.": "I can't transcribe a file in a folder whose name has line breaks.",
+  "Detector de voz": "Voice detector",
+  "El mejor resultado; recomendado con 8 GB de RAM o más.": "The best result; recommended with 8 GB of RAM or more.",
+  "Más rápido y pequeño; para equipos con poca memoria.": "Faster and smaller; for computers with little memory.",
+  "Salta los silencios: menos inventos y más rápido.": "Skips silences: fewer made-up lines and faster.",
+  "No pude conectarme. Revisa tu conexión.": "I couldn't connect. Check your connection.",
+  "No pude leer el catálogo.": "I couldn't read the catalog.",
+  "Eso no es válido.": "That isn't valid.",
+  "Llegó dañado. Intenta de nuevo.": "It arrived damaged. Please try again.",
+  "Ya no está en el catálogo. Vuelve a abrirlo.": "It's no longer in the catalog. Open it again."
  },
  "palabras": {
   "lunes": "Monday",

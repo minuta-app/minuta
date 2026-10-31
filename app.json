@@ -1,7 +1,9 @@
 {
  "nombre": "Minuta",
  "id": "minuta",
- "datos": "sistema",
+ "datos": {
+  "carpeta": "~/minuta"
+ },
  "icono": "docs/favicon.svg",
  "plataformas": [
   "mac",
@@ -17,6 +19,38 @@
    "claude",
    "codex",
    "gemini"
+  ],
+  "idioma_audio": {
+   "tipo": "texto",
+   "patron": "auto|[a-z]{2,3}"
+  },
+  "modelo": [
+   "turbo",
+   "small"
   ]
+ },
+ "catalogo": {
+  "repo": "minuta-app/minuta-catalogo",
+  "rama": "main",
+  "tipos": {
+   "temas": {
+    "validador": "universo_formato",
+    "indice": "temas/index.json",
+    "max_bytes": 102400,
+    "max_indice": 2097152,
+    "max_en_indice": 1000,
+    "singular": "universo",
+    "origen": false
+   },
+   "idiomas": {
+    "validador": "idioma_formato",
+    "indice": "idiomas/catalogo.json",
+    "max_bytes": 204800,
+    "max_indice": 4194304,
+    "max_en_indice": 200,
+    "singular": "idioma",
+    "origen": false
+   }
+  }
  }
 }

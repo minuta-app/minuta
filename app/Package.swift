@@ -10,7 +10,13 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "Minuta",
+            dependencies: ["PiezaCatalogo"],
             path: "Sources/Minuta"
+        ),
+        // Pieza «catálogo» de Pieza (universos e idiomas de la comunidad, con huella SHA-256): su propio target, no se edita aquí.
+        .target(
+            name: "PiezaCatalogo",
+            path: "Sources/PiezaCatalogo"
         ),
         // whisper.cpp oficial (framework para Apple, usa Metal). Misma versión que se probó con whisper-cli.
         .binaryTarget(

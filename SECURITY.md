@@ -35,7 +35,7 @@ Solo la última versión publicada en [Releases](https://github.com/minuta-app/m
   pull request con permisos de escritura ni con secretos.
 - Las actions de GitHub van fijadas por su commit (SHA) y con los permisos mínimos; Dependabot propone actualizaciones
   con unos días de espera.
-- Las descargas que hace la app (versiones nuevas, modelos, Python, herramientas) se verifican con su huella SHA-256 antes
+- Las descargas que hace la app (versiones nuevas, modelos, Python, herramientas, universos e idiomas del catálogo) se verifican con su huella SHA-256 antes
   de usarse.
 - Lo que viene de afuera (universos, idiomas, transcripciones, respuestas de la IA) es solo dato: se valida, se escapa
   antes de mostrarse y la interfaz tiene una política de contenido (CSP) que no deja ejecutar código que no sea el de la app.
