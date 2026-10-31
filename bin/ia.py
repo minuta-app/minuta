@@ -39,16 +39,21 @@ SIN_MEMORIA_CLAUDE = {"CLAUDE_CODE_DISABLE_CLAUDE_MDS": "1", "CLAUDE_CODE_DISABL
 PROHIBIDO = ["Bash", "Edit", "Write", "MultiEdit", "NotebookEdit", "WebFetch", "WebSearch", "Task"]
 #: Texto de cada error (la clave de traducción es el texto en español; {ia} y {detalle} se reemplazan en la interfaz).
 ERRORES = {
-    "no_instalada": "No encontré {ia} en este computador. Revisa en Ajustes → Tu IA.",
+    "no_instalada": "No encontré {ia} en este computador.",
     "demora": "{ia} se demoró demasiado en responder. Inténtalo de nuevo.",
     "sin_respuesta": "{ia} no respondió. {detalle}",
+    "sin_respuesta_corta": "{ia} no respondió.",
     "desconocida": "No conozco esa IA.",
     "actualizar": "Actualiza {ia} para usarla con {app}: tu versión no conoce las protecciones que necesitamos.",
 }
 
 
+
+
 class VersionVieja(Exception):
     """El CLI no conoce una protección obligatoria: nunca se corre sin ella; se le pide a la persona actualizarlo."""
+
+
 INSTRUCCION_ARCHIVO = ("Lee el archivo instrucciones.md de esta carpeta (y el material que menciona) y haz exactamente lo que pide. "
                        "Entrega solo el resultado pedido, sin comentarios. No modifiques ni crees archivos.")
 _ayuda = {}  # (ruta, mtime, tamaño) → texto de --help: si el CLI se actualiza, se vuelve a preguntar
@@ -128,8 +133,8 @@ def _conoce_ayuda(cmd):
 
 def _entorno():
     """La IA no recibe las variables de la app (rutas, credenciales, modos de prueba): solo lo necesario para correr."""
-    p = nucleo.prefijo()
-    return {k: v for k, v in os.environ.items() if not k.startswith(p)}
+    p = nucleo.prefijo().upper()
+    return {k: v for k, v in os.environ.items() if not k.upper().startswith(p)}  # en Windows las variables no distinguen mayúsculas
 
 
 def _sin_secretos(no_leer):
@@ -240,7 +245,7 @@ def preguntar(prompt, **opciones):
         return "", error("actualizar")
     if r.returncode != 0 or not (r.stdout or "").strip():
         valores["detalle"] = ((r.stderr or "").strip().splitlines()[-1:] or [""])[0][:300]
-        return "", error("sin_respuesta")
+        return "", error("sin_respuesta" if valores["detalle"] else "sin_respuesta_corta")
     return r.stdout, None
 
 

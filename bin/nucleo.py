@@ -21,7 +21,7 @@ import re
 import sys
 import tempfile
 
-VERSION = "0.4.0"
+VERSION = "0.6.0"
 MAXIMO_ENTRADA = 5 * 1024 * 1024
 _app = None
 _privadas = set()
@@ -74,8 +74,18 @@ def carpeta_datos():
     if entorno("DATOS"):
         return carpeta_privada(entorno("DATOS"))
     a, casa = app(), os.path.expanduser("~")
+    if isinstance(a["datos"], dict):
+        # {"carpeta": "~/minuta"}: una carpeta propia, que puede ser también el checkout de la app (Minuta). Se usa tal cual: sin
+        # crearla ni cambiarle permisos (la app sabe cómo la cuida). Solo dentro de la casa de la persona.
+        ruta = os.path.realpath(os.path.expanduser(str(a["datos"].get("carpeta", ""))))
+        if not ruta.startswith(os.path.realpath(casa) + os.sep):
+            raise RuntimeError("app.json: «datos.carpeta» tiene que estar dentro de la carpeta de la persona (~/…).")
+        return ruta
     if a["datos"] == "visible":
-        ruta = os.path.join(casa, a["nombre"], "." + a["id"])
+        visible = entorno("CARPETA") or os.path.join(casa, a["nombre"])  # <ID>_CARPETA: mueve todo en las pruebas
+        if not os.path.isdir(visible):
+            carpeta_privada(visible)  # recién creada, también solo para la persona (una que ya existía no se toca)
+        ruta = os.path.join(visible, "." + a["id"])
     elif sys.platform == "darwin":
         ruta = os.path.join(casa, "Library", "Application Support", a["nombre"])
     elif os.name == "nt":
@@ -119,6 +129,8 @@ def escribir_atomico(ruta, texto, modo=None):
     deja temporales huérfanos si algo falla. Un archivo nuevo queda PRIVADO salvo que se pida modo=DOCUMENTO."""
     carpeta = os.path.dirname(os.path.abspath(ruta))
     os.makedirs(carpeta, exist_ok=True)
+    if modo is None and app().get("privado"):
+        modo = PRIVADO  # app.json "privado": true (p. ej. datos de niños): todo queda 0600, siempre
     if modo is None:
         try:
             modo = os.stat(ruta).st_mode & 0o777

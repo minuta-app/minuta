@@ -882,7 +882,9 @@
   "{x} se demoró demasiado en responder. Inténtalo de nuevo.": "{x} took too long to answer. Please try again.",
   "No respondió.": "No answer.",
   "Actualiza {ia} para usarla con {app}: tu versión no conoce las protecciones que necesitamos.": "Update {ia} to use it with {app}: your version doesn't know the protections we need.",
-  "Actualiza {x} para usarla con {x}: tu versión no conoce las protecciones que necesitamos.": "Update {x} to use it with {x}: your version doesn't know the protections we need."
+  "Actualiza {x} para usarla con {x}: tu versión no conoce las protecciones que necesitamos.": "Update {x} to use it with {x}: your version doesn't know the protections we need.",
+  "No encontré {ia} en este computador.": "I couldn't find {ia} on this computer.",
+  "{ia} no respondió.": "{ia} didn't answer."
  },
  "palabras": {
   "lunes": "Monday",
