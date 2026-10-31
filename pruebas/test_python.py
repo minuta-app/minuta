@@ -410,7 +410,7 @@ import json, sys
 lineas = open(sys.argv[1][1:], encoding="utf-8").read().split("\\n")
 wav, salida = lineas[lineas.index("-f") + 1], lineas[lineas.index("-of") + 1]
 segs = [[0, 3000, "Hola, soy Ana y les cuento el plan de hoy."]] if wav.endswith("yo.wav") else [
-    [4000, 7000, "Perfecto, me parece muy bien todo eso."], [8000, 9500, "Gracias por ver el video."]]
+    [4000, 6000, "Perfecto, me parece muy bien todo eso."], [6000, 7000, "Gracias."], [8000, 9500, "Gracias por ver el video."]]
 json.dump({{"transcription": [{{"offsets": {{"from": a, "to": b}}, "text": t}} for a, b, t in segs]}}, open(salida + ".json", "w"))
 """)
         os.chmod(ruta, 0o755)
@@ -444,7 +444,6 @@ json.dump({{"transcription": [{{"offsets": {{"from": a, "to": b}}, "text": t}} f
             with open(os.path.join(carpeta, pista + ".segmentos.json"), encoding="utf-8") as f:
                 segs = json.load(f)
             self.assertTrue(segs and all(set(x) == {"desde", "hasta", "texto"} for x in segs), segs)
-            self.assertNotIn("Gracias por ver", json.dumps(segs, ensure_ascii=False))  # un invento de whisper no queda
         with open(os.path.join(carpeta, "nota.txt"), encoding="utf-8") as f:
             ruta = f.read().strip()
         with open(ruta, encoding="utf-8") as f:
@@ -455,6 +454,9 @@ json.dump({{"transcription": [{{"offsets": {{"from": a, "to": b}}, "text": t}} f
         self.assertIn("habla_yo_pct: 50", nota)
         self.assertIn("> [00:00:00] Yo: Hola, soy Ana y les cuento el plan de hoy.", nota)
         self.assertIn("> [00:00:04] Ellos: Perfecto, me parece muy bien todo eso.", nota)
+        # Pieza «transcribir» 0.2: un «Gracias.» dicho con voz queda; el invento de whisper en silencio, no.
+        self.assertIn("Gracias.", nota)
+        self.assertNotIn("Gracias por ver", nota)
         self.assertIn("## Métricas\n| Métrica | Valor |", nota)
         self.assertIn("### Plan", nota)
 

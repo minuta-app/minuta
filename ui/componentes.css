@@ -3,10 +3,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 /* Pieza «componentes»: botón, diálogo (hoja desde abajo en el celular), avisos, filas, selector segmentado, chips, campos y el
    giro de espera. Solo usa los tokens de la pieza «tema» (cárgala antes). Clases con prefijo pz- para no chocar con las de la app.
-   Lo que se toca mide --pz-boton-alto (botones) y --pz-chip-alto (chips, selector): 36 y 32 px, y --pz-tactil (44 px) en pantallas
-   táctiles y a 760 px o menos. La app los cambia en su :root (p. ej. --pz-boton-alto: 44px para botones grandes también en
-   escritorio, o --pz-tactil: 48px); dentro de un diálogo, en táctil, nunca bajan de --pz-tactil. Las reglas sobre elementos
-   (p, h2) van con :where() para que cualquier clase de la app les gane. Con movimiento reducido no hay animaciones. */
+   Lo que se toca mide --pz-boton-alto (botones) y --pz-chip-alto (chips, selector): 36 y 32 px. En pantallas táctiles y a 760 px
+   o menos, dentro de los componentes de la pieza (diálogos, filas de Ajustes, avisos) pasan a --pz-tactil (44 px); en el resto de
+   la app quedan como la app diga (un editor compacto no crece solo). La app los cambia en su :root (p. ej. --pz-boton-alto: 44px
+   para botones grandes también en escritorio, o --pz-tactil: 48px). Las reglas sobre elementos (p, h2) van con :where() para que
+   cualquier clase de la app les gane. Con movimiento reducido no hay animaciones. */
 :root { --pz-tactil: 44px; --pz-boton-alto: 36px; --pz-chip-alto: 32px; }
 .pz-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
@@ -36,10 +37,13 @@
 .pz-cabeza h2 { flex: 1; }
 .pz-cabeza.pz-sin-titulo { justify-content: flex-end; float: right; margin-left: 8px; }
 :where(.pz-dialogo) h2 { margin: 0 0 8px; font-size: 19px; line-height: 1.3; }
-/* El título recibe el foco al abrir (para el lector de pantalla): sin anillo, no es un control. */
-:where(.pz-dialogo) :is(h1, h2, h3)[tabindex="-1"]:focus { outline: none; }
+/* El título recibe el foco al abrir (para el lector de pantalla): sin anillo, no es un control. En toda ventana aria-modal (también
+   las propias de la app, que la pieza enfoca igual), no solo en .pz-dialogo. */
+:where([role="dialog"], [role="alertdialog"])[aria-modal="true"] :is(h1, h2, h3)[tabindex="-1"]:focus { outline: none; }
 :where(.pz-dialogo) > p, :where(.pz-dialogo > .pz-cabeza) + p { margin: 0 0 12px; color: var(--texto-suave); }
-.pz-cerrar { min-width: var(--pz-boton-alto); padding: 6px; margin: -6px -8px 0 0; color: var(--texto-suave); }
+/* La ✕ nunca baja de 36 px (ni si la app pone --pz-boton-alto: 0 para botones a su medida); --pz-cerrar-ancho la fija. */
+.pz-cerrar { min-width: var(--pz-cerrar-ancho, max(36px, var(--pz-boton-alto))); min-height: var(--pz-cerrar-ancho, max(36px, var(--pz-boton-alto)));
+  padding: 6px; margin: -6px -8px 0 0; color: var(--texto-suave); }
 .pz-pie { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 .pz-pie .pz-izq { margin-right: auto; }
 @keyframes pz-entrar { from { opacity: 0; transform: translateY(8px); } }
@@ -98,10 +102,10 @@
   border-radius: var(--radio-chico); background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
 .pz-toast-accion:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 
-/* Táctil y celular: objetivos de --pz-tactil, diálogos como hojas desde abajo. */
+/* Táctil y celular: objetivos de --pz-tactil en los componentes de la pieza (no en toda la app: :root queda como la app lo
+   dejó), diálogos como hojas desde abajo. Si quieres todo a --pz-tactil, ponlo tú en tu :root dentro de esta misma consulta. */
 @media (pointer: coarse), (max-width: 760px) {
-  :root { --pz-boton-alto: var(--pz-tactil); --pz-chip-alto: var(--pz-tactil); }
-  :where(.pz-dialogo, .pz-toast) { --pz-boton-alto: var(--pz-tactil); --pz-chip-alto: var(--pz-tactil); }
+  :where(.pz-dialogo, .pz-toast, .pz-filas, .pz-fila, .pz-acerca + .pz-chips) { --pz-boton-alto: var(--pz-tactil); --pz-chip-alto: var(--pz-tactil); }
   .pz-enlace::after { inset: -12px -6px; }
 }
 @media (max-width: 760px) {

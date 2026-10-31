@@ -5,6 +5,13 @@ Lo que cambia para quien usa Minuta, en palabras simples. Las versiones anterior
 *What changes for people using Minuta, in plain words. Earlier versions are listed in Releases.*
 
 ## Sin publicar · Unreleased
+- **Ya no se pierde un «Gracias» de verdad:** antes, la transcripción borraba siempre «Gracias», «Thank you» y frases parecidas
+  (whisper las inventa en los silencios), aunque alguien las hubiera dicho. Ahora solo se quitan si caen en silencio.
+  · *A real «Thank you» is no longer lost: transcription used to always drop «Gracias», «Thank you» and similar phrases (whisper
+  makes them up in silences), even when someone said them. Now they're only removed if they fall in silence.*
+- Sin conexión, la galería de universos muestra la lista de la última vez en vez de quedar vacía (descargar sigue pidiendo
+  conexión). · *Offline, the universe gallery shows the list from last time instead of staying empty (downloading still needs a
+  connection).*
 - **Universos e idiomas más seguros:** antes de guardar un universo o un idioma del catálogo, Minuta revisa que sea exactamente el
   publicado (su huella SHA-256); si llega cambiado o dañado, no lo instala y te lo dice. Lo que ya descargaste sigue donde estaba.
   · *Safer universes and languages: before saving a universe or a language from the catalog, Minuta checks it is exactly the one

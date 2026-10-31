@@ -25,8 +25,11 @@ const REPO = /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/;
 const RAMA = /^[A-Za-z0-9._-]{1,60}$/;
 const TIPO = /^[a-z][a-z0-9-]{0,30}$/;
 const INDICE = /^(?:[a-z0-9-]+\/)?[a-z0-9-]+\.json$/;
+const CARPETA = /^[a-z][a-z0-9-]{0,30}$/;
 const ID = "[a-z0-9]+(?:-[a-z0-9]+)*";
-/** Frases en español (claves de traducción): la interfaz las muestra con Tp(plantilla). Las mismas de bin/catalogo.py. */
+const ID_MAYUSCULAS = "[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*";
+/** Frases en español (claves de traducción): la interfaz las muestra con Tp(r.frase). Las mismas de bin/catalogo.py. (No van en
+ *  «plantilla»: un tipo con singular «plantilla» devuelve ahí el objeto descargado.) */
 const ERRORES = {
   sin_conexion: "No pude conectarme. Revisa tu conexión.",
   indice: "No pude leer el catálogo.",
@@ -34,7 +37,7 @@ const ERRORES = {
   danado: "Llegó dañado. Intenta de nuevo.",
   no_esta: "Ya no está en el catálogo. Vuelve a abrirlo.",
 };
-const error = (codigo, extra = {}) => ({ ok: false, codigo, plantilla: ERRORES[codigo], error: ERRORES[codigo], ...extra });
+const error = (codigo, extra = {}) => ({ ok: false, codigo, frase: ERRORES[codigo], error: ERRORES[codigo], ...extra });
 
 const entero = (v, defecto, tope) => (Number.isInteger(v) && v > 0 && v <= tope ? v : defecto);
 
@@ -47,13 +50,17 @@ function leerConfig(appJson) {
   const tipos = {};
   for (const [id, t] of Object.entries(c.tipos || {})) {
     if (!TIPO.test(id) || !t || typeof t !== "object") throw new Error(`app.json: tipo de catálogo raro «${id}».`);
-    const indice = t.indice === undefined ? `${id}/index.json` : t.indice;
+    const carpeta = t.carpeta === undefined ? id : t.carpeta;
+    if (typeof carpeta !== "string" || !CARPETA.test(carpeta)) throw new Error(`app.json: «catalogo.tipos.${id}.carpeta» no es válida.`);
+    const indice = t.indice === undefined ? `${carpeta}/index.json` : t.indice;
     if (typeof indice !== "string" || !INDICE.test(indice)) throw new Error(`app.json: «catalogo.tipos.${id}.indice» no es válido.`);
+    const ident = t.mayusculas === true ? ID_MAYUSCULAS : ID;
     tipos[id] = {
       id, indice,
       maxBytes: entero(t.max_bytes, 100 * 1024, 5 * 1024 * 1024),
       maxIndice: entero(t.max_indice, 1024 * 1024, 20 * 1024 * 1024),
-      patron: new RegExp(`^${id}/${ID}/${ID}\\.json$`),
+      // <carpeta>/<categoria>/<id>.json, o <carpeta>/<id>.json con "categoria": false (un catálogo plano)
+      patron: new RegExp(t.categoria === false ? `^${carpeta}/${ident}\\.json$` : `^${carpeta}/${ID}/${ident}\\.json$`),
     };
   }
   return { repo: c.repo, rama, base: `https://${HOST}/${c.repo}/${rama}/`, tipos };
@@ -103,13 +110,20 @@ function crear({ fetch, procesador, appJson, agente = "Pieza" }) {
 
   return {
     config: conf,
-    /** El índice de un tipo, validado por Python: { ok, tipo, <tipo>: [...] } o { ok: false, codigo, plantilla, error }. */
+    /** El índice de un tipo, validado por Python: { ok, tipo, <tipo>: [...] } o { ok: false, codigo, frase, error }. Sin
+     *  conexión, la última lista validada (si hay) con `sin_conexion: true`, `fecha` y la frase: se ve, pero no se descarga. */
     async listar(tipo) {
       const t = conf.tipos[tipo];
       if (!t) return error("no_valido", { tipo: String(tipo || "") });
       const datos = await pedir(t.indice, t.maxIndice);
       if (datos === false) return error("indice", { tipo });
-      if (!datos) return error("sin_conexion", { tipo });
+      if (!datos) {
+        const r = await Promise.resolve().then(() => procesador.conEntrada("catalogo.py", "ultima", { tipo })).catch(() => null);
+        if (r && r.ok === true && Array.isArray(r[tipo]) && r[tipo].length) {
+          return { ...r, sin_conexion: true, codigo: "sin_conexion", frase: ERRORES.sin_conexion };
+        }
+        return error("sin_conexion", { tipo });
+      }
       const archivo = temporal(datos);
       try {
         const r = await procesador.conEntrada("catalogo.py", "indice", { tipo, archivo });

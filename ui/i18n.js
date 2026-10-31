@@ -118,8 +118,9 @@
     const noTraducir = opciones.noTraducir ? `${SALTAR}, ${opciones.noTraducir}` : SALTAR;
     // Atributos: sin `noTraducirAtributos`, se saltan donde se salta el texto (como hasta 0.2.0). Con él, se traducen en todas
     // partes (también en las zonas de `noTraducir`: un botón «Abrir nota» dentro de una lista de notas) menos donde diga.
+    // [data-sin-traducir] siempre cuenta: lo marcado así es de la persona (o ya viene traducido), también sus atributos.
     const sinAtributos = typeof opciones.noTraducirAtributos === "string" && opciones.noTraducirAtributos.trim()
-      ? `${SIN_ATRIBUTOS}, ${opciones.noTraducirAtributos}` : null;
+      ? `${SIN_ATRIBUTOS}, [data-sin-traducir], ${opciones.noTraducirAtributos}` : null;
     const documento = () => opciones.documento || (typeof document !== "undefined" ? document : null);
     const faltantes = () => opciones.faltantes || globalThis._faltantes || null;
     const ESPANOL = { codigo: "es", nombre: "Español", bandera: "", textos: new Map(), palabras: new Map() };
@@ -261,7 +262,8 @@
 
       /** Traduce lo ya pintado: textos y los atributos title, aria-label, placeholder y alt. Nunca traduce el texto de
        *  [data-sin-traducir], script, style, svg, textarea, code ni pre (ni de lo que diga `noTraducir`); el placeholder, title y
-       *  aria-label de un textarea sí. Con `crear({noTraducirAtributos})`, los atributos se traducen en todas partes menos ahí.
+       *  aria-label de un textarea sí. Con `crear({noTraducirAtributos})`, los atributos se traducen en todas partes menos ahí
+       *  y en [data-sin-traducir] (siempre, sin tener que nombrarlo).
        *  { soloDentro: true } no toca los atributos de la raíz (al volver a pintar dentro de un contenedor ya traducido). */
       traducirDOM(raiz, { soloDentro = false } = {}) {
         if (!raiz || actual.codigo === "es") return;

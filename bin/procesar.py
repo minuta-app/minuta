@@ -18,8 +18,6 @@ import transcribir  # noqa: E402  (pieza «transcribir» de Pieza)
 
 HOME = os.path.expanduser("~")
 BASE = os.path.join(HOME, "minuta")
-# Los modelos de voz de Minuta viven en ~/minuta/models (desde siempre; la pieza los busca en <datos>/modelos): no se mueven.
-transcribir.carpeta_modelos = lambda: os.path.join(BASE, "models")
 # Modelo de transcripción: el que se eligió en la bienvenida (si falta, el que esté descargado). El detector de voz (VAD), si está.
 MODELO = transcribir.modelo_elegido((PERFIL.get("modelo_whisper") or "").strip())
 VAULT = CARPETA_NOTAS
@@ -250,7 +248,7 @@ def transcribir_pista(wav, carpeta, archivo):
     try:
         segs = transcribir.transcribir(wav, idioma=IDIOMA_AUDIO, modelo=MODELO, vocabulario=VOCABULARIO)
     except transcribir.ErrorTranscribir as e:
-        raise SystemExit(f"{e} {e.detalle}".strip()) from None
+        raise SystemExit(e.frase) from None
     with open(os.path.join(carpeta, archivo + ".segmentos.json"), "w", encoding="utf-8") as f:
         json.dump(segs, f, ensure_ascii=False)
     return segs

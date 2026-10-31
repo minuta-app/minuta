@@ -352,6 +352,7 @@
   "Más universos para descargar": "More universes to download",
   "cargando…": "loading…",
   "sin conexión al catálogo": "no connection to the catalog",
+  "sin conexión · la lista de la última vez": "offline · the list from last time",
   "{n} disponibles · gratis": "{n} available · free",
   "Ya tienes todos los universos del catálogo. 🎉": "You already have every universe in the catalog. 🎉",
   "Quitar este universo": "Remove this universe",
@@ -934,7 +935,8 @@
   "No pude leer el catálogo.": "I couldn't read the catalog.",
   "Eso no es válido.": "That isn't valid.",
   "Llegó dañado. Intenta de nuevo.": "It arrived damaged. Please try again.",
-  "Ya no está en el catálogo. Vuelve a abrirlo.": "It's no longer in the catalog. Open it again."
+  "Ya no está en el catálogo. Vuelve a abrirlo.": "It's no longer in the catalog. Open it again.",
+  "La transcripción falló: {detalle}": "Transcription failed: {detalle}"
  },
  "palabras": {
   "lunes": "Monday",
