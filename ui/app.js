@@ -3382,7 +3382,7 @@
       b.perfil = { ...(d.perfil || {}), ...b.perfil };
       render({ mantenerScroll: true });
     },
-    iaProbada(r) { const b = E.bv; if (!b) return; b.probando = null; if (r.ok) { b.iaOk = r.id; b.iaTexto = ""; b.perfil.ia = r.id; } else b.iaTexto = r.texto || "No respondió."; render({ mantenerScroll: true }); },
+    iaProbada(r) { const b = E.bv; if (!b) return; b.probando = null; if (r.ok) { b.iaOk = r.id; b.iaTexto = ""; b.perfil.ia = r.id; } else b.iaTexto = r.codigo === "no_instalada" ? "No está instalada" : r.texto || "No respondió."; render({ mantenerScroll: true }); },
     modeloProgreso(r) { const b = E.bv; if (!b) return; b.pct = r.pct; const bar = document.querySelector(".bv-barra i"); if (bar) { bar.style.width = r.pct + "%"; const t = bar.parentElement.nextElementSibling; if (t) t.textContent = tr(`Descargando… ${r.pct}% · puedes seguir con los demás pasos.`); } },
     modeloListo(r) { const b = E.bv; if (!b) { toast(r.ok ? "Modelo descargado ✓" : `No se pudo descargar: ${r.error}`); return; } b.descargando = null; if (r.modelos) b.modelos = r.modelos; if (r.ok) { b.perfil.modelo_whisper = r.id; b.modeloElegido = r.id; } else b.error = r.error || "No se pudo descargar."; render({ mantenerScroll: true }); },
     carpetaNotas(r) { const b = E.bv; if (!b) return; b.carpeta = r.ruta; b.notas = r.notas; b.perfil.carpeta_notas = r.ruta; render({ mantenerScroll: true }); },

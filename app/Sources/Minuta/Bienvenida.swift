@@ -139,44 +139,11 @@ enum IA {
         return d
     }
 
-    /// Cómo se le pide una respuesta de texto a cada IA, sin que toque archivos (mismo criterio que bin/perfil.py).
-    static func argumentos(_ id: String, ruta: String = "") -> [String] {
-        switch id {
-        case "codex": return ["exec", "--skip-git-repo-check", "-s", "read-only", "-"]
-        case "gemini" where (ruta as NSString).lastPathComponent == "agy":
-            return ["--output-format", "text", "--sandbox", "-p", "Responde solo con la palabra: listo"]
-        case "gemini": return ["-p", "Responde a las instrucciones de arriba.", "-o", "text"]
-        default: return ["-p", "--output-format", "text"]
-        }
-    }
-
     static var paraJS: [[String: Any]] {
         conocidas.map { ["id": $0.id, "nombre": $0.nombre, "ruta": buscar($0.comandos) ?? NSNull(), "soportada": $0.soportada, "guia": $0.guia] }
     }
 
-    /// Prueba real: le pide a la IA una palabra. Así sabemos que está instalada y con la sesión iniciada.
-    static func probar(_ id: String, _ fin: @escaping @MainActor (Bool, String) -> Void) {
-        guard let ia = conocidas.first(where: { $0.id == id }), let ruta = buscar(ia.comandos) else { fin(false, "No está instalada."); return }
-        let p = Process(), salida = Pipe(), error = Pipe(), entrada = Pipe()
-        p.executableURL = URL(fileURLWithPath: ruta)
-        p.arguments = argumentos(id, ruta: ruta)
-        var env = ProcessInfo.processInfo.environment
-        env["PATH"] = (dirs() + ["/bin"]).joined(separator: ":")
-        p.environment = env
-        p.currentDirectoryURL = FileManager.default.temporaryDirectory
-        p.standardInput = entrada; p.standardOutput = salida; p.standardError = error
-        p.terminationHandler = { pr in
-            let texto = String(data: salida.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-            let err = String(data: error.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-            Task { @MainActor in
-                fin(pr.terminationStatus == 0 && !texto.isEmpty, pr.terminationStatus == 0 ? texto.trimmingCharacters(in: .whitespacesAndNewlines) : String(err.prefix(300)))
-            }
-        }
-        do { try p.run() } catch { fin(false, error.localizedDescription); return }
-        entrada.fileHandleForWriting.write("Responde solo con la palabra: listo".data(using: .utf8)!)
-        try? entrada.fileHandleForWriting.close()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 90) { if p.isRunning { p.terminate() } }
-    }
+    // La prueba real (pedirle una palabra) la hace la pieza «ia»: acción probarIA de VisorWeb.swift → bin/ia.py probar.
 }
 
 // MARK: - Notas: carpeta, importar desde git y respaldo en la cuenta del usuario

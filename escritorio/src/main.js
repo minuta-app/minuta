@@ -671,10 +671,16 @@ const ACCIONES = {
     enviarEstadoAvisos();
   },
   probarIA: async (d, w) => {
-    const id = d.id || "claude";
-    const r = await IA.probar(id);
-    if (r.ok) Perfil.mezclar({ ia: id });
-    llamarFuncion(w, "iaProbada", { id, ok: r.ok, texto: r.texto });
+    // Pieza «ia»: `ia.py probar <entrada.json> <salida.json>`, con las mismas protecciones que una nota (sin herramientas ni MCP,
+    // sin la memoria de la persona, en una carpeta temporal). La IA elegida va en el archivo de entrada, nunca como argumento.
+    const id = ["claude", "codex", "gemini"].includes(d.id) ? d.id : "claude";
+    const entrada = temporal(`minuta-ia-${Math.random().toString(36).slice(2)}.json`);
+    fs.writeFileSync(entrada, JSON.stringify({ ia: id }), { mode: 0o600 });
+    const { datos, error } = await correrScriptJSON("ia.py", ["probar", entrada]);
+    fs.rmSync(entrada, { force: true });
+    const ok = datos?.ok === true;
+    if (ok) Perfil.mezclar({ ia: id });
+    llamarFuncion(w, "iaProbada", { id, ok, texto: ok ? "listo" : datos?.error || error, codigo: datos?.codigo || "" });
   },
   descargarModelo: async (d, w) => {
     const id = d.id || Modelos.recomendado;

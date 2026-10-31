@@ -1,0 +1,22 @@
+{
+ "nombre": "Minuta",
+ "id": "minuta",
+ "datos": "sistema",
+ "icono": "docs/favicon.svg",
+ "plataformas": [
+  "mac",
+  "windows",
+  "linux"
+ ],
+ "config": {
+  "idioma_ui": [
+   "es",
+   "en"
+  ],
+  "ia": [
+   "claude",
+   "codex",
+   "gemini"
+  ]
+ }
+}

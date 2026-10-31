@@ -311,10 +311,18 @@ private struct WebHost: NSViewRepresentable {
             case "bienvenidaEstado":
                 enviarBienvenida()
             case "probarIA":
-                let id = datos["id"] as? String ?? "claude"
-                IA.probar(id) { [weak self] ok, texto in
+                // Pieza «ia»: `ia.py probar <entrada.json> <salida.json>`, con las mismas protecciones que una nota (sin herramientas
+                // ni MCP, sin la memoria de la persona, en una carpeta temporal). La IA elegida va en el archivo, nunca como argumento.
+                let pedida = datos["id"] as? String ?? ""
+                let id = IA.conocidas.contains(where: { $0.id == pedida }) ? pedida : "claude"
+                let archivo = FileManager.default.temporaryDirectory.appendingPathComponent("minuta-ia-\(UUID().uuidString).json")
+                guard let d = try? JSONSerialization.data(withJSONObject: ["ia": id]), (try? d.write(to: archivo)) != nil else { break }
+                model.correrScriptJSON("ia.py", ["probar", archivo.path]) { [weak self] r, error in
+                    try? FileManager.default.removeItem(at: archivo)
+                    let ok = r?["ok"] as? Bool ?? false
                     if ok { var p = Perfil.datos(); p["ia"] = id; Perfil.guardar(p) }
-                    self?.llamarFuncion("iaProbada", ["id": id, "ok": ok, "texto": texto])
+                    self?.llamarFuncion("iaProbada", ["id": id, "ok": ok, "texto": ok ? "listo" : (r?["error"] as? String ?? error),
+                                                      "codigo": r?["codigo"] as? String ?? ""])
                 }
             case "descargarModelo":
                 let id = datos["id"] as? String ?? Modelos.recomendado

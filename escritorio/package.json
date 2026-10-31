@@ -52,6 +52,10 @@
         ]
       },
       {
+        "from": "../app.json",
+        "to": "minuta/app.json"
+      },
+      {
         "from": "../universos",
         "to": "minuta/universos",
         "filter": [

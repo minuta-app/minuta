@@ -22,7 +22,8 @@ Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromis
 | `app/Sources/Minuta/` | App Swift (SwiftPM, macOS 15). Barra de menú (`BarraMenu.swift`), ventana web (`VisorWeb.swift`), captura de audio y detección de reuniones (`Audio.swift`), modelo y flujo (`MinutaApp.swift`), alertas flotantes (`Alerta.swift`), coach en vivo (`Vivo.swift`), dictado del Gimnasio (`Dictado.swift`), perfil (`Perfil.swift`), catálogo e idiomas (`Catalogo.swift`), universos y juego (`Juego.swift`). `Visor.swift` es el visor SwiftUI antiguo (casi sin uso). |
 | `app/Sources/Diarizar/` | Binario `minuta-diarizar` (FluidAudio) que separa voces de la pista "Ellos". |
 | `app/Sources/Transcribir/` | Binario `minuta-transcribir`: whisper.cpp (xcframework oficial v1.8.3, Metal) con las **mismas opciones que `whisper-cli`**, para que el pipeline sea igual en Mac, Windows y Linux. |
-| `bin/` | Python: `procesar.py` (pipeline principal y prompt de notas), `perfil.py` (perfil compartido, `limpiar_nombre`, `hechos`), `corregir.py` (corrige una nota con la IA según una instrucción en palabras; guarda copia en `~/minuta/respaldos/` y lo aprendido en `personas_conocidas.json`, que `procesar.py` usa en las próximas notas), `limpiar_notas.py` (ordena nombres de participantes en notas viejas), `redactar.py` (mensaje para participantes), `gimnasio.py`, `preguntar.py` (⌘K), `semana.py`, `universo.py` (creador de universos), `logros.py`, `recalcular_interrupciones.py`. |
+| `bin/` | Python: `procesar.py` (pipeline principal y prompt de notas), `perfil.py` (perfil compartido, `limpiar_nombre`, `hechos`, `NOMBRE_IA` y `ejecutar_ia` sobre la pieza «ia»), `nucleo.py` e `ia.py` (piezas de Pieza: ver «Piezas»), `corregir.py` (corrige una nota con la IA según una instrucción en palabras; guarda copia en `~/minuta/respaldos/` y lo aprendido en `personas_conocidas.json`, que `procesar.py` usa en las próximas notas), `limpiar_notas.py` (ordena nombres de participantes en notas viejas), `redactar.py` (mensaje para participantes), `gimnasio.py`, `preguntar.py` (⌘K), `semana.py`, `universo.py` (creador de universos), `logros.py`, `recalcular_interrupciones.py`. |
+| `app.json`, `piezas.json` | **Pieza** (ver «Piezas»): `app.json` describe la app para las piezas (id, nombre, plataformas); `piezas.json` lo escribe `pieza.py` (versión y huella de cada archivo copiado). |
 | `ui/` | Interfaz web única (`app.js` + CSS) que usan la ventana y el panel de la barra de menú. `demo.json` = datos ficticios para la vista previa en navegador. `idiomas/en.json` = inglés incluido. |
 | `universos/` | Los 4 universos incluidos (cine, starwars, harrypotter, marvel). El resto está en el catálogo. |
 | `herramientas/` | `revisar_privacidad.sh` (auditoría antes de commitear) y `empaquetar.sh` (arma `dist/Minuta.app` + `dist/Minuta-macOS.zip` y su `.sha256`). |
@@ -41,9 +42,9 @@ Repos relacionados: catálogo público `minuta-app/minuta-catalogo` (universos/,
 ## Qué lleva la app adentro (sin Homebrew)
 
 `herramientas/empaquetar.sh` (lo usan `build.sh` y la Release) arma `Minuta.app` con: la app, `minuta-transcribir` + `whisper.framework`, `minuta-diarizar` y un Python portátil
-(python-build-standalone 3.13, verificado por SHA-256) en `Contents/Resources/python`, y una copia de `bin/`, `ui/` y `universos/`
+(python-build-standalone 3.13, verificado por SHA-256) en `Contents/Resources/python`, y una copia de `bin/`, `ui/`, `universos/` y `app.json`
 en `Contents/Resources/minuta`. **Código vs. datos:** `Temas.base` (`~/minuta`) son los datos; `Temas.recursos` es el código: `~/minuta` si es
-un checkout git con `ui/` (desarrollo), si no `Contents/Resources/minuta`. Los scripts lo reciben en `MINUTA_RECURSOS` (`perfil.RECURSOS`).
+un checkout git con `ui/` (desarrollo), si no `Contents/Resources/minuta`. Los scripts lo reciben en `MINUTA_RECURSOS`; `perfil.RECURSOS` es `nucleo.recursos()`: la carpeta del `app.json` junto a `bin/` (y `MINUTA_RECURSOS` solo si el script vive fuera de ella).
 Firma ad hoc con requisito por identificador (`app.minuta.mac`), así los permisos sobreviven a cada actualización. La app lanza los scripts con ese Python y
 les pasa `MINUTA_HERRAMIENTAS` (= `Contents/MacOS`); `procesar.herramienta()` busca ahí, luego en `bin/`, luego en el sistema.
 La conversión de audio usa `afconvert` (viene con macOS); ffmpeg solo se usa en Windows/Linux. Los scripts solo usan la biblioteca
@@ -118,11 +119,34 @@ aparece solo: se abre únicamente cuando la persona lo pide (⋯ → Enviar come
 ## Cómo se conectan las piezas
 
 - **JS ↔ Swift:** la UI llama `host.enviar(accion, datos)` → `webkit.messageHandlers.minuta` → `switch` en `VisorWeb.swift` (ventana) o `BarraMenu.swift` (panel). Swift responde con `window.Minuta.<funcion>(json)` (`llamarFuncion` / `llamar`). Al agregar una acción: caso en Swift + manejador en `window.Minuta` + modo `E.plataforma === "web"` simulado para la vista previa.
-- **IA del usuario:** los scripts nunca llaman a `claude` directo: usan `perfil.ejecutar_ia(prompt, timeout, cwd)`, que arma el comando según `perfil.ia` (`claude -p`, `codex exec … -o archivo -`; para Gemini, `agy -p` de Antigravity CLI —el prompt siempre en un archivo, nunca como argumento— o el `gemini -p` antiguo) y amplía el PATH (Homebrew, npm, nvm, `~/.local/bin`). Corre en una carpeta temporal vacía, sin las variables `MINUTA_*` y, con Claude, sin su memoria. Antes pregunta al CLI qué opciones conoce (`_soporta`, `--help` una vez): si no conoce una protección, **nunca** se corre sin ella (devuelve código 3 con «Actualiza … para usarla con Minuta»). Mensajes al usuario con `NOMBRE_IA`, no "Claude". Guía pública para instalarlas: `docs/ia.html`.
+- **IA del usuario:** los scripts nunca llaman a `claude` directo: usan `perfil.ejecutar_ia(prompt, timeout, cwd)`, que llama a `ia.ejecutar` de la pieza «ia» con la IA de `perfil.json` → `ia` (siempre explícita: Minuta no usa la config de la pieza). La pieza arma el comando (`claude -p --strict-mcp-config --disallowedTools "*"` y `--tools ""` si lo conoce, `codex exec -s read-only … -o archivo -`; para Gemini, `agy -p` de Antigravity CLI —el prompt siempre en un archivo, nunca como argumento— o el `gemini -p` antiguo) y amplía el PATH (Homebrew, npm, nvm, `~/.local/bin`). Corre en una carpeta temporal vacía, sin las variables `MINUTA_*` y, con Claude, sin su memoria (y con `--safe-mode`/`--setting-sources user` si los conoce). `MINUTA_MODELO` elige el modelo de Claude. Antes pregunta al CLI qué opciones conoce (`ia._soporta`, `--help` una vez por versión, sin las variables `MINUTA_*`): si no conoce `--strict-mcp-config` o `--disallowedTools`, **nunca** se corre sin ellas (`ia.VersionVieja`; `perfil.ejecutar_ia` devuelve el código 3 de siempre con «Actualiza … para usarla con Minuta»). Probar la IA (bienvenida) es `bin/ia.py probar <entrada.json {ia}> <salida.json>` desde `VisorWeb.swift` y `ACCIONES.probarIA`: las mismas protecciones que una nota. Mensajes al usuario con `NOMBRE_IA`, no "Claude". Guía pública para instalarlas: `docs/ia.html`.
 - **Swift → Python:** `AppModel.ejecutar` / `correrScriptJSON(script, args)`; el último argumento siempre es la ruta del JSON de salida. Los scripts leen el perfil con `from perfil import …`.
 - **Formato de nota:** el prompt de `procesar.py` define secciones y marcadores (`### Próximos pasos`, `## Personas`, `## Feedback para …`, `**Veredicto:**`, `**Puntajes:**`, `**Hábito para la próxima:**`, `**Decisión:**`, `**Pendiente:**`, `🔧`, `✅`, `→ Prueba:`). **Los marcadores van siempre en español** aunque la nota esté en otro idioma: `app.js`, `redactar.py`, `semana.py` y `preguntar.py` los usan para leer.
 - **Universos:** JSON de solo datos (rangos ×10, apartados claridad/escucha/preguntas/cierre ×10, logros, íconos, `estilo`). `Temas.paraJS()` une incluidos + `~/minuta/temas`. Se descargan con `Catalogo.descargarUniverso` (valida antes de guardar).
 - **Idiomas:** el español es el idioma del código. `traducirDOM()` en `app.js` traduce el DOM ya pintado con `textos` (claves = texto en español, `{n}` números, `{x}` texto libre) y `palabras` (fechas). En Swift: `Idioma.t("…")` e `Idioma.f("… {x} …", valor)`.
+
+## Piezas (de [Pieza](https://github.com/pieza-app/pieza))
+Minuta usa piezas de Pieza, la base de la familia de apps: código probado que se copia a la app (modelo «copiar y adueñarse»).
+
+| Pieza | Archivos | Qué usa Minuta |
+|---|---|---|
+| `nucleo` | `bin/nucleo.py` | `app.json` y `recursos()` (dónde está el código: `perfil.RECURSOS`). La pieza `ia` lo necesita para el prefijo `MINUTA_` y los temporales. |
+| `ia` | `bin/ia.py` | La IA de la persona: `ejecutar` (detrás de `perfil.ejecutar_ia`), `IAS`, `nombre`, `comando`, `VersionVieja` y `probar` (`ia.py probar <entrada {ia}> <salida>`, desde los hosts). Lo propio de Minuta (prompts, `NOMBRE_IA`, `MINUTA_MODELO`, el código 3 «Actualiza…» que esperan los scripts) sigue en `perfil.py`. En la bienvenida, `iaProbada` trae `codigo` (`no_instalada` muestra «No está instalada»). |
+
+- **Los datos no se mueven:** siguen en `~/minuta` (`perfil.BASE`, `perfil.json`, `config.json`…). `nucleo` todavía no sabe decir
+  «la carpeta de datos es `~/minuta`» (solo `sistema` o `visible`), así que Minuta **no** usa `nucleo.carpeta_datos()`,
+  `nucleo.config()` ni `guardar_config()`; `app.json` → `datos` queda en `sistema` solo porque la pieza lo pide. La IA elegida se le
+  pasa siempre a la pieza (`ia=`), así nunca lee la config de `nucleo`. `pruebas/test_python.py` (`Piezas`) revisa que no se cree
+  ninguna otra carpeta de datos.
+- **No edites a mano los archivos de una pieza.** Se actualizan con «Pieza al día» (`.github/workflows/pieza-al-dia.yml`, una vez por
+  semana abre un PR o un issue) o con `python3 <pieza>/herramientas/pieza.py actualizar .`. Si hay que cambiar algo, el cambio va
+  primero a Pieza (`pieza.py diferencias . <pieza>` lo muestra) y vuelve desde allá; `pieza.py estado .` dice si algo quedó distinto.
+- `app.json` va dentro de las apps (`herramientas/empaquetar.sh` y `extraResources` de `escritorio/package.json`): `bin/nucleo.py`
+  lo busca junto a `bin/`; sin él ningún script arranca. `.gitignore` es una lista blanca: `app.json` y `piezas.json` están en ella.
+- No adoptadas todavía: `i18n` (las claves de Minuta repiten `{n}`/`{x}` y se llenan en orden —«Paso {n} de {n}»—, y la pieza toma
+  los marcadores por nombre; además `NO_TRADUCIR` de Minuta salta solo los textos y la pieza salta también los atributos, y no
+  traduce el `placeholder` de un `textarea`), `bienvenida` (requiere `i18n`; la de Minuta es nativa y tiene sus pasos) y
+  `actualizaciones` (la de Minuta tiene además el modo desarrollo con `git pull` + `build.sh`).
 
 ## Reglas al cambiar cosas
 
@@ -133,13 +157,14 @@ aparece solo: se abre únicamente cuando la persona lo pide (⋯ → Enviar come
 - Universos y paquetes de idioma son datos: nunca agregues campos que se ejecuten o se inyecten como HTML sin `esc()`.
 - **Seguridad** (ver `SECURITY.md`): los universos entran a la interfaz por `limpiarUniverso()` (textos sin HTML, estilo solo con
   valores CSS esperados) y `ui/index.html` tiene una CSP sin código en línea: no agregues `onclick=`, `<script>` en línea ni
-  recursos de otros dominios. La IA corre solo con texto (`perfil.CLAUDE_SOLO_TEXTO`: sin herramientas ni MCP), porque las
+  recursos de otros dominios. La IA corre solo con texto (pieza «ia»: sin herramientas ni MCP), porque las
   transcripciones traen lo que dijeron otras personas. Las acciones del puente que abren cosas (`abrir`, `obsidian`, `finder`)
   solo aceptan esquemas conocidos o notas de la carpeta de reuniones. Los puentes (`VisorWeb`, `BarraMenu`, `ipcMain` de Electron) ignoran mensajes que no vengan del marco principal y del origen de la app. El actualizador solo baja de `https://github.com/minuta-app/minuta/releases/download/` (`esDescargaNuestra`) y todo lo variable de sus guiones de bash va con `comillas()`. En los workflows: actions fijadas por SHA (Dependabot
   las sube), permisos mínimos, `persist-credentials: false`, nunca `pull_request_target` ni `${{ … }}` dentro de `run:`.
 - Interfaz: usa `render({ mantenerScroll: true })` para no saltar; el contenedor de página usa `data-pagina` (no `data-vista`, que dispara navegación).
 - Antes de terminar un cambio de UI: `node --check ui/app.js` y prueba en navegador (`cd ui && python3 -m http.server 8765` → `http://localhost:8765/index.html`; `#panel` para el panel, `?idioma=en` para inglés, `window.Minuta._probar({...})` para saltar a cualquier vista).
 - Python: `python3 -m py_compile bin/*.py`. Swift: solo compila en el Mac (`build.sh`).
+- Archivos de piezas (`bin/nucleo.py`, `bin/ia.py`): no se editan aquí; ver «Piezas».
 
 ## Lo que rodea a un cambio
 Un cambio está listo cuando la app **y lo que la cuenta** dicen lo mismo. Antes de empezar, anota qué tipo de cambio es; al terminar,
@@ -153,6 +178,7 @@ revisa cada fila ("no aplica" se decide, no se supone):
 | quita algo | bórralo de la página, el README y las guías: nada que prometa lo que ya no hace |
 | cambia el formato de datos o el puente | la documentación del formato, `ejemplos/` si existe y esta guía |
 | cambia carpetas, reglas o pruebas | esta guía (`AGENTS.md`) y `CONTRIBUTING.md` |
+| actualiza o agrega una pieza | `piezas.json` (lo escribe `pieza.py`), la tabla «Piezas» de esta guía y `app.json` si pide algo |
 | resuelve un issue | ciérralo con «Resuelto en …» dando crédito y abre issues para lo que quedó pendiente |
 | lo nota quien usa Minuta | `CHANGELOG.md`: una línea en «Sin publicar», en lenguaje de persona («Ahora puedes…»), en español e inglés |
 
@@ -165,7 +191,7 @@ Los issues que abrimos para una tarea traen una sección «Qué actualizar alred
 - `bash pruebas/correr.sh`: todo lo de abajo menos compilar Swift. Córrelo antes de cada commit (la interfaz necesita Playwright: `PLAYWRIGHT=/ruta/playwright`).
 - `pruebas/contrato.py`: cada `host.enviar("x")`/`data-pn`/`data-av` de la interfaz existe en Swift (VisorWeb/BarraMenu) **y** en `ACCIONES`
   de Electron, y cada `window.Minuta.x` que llaman las apps existe. Excepciones a propósito en `EXCEPCIONES` con su motivo.
-- `pruebas/test_python.py`: limpiar nombres, `corregir.py` (con IA simulada), `limpiar_notas.py`, universos incluidos. HOME temporal: nunca toca datos reales.
+- `pruebas/test_python.py`: limpiar nombres, `corregir.py` (con IA simulada), `limpiar_notas.py`, universos incluidos, la IA sin herramientas y en carpeta temporal, `ia.py probar` con archivo de entrada y que las piezas no muevan los datos de `~/minuta`. HOME temporal: nunca toca datos reales.
 - `pruebas/interfaz.mjs`: todas las vistas sin errores en español e inglés, **ningún texto sin traducir** (los datos de demo no cuentan),
   los mismos casos de nombres que Python (`casos_nombres.json`) y contraste del botón principal en cada universo. `CAPTURAS=carpeta` guarda capturas
   (en GitHub quedan como artefacto "capturas" de cada revisión).

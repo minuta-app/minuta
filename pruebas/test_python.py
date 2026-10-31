@@ -104,8 +104,9 @@ def cli_falso(guion, ayuda=AYUDA_CLAUDE):
     with open(ruta, "w", encoding="utf-8") as f:
         f.write("#!/bin/bash\n" + ayuda_falsa(ayuda) + guion)
     os.chmod(ruta, 0o755)
-    perfil.CLAUDE = ruta  # perfil busca el CLI al importarse: aquí se usa el falso (nunca una IA de verdad)
-    perfil._ayuda.clear()  # cada prueba tiene su propio CLI: se vuelve a preguntar qué opciones conoce
+    # La pieza «ia» busca el CLI en el PATH (BIN_FALSO va primero: nunca una IA de verdad). Cada prueba tiene su propio CLI:
+    # se vuelve a preguntar qué opciones conoce.
+    perfil.ia._ayuda.clear()
 
 
 class IASoloTexto(unittest.TestCase):
@@ -130,8 +131,9 @@ class IASoloTexto(unittest.TestCase):
         recibidos = self.leer(self.args)
         self.assertIn("--strict-mcp-config", recibidos)
         self.assertIn("--safe-mode", recibidos)
-        i = recibidos.index("--tools")
-        self.assertEqual(recibidos[i + 1], "")
+        self.assertEqual(recibidos[recibidos.index("--disallowedTools") + 1], "*")
+        self.assertEqual(recibidos[recibidos.index("--tools") + 1], "")  # las herramientas ni siquiera se cargan
+        self.assertNotIn("--allowedTools", recibidos)
 
     def test_cli_sin_strict_mcp_no_corre(self):
         # Un CLI que no conoce --strict-mcp-config NO se corre sin protecciones: falla con un mensaje claro.
@@ -179,14 +181,73 @@ class IASoloTexto(unittest.TestCase):
         with open(ruta, "w", encoding="utf-8") as f:
             f.write(f'#!/bin/bash\nprintf "%s\\n" "$@" > "{self.args}"\ncat instrucciones.md\n')
         os.chmod(ruta, 0o755)
-        antes = perfil.IA, perfil.CLAUDE
-        perfil.IA, perfil.CLAUDE = "gemini", ruta
+        antes = perfil.IA
+        perfil.IA = "gemini"
         try:
             r = perfil.ejecutar_ia("pedido corto", timeout=30)
         finally:
-            perfil.IA, perfil.CLAUDE = antes
+            perfil.IA = antes
+            os.remove(ruta)
         self.assertEqual(r.stdout.strip(), "pedido corto")
         self.assertNotIn("pedido corto", "\n".join(self.leer(self.args)))
+
+    def test_corre_en_carpeta_temporal(self):
+        # Nunca dentro de ~/minuta ni del código: su CLI cargaría la configuración (y los hooks) de esa carpeta.
+        cli_falso(f'pwd > "{self.args}"\ncat > /dev/null\necho listo\n')
+        perfil.ejecutar_ia("hola", timeout=30)
+        carpeta = self.leer(self.args)[0]
+        self.assertNotIn(os.path.join(HOME, "minuta"), carpeta)
+        self.assertNotIn(RAIZ, carpeta)
+
+
+class Piezas(unittest.TestCase):
+    """Minuta usa las piezas «nucleo» e «ia» de Pieza, sin mover los datos de nadie (siguen en ~/minuta)."""
+    def correr_ia(self, *args):
+        salida = os.path.join(HOME, "probar.json")
+        subprocess.run([sys.executable, os.path.join(RAIZ, "bin", "ia.py"), *args, salida], check=True, timeout=60,
+                       env={**os.environ, "MINUTA_RECURSOS": RAIZ})
+        with open(salida, encoding="utf-8") as f:
+            return json.load(f)
+
+    def test_probar_con_archivo_de_entrada(self):
+        # Los hosts (Swift y Electron) prueban la IA con `ia.py probar <entrada.json> <salida.json>`: la IA no va como argumento
+        # y la prueba corre con las mismas protecciones que una nota.
+        args = os.path.join(HOME, "args-probar.txt")
+        cli_falso(f'printf "%s\\n" "$@" > "{args}"\ncat > /dev/null\necho listo\n')
+        entrada = os.path.join(HOME, "entrada-probar.json")
+        with open(entrada, "w", encoding="utf-8") as f:
+            json.dump({"ia": "claude"}, f)
+        self.assertEqual(self.correr_ia("probar", entrada), {"ia": "claude", "ok": True})
+        with open(args, encoding="utf-8") as f:
+            recibidos = f.read().split("\n")
+        self.assertIn("--strict-mcp-config", recibidos)
+        self.assertEqual(recibidos[recibidos.index("--disallowedTools") + 1], "*")
+
+    def test_probar_ia_desconocida(self):
+        entrada = os.path.join(HOME, "entrada-probar.json")
+        with open(entrada, "w", encoding="utf-8") as f:
+            json.dump({"ia": "otra"}, f)
+        r = self.correr_ia("probar", entrada)
+        self.assertFalse(r["ok"])
+        self.assertEqual(r["codigo"], "desconocida")
+
+    def test_datos_siguen_en_minuta(self):
+        # Minuta no usa la carpeta de datos de «nucleo» (Application Support / ~/.config): todo sigue en ~/minuta.
+        self.assertEqual(perfil.BASE, os.path.join(HOME, "minuta"))
+        self.assertEqual(os.path.realpath(perfil.RECURSOS), os.path.realpath(RAIZ))
+        for d in (os.path.join(HOME, "Library", "Application Support", "Minuta"), os.path.join(HOME, ".config", "minuta"),
+                  os.path.join(HOME, "Minuta", ".minuta")):
+            self.assertFalse(os.path.exists(d), f"se creó {d}")
+
+    def test_app_json_va_dentro_de_las_apps(self):
+        # bin/nucleo.py busca app.json junto a bin/: sin él, ningún script arranca en la app instalada.
+        with open(os.path.join(RAIZ, "app.json"), encoding="utf-8") as f:
+            self.assertEqual(json.load(f)["id"], "minuta")
+        with open(os.path.join(RAIZ, "herramientas", "empaquetar.sh"), encoding="utf-8") as f:
+            self.assertIn("app.json", f.read())
+        with open(os.path.join(RAIZ, "escritorio", "package.json"), encoding="utf-8") as f:
+            recursos = json.load(f)["build"]["extraResources"]
+        self.assertIn({"from": "../app.json", "to": "minuta/app.json"}, recursos)
 
 
 class Corregir(unittest.TestCase):
