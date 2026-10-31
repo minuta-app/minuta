@@ -21,7 +21,7 @@ import re
 import sys
 import tempfile
 
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 MAXIMO_ENTRADA = 5 * 1024 * 1024
 _app = None
 _privadas = set()
@@ -167,7 +167,14 @@ def ruta_en(base, relativa):
 # ── Configuración ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 def _valida(regla, valor):
-    if isinstance(regla, dict):  # {"tipo": "texto" | [valores], "max"?: caracteres, "interfaz"?: false}
+    if isinstance(regla, dict):  # {"tipo": "texto" | [valores], "max"?: caracteres, "patron"?: regex, "interfaz"?: false}
+        if regla.get("tipo") == "texto" and isinstance(regla.get("patron"), str):
+            # El valor entero tiene que calzar (p. ej. "auto|[a-z]{2,3}" para un idioma). El patrón es de app.json, no de afuera.
+            maximo = regla["max"] if isinstance(regla.get("max"), int) and 0 < regla["max"] <= MAXIMO_ENTRADA else 2000
+            try:
+                return isinstance(valor, str) and len(valor) <= maximo and re.fullmatch(regla["patron"], valor) is not None
+            except re.error:
+                return False
         if regla.get("tipo") == "texto" and isinstance(regla.get("max"), int) and 0 < regla["max"] <= MAXIMO_ENTRADA:
             return isinstance(valor, str) and len(valor) <= regla["max"]
         return _valida(regla.get("tipo"), valor)

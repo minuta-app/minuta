@@ -64,6 +64,18 @@
     if (ventana.document?.documentElement?.dataset) ventana.document.documentElement.dataset.host = plataforma;
 
     const respuestas = ventana[global] && typeof ventana[global] === "object" ? ventana[global] : (ventana[global] = {});
+    // La app nativa llama window.<Global>.x: si la interfaz hiciera `window.<Global> = {…}` después, se perderían las respuestas
+    // de las piezas. Se avisa y lo nuevo se SUMA al mismo objeto (nunca lo reemplaza).
+    try {
+      Object.defineProperty(ventana, global, {
+        configurable: true, enumerable: true,
+        get: () => respuestas,
+        set: (v) => {
+          ventana.console?.warn?.(`host-ui: no reasignes window.${global} después de crearHost; usa host.responder({…}). Lo sumé al mismo objeto.`);
+          if (esObjeto(v) && v !== respuestas) responder(v);
+        },
+      });
+    } catch { /* la ventana no deja: queda como estaba */ }
     const simular = opciones.simular;
     const pendientes = new Set();
 
@@ -95,11 +107,14 @@
       return undefined;  // en la vista previa, una acción sin simular no hace nada (igual que el `default: break` de la app)
     }
 
-    /** Suma funciones a window.<Global> (las que llama la app). Nunca reemplaza el objeto: la app puede tener una referencia. */
+    /** Suma funciones a window.<Global> (las que llama la app). Nunca reemplaza el objeto: la app puede tener una referencia.
+     *  También acepta objetos (p. ej. `_pruebas` con las funciones que leen las pruebas de la app); otra cosa se avisa y no se suma.
+     *  `llamar` solo llama funciones: un objeto nunca es una respuesta. */
     function responder(funciones) {
       for (const [k, f] of Object.entries(funciones || {})) {
-        if (PROHIBIDAS.has(k) || typeof f !== "function") continue;
-        respuestas[k] = f;
+        if (PROHIBIDAS.has(k)) continue;
+        if (typeof f === "function" || (f !== null && typeof f === "object")) respuestas[k] = f;
+        else ventana.console?.warn?.(`host-ui: window.${global}.${k} no es una función ni un objeto; no lo sumé.`);
       }
       return respuestas;
     }

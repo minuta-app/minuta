@@ -27,6 +27,10 @@
   const PROHIBIDAS = new Set(["__proto__", "constructor", "prototype"]);
   /** Lo que nunca se traduce: contenido de la persona y lo que no es texto de la app. */
   const SALTAR = "[data-sin-traducir], script, style, svg, textarea, code, pre";
+  /** El texto de un textarea es de la persona, pero su placeholder, title y aria-label son de la app: esos sí se traducen. */
+  const SOLO_ATRIBUTOS = "textarea";
+  /** Nunca se traducen atributos aquí adentro. */
+  const SIN_ATRIBUTOS = "script, style, svg";
   const ATRIBUTOS = ["title", "aria-label", "placeholder", "alt"];
 
   /** Escapa para HTML (texto y atributos entre comillas). */
@@ -112,6 +116,10 @@
 
   function crear(opciones = {}) {
     const noTraducir = opciones.noTraducir ? `${SALTAR}, ${opciones.noTraducir}` : SALTAR;
+    // Atributos: sin `noTraducirAtributos`, se saltan donde se salta el texto (como hasta 0.2.0). Con él, se traducen en todas
+    // partes (también en las zonas de `noTraducir`: un botón «Abrir nota» dentro de una lista de notas) menos donde diga.
+    const sinAtributos = typeof opciones.noTraducirAtributos === "string" && opciones.noTraducirAtributos.trim()
+      ? `${SIN_ATRIBUTOS}, ${opciones.noTraducirAtributos}` : null;
     const documento = () => opciones.documento || (typeof document !== "undefined" ? document : null);
     const faltantes = () => opciones.faltantes || globalThis._faltantes || null;
     const ESPANOL = { codigo: "es", nombre: "Español", bandera: "", textos: new Map(), palabras: new Map() };
@@ -251,8 +259,9 @@
         return `<${e} data-sin-traducir>${i18n.T(plantilla, valores)}</${e}>`;
       },
 
-      /** Traduce lo ya pintado: textos y los atributos title, aria-label, placeholder y alt. Nunca entra a
-       *  [data-sin-traducir], script, style, svg, textarea, code ni pre (ni a lo que diga `noTraducir`).
+      /** Traduce lo ya pintado: textos y los atributos title, aria-label, placeholder y alt. Nunca traduce el texto de
+       *  [data-sin-traducir], script, style, svg, textarea, code ni pre (ni de lo que diga `noTraducir`); el placeholder, title y
+       *  aria-label de un textarea sí. Con `crear({noTraducirAtributos})`, los atributos se traducen en todas partes menos ahí.
        *  { soloDentro: true } no toca los atributos de la raíz (al volver a pintar dentro de un contenedor ya traducido). */
       traducirDOM(raiz, { soloDentro = false } = {}) {
         if (!raiz || actual.codigo === "es") return;
@@ -262,18 +271,33 @@
             if (v) { const x = i18n.tr(v); if (x !== v) el.setAttribute(a, x); }
           }
         };
+        // Con `noTraducirAtributos`: los atributos de una zona sin traducir (y de lo que tiene adentro) igual se traducen.
+        const soloAtributos = (n) => {
+          if (n.matches?.(sinAtributos)) return;
+          atributos(n);
+          for (const h of Array.from(n.childNodes || [])) if (h.nodeType === 1) soloAtributos(h);
+        };
         const recorrer = (n) => {
           for (const h of Array.from(n.childNodes || [])) {
             if (h.nodeType === 3) {
               if (tieneLetras(h.nodeValue)) { const v = i18n.tr(h.nodeValue); if (v !== h.nodeValue) h.nodeValue = v; }
             } else if (h.nodeType === 1 && !h.matches(noTraducir)) {
-              atributos(h);
+              if (!sinAtributos || !h.matches(sinAtributos)) atributos(h);
               recorrer(h);
+            } else if (h.nodeType === 1) {
+              if (sinAtributos) soloAtributos(h);
+              else if (h.matches(SOLO_ATRIBUTOS) && !h.matches("[data-sin-traducir]")) atributos(h);
             }
           }
         };
         if (raiz.nodeType === 1) {
-          if (raiz.closest?.(noTraducir)) return;
+          if (raiz.closest?.(noTraducir)) {
+            if (sinAtributos && !raiz.closest(sinAtributos)) {
+              if (soloDentro) for (const h of Array.from(raiz.childNodes || [])) { if (h.nodeType === 1) soloAtributos(h); }
+              else soloAtributos(raiz);
+            }
+            return;
+          }
           if (!soloDentro) atributos(raiz);
         }
         recorrer(raiz);

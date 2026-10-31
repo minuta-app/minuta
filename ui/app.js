@@ -141,9 +141,9 @@
   E.idioma = { codigo: "es", textos: {}, instalados: [{ codigo: "es", nombre: "Español", bandera: "🇪🇸", incluido: true }] };
   /** Zonas con contenido de la persona (notas, transcripción, chat…): sus textos no se traducen. */
   const NO_TRADUCIR = ".notas, .turnos, .gy-chat, .co-veredicto, .co-habito p, .fila-titulo, .pe-ficha h2, .pe-fila b, .ag-lista, .ag-comps, .ag-txt, .pr-respuesta, .env-caja textarea, .cita, h1.nota-titulo, .rv-carta h2, .rv-carta p, .universo .u-nombre, .u-previa";
-  /** Donde ni los atributos se traducen (title con el nombre de una nota, por ejemplo). */
-  const SIN_ATRIBUTOS = ".notas, .turnos, [data-sin-traducir]";
-  const i18n = PiezaI18n.crear({ noTraducir: NO_TRADUCIR });
+  /** Donde ni los atributos se traducen (title con el nombre de una nota, por ejemplo). En el resto de NO_TRADUCIR los
+   *  atributos sí se traducen (un botón «Abrir nota» dentro de la agenda). */
+  const i18n = PiezaI18n.crear({ noTraducir: NO_TRADUCIR, noTraducirAtributos: ".notas, .turnos, [data-sin-traducir]" });
   let _textosUsados = null;
   /** Pasa a la pieza el idioma de E.idioma (lo manda la app en cargar, o lo carga la vista previa) si cambió. */
   function sincronizarIdioma() {
@@ -158,19 +158,13 @@
     if (!raiz) return;
     sincronizarIdioma();
     if (i18n.idioma === "es") return;
-    i18n.traducirDOM(raiz);
-    // La pieza no traduce los atributos dentro de una zona de NO_TRADUCIR ni el placeholder de un textarea; en Minuta sí
-    // (un botón «Abrir nota» dentro de la agenda, «Escribe aquí…» en el gimnasio). Solo se saltan los de SIN_ATRIBUTOS.
-    for (const el of raiz.querySelectorAll("[placeholder],[title],[aria-label]")) {
-      if (el.closest(SIN_ATRIBUTOS) || !(el.matches("textarea") || el.closest(NO_TRADUCIR))) continue;
-      for (const a of ["placeholder", "title", "aria-label"]) { const v = el.getAttribute(a); if (v) { const x = i18n.tr(v); if (x !== v) el.setAttribute(a, x); } }
-    }
+    i18n.traducirDOM(raiz);  // también el placeholder de un textarea («Escribe aquí…» en el gimnasio)
   }
 
   // Pieza «componentes»: avisos en cola (#toast) y el foco y Esc de las ventanas (role="dialog" con aria-modal).
   const ui = PiezaComponentes.crear({ i18n, host, app: "Minuta", cerrar: () => cerrarArriba() });
-  /** Un aviso breve: el texto en español (ya armado) se traduce aquí, como el resto de la interfaz. */
-  const toast = (texto, o = {}) => ui.aviso(tr(String(texto ?? "")), { ...o, traducido: true });
+  /** Un aviso breve: el texto en español, ya armado (la pieza lo pasa por tr, que reconoce las plantillas). */
+  const toast = (texto, o = {}) => ui.aviso(String(texto ?? ""), o);
 
   // ───────────────────────── Notas ─────────────────────────
   /** Solo el nombre: "Ana (PO, la separación de voces…)" → "Ana" (igual que perfil.limpiar_nombre en Python). */
@@ -661,7 +655,7 @@
     return 0.299 * ((v >> 16) & 255) + 0.587 * ((v >> 8) & 255) + 0.114 * (v & 255);
   }
 
-  /** Pieza «tema»: <html data-tema="claro|oscuro"> y los tokens comunes. Los colores del universo van directo a los tokens. */
+  /** Pieza «tema»: <html data-pz-modo="claro|oscuro"> y los tokens comunes. Los colores del universo van directo a los tokens. */
   const apariencia = PiezaTema.crear();
   apariencia.aplicar("oscuro");
   function aplicarTema() {
@@ -2799,7 +2793,7 @@
       return;
     }
     const bb = ev.target.closest("[data-borrar]");
-    if (bb) { E.borrar = bb.dataset.borrar; render({ mantenerScroll: true }); setTimeout(() => $(".borrar-caja .peligro")?.focus(), 30); return; }
+    if (bb) { E.borrar = bb.dataset.borrar; render({ mantenerScroll: true }); return; }
     const ab = ev.target.closest("[data-accion=si-borrar],[data-accion=cancelar-borrar]");
     if (ab) {
       if (ab.dataset.accion === "si-borrar") borrarNota(E.borrar, ab.dataset.delRespaldo !== "0");
@@ -2846,7 +2840,7 @@
       case "a-palabra": E.corrIA = null; if (n) abrirCorregir(""); break;
       case "cancelar-corr": if (ev.target === b || b.classList.contains("boton-txt")) { E.corr = null; render({ mantenerScroll: true }); } break;
       case "aplicar-corr": aplicarCorregir(); break;
-      case "borrar": if (n) { E.borrar = n.ruta; render({ mantenerScroll: true }); setTimeout(() => $(".borrar-caja .peligro")?.focus(), 30); } break;
+      case "borrar": if (n) { E.borrar = n.ruta; render({ mantenerScroll: true }); } break;
       case "copiar": host.enviar("copiar", { texto: textoCopiable() }); toast("Copiado ✓"); break;
       case "obsidian": n && host.enviar("obsidian", { ruta: n.ruta }); render({ mantenerScroll: true }); break;
       case "finder": n && host.enviar("finder", { ruta: n.ruta }); render({ mantenerScroll: true }); break;
@@ -3236,7 +3230,7 @@
     if (!PANEL && (ev.metaKey || (ESCRITORIO && ev.ctrlKey)) && ev.key.toLowerCase() === "e" && notaActual() && E.seccion === "reuniones") { abrirCorregir(getSelection()?.toString().trim().slice(0, 60) || ""); ev.preventDefault(); return; }
     if (E.borrar) return;
     if (!PANEL && (ev.metaKey || (ESCRITORIO && ev.ctrlKey)) && (ev.key === "Backspace" || (ESCRITORIO && ev.key === "Delete")) && document.activeElement?.id !== "buscar" && notaActual()) {
-      E.borrar = notaActual().ruta; render({ mantenerScroll: true }); setTimeout(() => $(".borrar-caja .peligro")?.focus(), 30); ev.preventDefault(); return;
+      E.borrar = notaActual().ruta; render({ mantenerScroll: true }); ev.preventDefault(); return;
     }
     if (PANEL) {
       if (ev.key === "Enter" && ev.target.id === "pn-titulo" && E.pan.fase === "inactiva") { host.enviar("grabar", { titulo: E.pan.titulo, tipo: E.pan.tipo }); ev.preventDefault(); }

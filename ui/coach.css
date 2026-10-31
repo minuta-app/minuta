@@ -1,7 +1,7 @@
 /* Minuta — modo entrenador: cada número dice si está bien y qué hacer.
    Colores con significado: verde = bien, ámbar = mirar, rojo = problema. El acento del universo queda para lo importante. */
 :root { --bien: #22c55e; --ojo: #f59e0b; --mal: #ef4444; }
-:root[data-tema="claro"] { --bien: #15803d; --ojo: #b45309; --mal: #dc2626; }
+:root[data-pz-modo="claro"] { --bien: #15803d; --ojo: #b45309; --mal: #dc2626; }
 
 .coach, .foco { display: flex; flex-direction: column; gap: 16px; max-width: 920px; }
 .co-eti { font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--texto-suave); margin-bottom: 6px; }

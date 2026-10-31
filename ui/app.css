@@ -2,7 +2,7 @@
 :root {
   /* Los tokens (--fondo, --panel, --texto, --texto-suave, --linea, --acento, --sobre-acento, --radio, --radio-chico) son los de la
      pieza «tema» (tema.css, cargado antes). Cada universo los escribe ya resueltos para su modo (app.js → aplicarTema) y su modo va
-     en data-tema. Esto es solo lo de antes de que llegue el primer universo, y lo propio de Minuta. */
+     en data-pz-modo. Esto es solo lo de antes de que llegue el primer universo, y lo propio de Minuta. */
   --fondo-oscuro: #101010; --panel-oscuro: rgba(255,255,255,.05); --texto-oscuro: #f2efe9; --texto-suave-oscuro: #a39e95;
   --linea-oscuro: rgba(255,255,255,.1); --acento-oscuro: #f5b700; --sobre-acento-oscuro: #111;
   --sombra-oscuro: 0 14px 34px -22px rgba(0,0,0,.85); --sombra-claro: 0 14px 34px -24px rgba(40,50,70,.45);
@@ -57,7 +57,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .hud-logros { display: flex; flex-direction: column; align-items: center; font-size: 11px; }
 .hud-logros b { font: 800 18px/1 ui-rounded, system-ui; color: var(--acento-t); }
 .hud-barra { height: 10px; margin-top: 12px; border-radius: 99px; background: rgba(0,0,0,.25); box-shadow: inset 0 1px 2px rgba(0,0,0,.3); overflow: hidden; }
-:root[data-tema="claro"] .hud-barra { background: rgba(0,0,0,.1); }
+:root[data-pz-modo="claro"] .hud-barra { background: rgba(0,0,0,.1); }
 .hud-barra div { height: 100%; width: calc(var(--p) * 100%); border-radius: 99px; background: linear-gradient(90deg, var(--acento), var(--acento2));
   box-shadow: 0 0 12px color-mix(in srgb, var(--acento) 80%, transparent); transform-origin: left; animation: crecer 1.1s cubic-bezier(.2,.8,.2,1) both .2s; }
 .hud-xp { font-size: 11px; color: var(--texto-suave); margin-top: 7px; line-height: 1.35; }
@@ -173,7 +173,7 @@ a { color: var(--acento-t); }
 .turno:first-child { border-top: 0; }
 .hora { color: var(--texto-suave); font: 12px ui-monospace, Menlo, monospace; padding-top: 2px; }
 .quien { font-weight: 800; color: var(--acento2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-:root[data-tema="oscuro"] .quien { color: color-mix(in srgb, var(--acento2) 70%, white); }
+:root[data-pz-modo="oscuro"] .quien { color: color-mix(in srgb, var(--acento2) 70%, white); }
 .quien.yo { color: var(--acento-t); }
 
 /* ───────────── Juego ───────────── */
@@ -252,8 +252,9 @@ a { color: var(--acento-t); }
 .u-check { position: absolute; top: 12px; right: 12px; z-index: 1; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%;
   background: var(--u-acento); color: #111; font-weight: 900; }
 
-/* Una ventana (aria-modal) recibe el foco cuando lo que la abrió ya no está (pieza «componentes»): sin anillo alrededor de toda la caja. */
-:is([role="dialog"], [role="alertdialog"])[aria-modal="true"]:focus-visible { outline: none; }
+/* Al abrir una ventana propia (aria-modal) la pieza «componentes» pone el foco en su título: sin anillo alrededor del título
+   (la pieza solo lo quita dentro de .pz-dialogo). */
+:where([role="dialog"], [role="alertdialog"])[aria-modal="true"] :is(h1, h2, h3)[tabindex="-1"]:focus { outline: none; }
 
 /* ───────────── Avisos ───────────── */
 /* La cola, el tiempo y la accesibilidad son de la pieza «componentes» (.pz-toast); aquí solo el color del universo. */

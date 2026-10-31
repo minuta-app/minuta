@@ -1,8 +1,10 @@
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
-// Pieza «tema»: sistema, claro u oscuro. Pone <html data-tema="claro|oscuro"> (o lo quita para seguir al sistema); los colores
-// los resuelve tema.css con light-dark(). Trae el selector de Ajustes («Apariencia») como HTML y su manejador de clics.
+// Pieza «tema»: sistema, claro u oscuro. Pone <html data-pz-modo="claro|oscuro"> (o lo quita para seguir al sistema); los colores
+// los resuelve tema.css con light-dark(). El atributo lleva prefijo para no chocar con un `data-tema` de la app (un
+// closest("[data-tema]") de la app encontraba <html>). Lo elegido se lee con `tema.valor` y `tema.resuelto()`.
+// Trae el selector de Ajustes («Apariencia») como HTML y su manejador de clics.
 // Sin dependencias. Script clásico (window.PiezaTema) o Node (require). Sin estilos ni código en línea.
 //
 //   const tema = PiezaTema.crear({ guardar: (v) => host.enviar("config", { tema: v }) });
@@ -17,6 +19,8 @@
   "use strict";
 
   const VALORES = ["sistema", "claro", "oscuro"];
+  /** El atributo que pone en <html> (tema.css lo lee). Antes de 0.2.0 era data-tema. */
+  const ATRIBUTO = "data-pz-modo";
   /** Las opciones del selector, en español (las traduce la app con traducirDOM o T). */
   const OPCIONES = [["sistema", "Como el sistema"], ["claro", "Claro"], ["oscuro", "Oscuro"]];
   const valido = (v) => (VALORES.includes(v) ? v : null);
@@ -34,7 +38,7 @@
       valor = valido(v) || "sistema";
       const html = documento?.documentElement;
       if (html?.dataset) {
-        if (valor === "sistema") delete html.dataset.tema; else html.dataset.tema = valor;
+        if (valor === "sistema") delete html.dataset.pzModo; else html.dataset.pzModo = valor;
       }
       opciones.alCambiar?.(resuelto(), valor);
       return valor;
@@ -56,7 +60,7 @@
 
     /** Un clic en el selector: aplica, guarda y devuelve true. Cualquier otro clic, false. */
     function manejarClic(ev) {
-      const b = ev?.target?.closest?.("[data-pz-tema]");
+      const b = ev?.target?.closest?.("button[data-pz-tema]");
       if (!b) return false;
       const v = valido(b.getAttribute("data-pz-tema"));
       if (!v) return false;
@@ -80,5 +84,5 @@
     };
   }
 
-  return { crear, VALORES, OPCIONES };
+  return { crear, VALORES, OPCIONES, ATRIBUTO };
 });
