@@ -1,6 +1,7 @@
 /* Minuta — visor portable (HTML/CSS/JS puro, sin dependencias).
-   Funciona dentro de la app de Mac (WKWebView), en otro contenedor (Tauri/Electron) o en un navegador
-   con datos de ejemplo (demo.json). Entrada de datos: window.Minuta.cargar({...}). */
+   Funciona dentro de la app de Mac (WKWebView), en Windows y Linux (Electron) o en un navegador con datos de ejemplo
+   (demo.json). Entrada de datos: window.Minuta.cargar({...}). Lo común viene de piezas de Pieza (cargadas antes en index.html):
+   host.js (el puente), i18n.js (idiomas), tema.js (claro/oscuro) y componentes.js (avisos y diálogos accesibles). */
 (() => {
   "use strict";
 
@@ -30,26 +31,18 @@
   }
 
   // ───────────────────────── Puente con el contenedor ─────────────────────────
-  const host = {
-    enviar(accion, datos = {}) {
-      const msg = { accion, ...datos };
-      if (window.webkit?.messageHandlers?.minuta) return window.webkit.messageHandlers.minuta.postMessage(msg);
-      if (window.__TAURI__?.core?.invoke) return window.__TAURI__.core.invoke("minuta", { msg });
-      if (window.minutaHost?.enviar) return window.minutaHost.enviar(msg); // Electron (preload)
-      // Navegador: comportamiento local
-      if (accion === "copiar") navigator.clipboard?.writeText(datos.texto);
-      if (accion === "tema") try { localStorage.setItem("minuta.tema", datos.id); } catch {}
-    },
-  };
+  // Pieza «host-ui»: {accion, datos} a webkit.messageHandlers.minuta (Mac) o window.minutaEscritorio (Electron); en el navegador
+  // responde simular() (más abajo), con copias JSON como la app.
+  const host = PiezaHost.crearHost({ nombre: "minuta", global: "Minuta", simular: (accion, datos, ctx) => simular(accion, datos, ctx) });
 
   // ───────────────────────── Ventana propia ─────────────────────────
   const RAIZ = document.documentElement;
-  const VENTANA = !!window.MINUTA_HOST || /ventana/.test(location.hash);
+  const VENTANA = !host.esWeb || /ventana/.test(location.hash);
   /** Windows y Linux (Electron): ventana rectangular del sistema, sin la forma recortada de cada universo. */
-  const ESCRITORIO = window.MINUTA_HOST === "windows" || window.MINUTA_HOST === "linux";
+  const ESCRITORIO = host.esEscritorio;
   if (VENTANA) RAIZ.classList.add("ventana", ESCRITORIO ? "escritorio" : "forma");
-  if (ESCRITORIO) RAIZ.classList.add(`so-${window.MINUTA_HOST}`);
-  if (VENTANA && !window.MINUTA_HOST) RAIZ.classList.add("emulada");
+  if (ESCRITORIO) RAIZ.classList.add(`so-${host.plataforma}`);
+  if (VENTANA && host.esWeb) RAIZ.classList.add("emulada");
   const TITULO_VENTANA = {
     starwars: "Terminal de misión", harrypotter: "Pensadero", senoranillos: "Crónicas de la Tierra Media", marvel: "Archivo S.H.I.E.L.D.",
     rapidoyfurioso: "Garaje de la familia", dragonball: "Bitácora Capsule Corp.", simpsons: "Actas de Springfield", gameofthrones: "Consejo Privado",
@@ -74,7 +67,7 @@
   /** Le dice al contenedor dónde se arrastra la ventana y dónde se cambia su tamaño. */
   let _regionesPend = 0;
   function regiones() {
-    if (!window.MINUTA_HOST) return;
+    if (host.esWeb) return;
     cancelAnimationFrame(_regionesPend);
     _regionesPend = requestAnimationFrame(() => {
       const r = (el) => { const b = el.getBoundingClientRect(); return [b.x, b.y, b.width, b.height]; };
@@ -143,74 +136,35 @@
   // ───────────────────────── Idiomas de la interfaz ─────────────────────────
   // El español es el idioma del código. Cada paquete (ui/idiomas/en.json incluido, el resto del catálogo) es
   // { codigo, nombre, textos: { "texto en español": "traducción" } }. Los números se escriben {n} en la clave.
-  // Se traduce el DOM ya pintado: solo textos de la app, nunca el contenido de tus notas.
+  // Se traduce el DOM ya pintado: solo textos de la app, nunca el contenido de tus notas. Lo hace la pieza «i18n» (valida el
+  // paquete: solo texto, los mismos marcadores que la clave); aquí solo se le pasa el idioma que manda la app.
   E.idioma = { codigo: "es", textos: {}, instalados: [{ codigo: "es", nombre: "Español", bandera: "🇪🇸", incluido: true }] };
-  const NO_TRADUCIR = ".notas, .turnos, .gy-chat, .co-veredicto, .co-habito p, .fila-titulo, .pe-ficha h2, .pe-fila b, .ag-lista, .ag-comps, .ag-txt, .pr-respuesta, .env-caja textarea, .cita, h1.nota-titulo, .rv-carta h2, .rv-carta p, .universo .u-nombre, .u-previa, [data-sin-traducir], input, textarea";
-  let _i18n = { codigo: "es", exactos: new Map(), patrones: [] };
-  function prepararIdioma() {
-    const { codigo, textos } = E.idioma;
-    if (_i18n.codigo === codigo && _i18n.textos === textos) return;
-    const exactos = new Map(), patrones = [];
-    for (const [es, otro] of Object.entries(textos || {})) {
-      if (!/\{(n|x)\}/.test(es)) { exactos.set(es, otro); continue; }
-      const re = new RegExp("^" + es.replace(/[.*+?^$()|[\]\\]/g, "\\$&").replace(/\\?\{n\\?\}/g, "(\\d+(?:[.,:]\\d+)*)").replace(/\\?\{x\\?\}/g, "(.+?)") + "$");
-      patrones.push([re, otro]);
-    }
-    _i18n = { codigo, textos, exactos, patrones };
-    document.documentElement.lang = codigo;
+  /** Zonas con contenido de la persona (notas, transcripción, chat…): sus textos no se traducen. */
+  const NO_TRADUCIR = ".notas, .turnos, .gy-chat, .co-veredicto, .co-habito p, .fila-titulo, .pe-ficha h2, .pe-fila b, .ag-lista, .ag-comps, .ag-txt, .pr-respuesta, .env-caja textarea, .cita, h1.nota-titulo, .rv-carta h2, .rv-carta p, .universo .u-nombre, .u-previa";
+  /** Donde ni los atributos se traducen (title con el nombre de una nota, por ejemplo). En el resto de NO_TRADUCIR los
+   *  atributos sí se traducen (un botón «Abrir nota» dentro de la agenda). */
+  const i18n = PiezaI18n.crear({ noTraducir: NO_TRADUCIR, noTraducirAtributos: ".notas, .turnos, [data-sin-traducir]" });
+  let _textosUsados = null;
+  /** Pasa a la pieza el idioma de E.idioma (lo manda la app en cargar, o lo carga la vista previa) si cambió. */
+  function sincronizarIdioma() {
+    const { codigo, textos, palabras, nombre } = E.idioma;
+    if (_textosUsados === textos && i18n.idioma === codigo) return;
+    _textosUsados = textos;
+    i18n.usar(codigo === "es" ? null : { codigo, nombre: nombre || codigo, textos: textos || {}, palabras: palabras || undefined });
   }
   /** Traduce un texto de la interfaz (si no hay traducción, queda en español). */
-  function tr(t) {
-    if (E.idioma.codigo === "es" || !t) return t;
-    prepararIdioma();
-    const k = t.trim(); if (!k) return t;
-    const r = trNucleo(k);
-    if (r != null) return t.replace(k, r);
-    // Íconos o símbolos alrededor ("💎 Claridad", "💬 Otra ▾"): se traduce el centro.
-    const m = k.match(/^([^\p{L}¿¡«“"]*)(.*?)([\s▾→←✓…]*)$/u);
-    if (m && (m[1] || m[3]) && m[2]) { const c = trNucleo(m[2]); if (c != null) return t.replace(k, m[1] + c + m[3]); }
-    // Mismo texto con otros saltos de línea o espacios (plantillas de varias líneas)
-    const kn = k.replace(/\s+/g, " ");
-    if (kn !== k) { const c = trNucleo(kn); if (c != null) return t.replace(k, c); }
-    // Textos armados con " · " ("18 oct · 70 min · abrir nota →"): se traduce cada parte que se pueda.
-    if (k.includes(" · ")) {
-      const partes = k.split(" · "), nuevas = partes.map((x) => { const y = tr(x); return y; });
-      if (nuevas.some((x, i) => x !== partes[i])) return t.replace(k, nuevas.join(" · "));
-    }
-    if (window._faltantes) window._faltantes.add(k);  // solo en pruebas: textos sin traducción
-    return t;
-  }
-  function trNucleo(k) {
-    let v = _i18n.exactos.get(k);
-    if (v == null) for (const [re, otro] of _i18n.patrones) { const m = k.match(re); if (m) { let i = 1; v = otro.replace(/\{(n|x)\}/g, () => m[i++] ?? ""); break; } }
-    if (v == null && E.idioma.palabras) {
-      // Fechas y textos cortos ("Domingo 18 de octubre · 10:45", "vencido · 12 oct"): palabra por palabra si todas son conocidas.
-      const P = E.idioma.palabras, palabras = k.match(/\p{L}+/gu) || [];
-      if (palabras.length && palabras.every((w) => P[w.toLowerCase()] || w.toLowerCase() === "de")) {
-        v = k.replace(/(\d+) de (\p{L}+)/gu, "$1 $2").replace(/\p{L}+/gu, (w) => { const x = P[w.toLowerCase()] || w; return w[0] === w[0].toUpperCase() ? x[0].toUpperCase() + x.slice(1) : x; });
-      }
-    }
-    return v;
-  }
+  function tr(t) { sincronizarIdioma(); return i18n.tr(t); }
   function traducirDOM(raiz) {
-    if (!raiz || E.idioma.codigo === "es") return;
-    prepararIdioma();
-    const w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT);
-    const nodos = []; let n; while ((n = w.nextNode())) nodos.push(n);
-    for (const t of nodos) { const el = t.parentElement; if (!el || el.closest(NO_TRADUCIR) || !/[a-záéíóúñ]/i.test(t.nodeValue)) continue; const v = tr(t.nodeValue); if (v !== t.nodeValue) t.nodeValue = v; }
-    for (const el of raiz.querySelectorAll("[placeholder],[title],[aria-label]")) {
-      if (el.closest(".notas, .turnos, [data-sin-traducir]")) continue;
-      for (const a of ["placeholder", "title", "aria-label"]) { const v = el.getAttribute(a); if (v) { const x = tr(v); if (x !== v) el.setAttribute(a, x); } }
-    }
+    if (!raiz) return;
+    sincronizarIdioma();
+    if (i18n.idioma === "es") return;
+    i18n.traducirDOM(raiz);  // también el placeholder de un textarea («Escribe aquí…» en el gimnasio)
   }
 
-  function toast(texto) {
-    const t = $("#toast");
-    t.textContent = tr(texto);
-    t.classList.add("visible");
-    clearTimeout(toast._t);
-    toast._t = setTimeout(() => t.classList.remove("visible"), 1800);
-  }
+  // Pieza «componentes»: avisos en cola (#toast) y el foco y Esc de las ventanas (role="dialog" con aria-modal).
+  const ui = PiezaComponentes.crear({ i18n, host, app: "Minuta", cerrar: () => cerrarArriba() });
+  /** Un aviso breve: el texto en español, ya armado (la pieza lo pasa por tr, que reconoce las plantillas). */
+  const toast = (texto, o = {}) => ui.aviso(String(texto ?? ""), o);
 
   // ───────────────────────── Notas ─────────────────────────
   /** Solo el nombre: "Ana (PO, la separación de voces…)" → "Ana" (igual que perfil.limpiar_nombre en Python). */
@@ -481,7 +435,7 @@
       const f = (v) => (v == null ? "—" : v.toFixed(m.dec) + (m.suf || ""));
       return `<div class="comp ${clase}"><div class="comp-cab"><span>${m.ico} ${m.nombre}</span><span class="delta">${delta}</span></div>
         <div class="comp-vals"><div><small>Antes</small><b>${f(a)}</b></div><div class="flecha">→</div><div><small>Ahora</small><b class="ahora">${f(b)}</b></div></div>
-        ${sparkline(lista.map(m.f), { color: clase === "malo" ? "#ef4444" : clase === "bueno" ? "#22c55e" : "var(--suave)" })}</div>`;
+        ${sparkline(lista.map(m.f), { color: clase === "malo" ? "#ef4444" : clase === "bueno" ? "#22c55e" : "var(--texto-suave)" })}</div>`;
     }).join("");
 
     // Puntajes en el tiempo y radar
@@ -701,6 +655,9 @@
     return 0.299 * ((v >> 16) & 255) + 0.587 * ((v >> 8) & 255) + 0.114 * (v & 255);
   }
 
+  /** Pieza «tema»: <html data-pz-modo="claro|oscuro"> y los tokens comunes. Los colores del universo van directo a los tokens. */
+  const apariencia = PiezaTema.crear();
+  apariencia.aplicar("oscuro");
   function aplicarTema() {
     const t = tema();
     if (!t) return;
@@ -708,16 +665,16 @@
     const r = document.documentElement.style;
     const fuente = e.fuente === "ui-rounded" ? "ui-rounded, system-ui" : `"${e.fuente}", system-ui`;
     const vars = {
-      "--fondo": e.fondo, "--fondo2": e.fondo2, "--panel": e.panel, "--texto": e.texto, "--suave": e.suave, "--linea": e.linea,
+      "--fondo": e.fondo, "--fondo2": e.fondo2, "--panel": e.panel, "--texto": e.texto, "--texto-suave": e.suave, "--linea": e.linea,
       "--acento": e.acento, "--acento-t": e.acento_texto, "--acento2": e.acento2, "--radio": `${e.radio}px`,
-      "--radio-c": `${radioControl(e.radio)}px`, "--fuente-t": fuente, "--peso-t": e.peso, "--mayus": e.mayusculas ? "uppercase" : "none",
+      "--radio-chico": `${radioControl(e.radio)}px`, "--fuente-t": fuente, "--peso-t": e.peso, "--mayus": e.mayusculas ? "uppercase" : "none",
       "--cursiva": e.cursiva ? "italic" : "normal", "--sobre-acento": sobreAcento(e.acento || "#888888"),
     };
     Object.entries(vars).forEach(([k, v]) => v !== undefined && r.setProperty(k, v));
     const [img, tam] = (Object.hasOwn(PATRONES, e.patron || "") ? PATRONES[e.patron] : () => ["", ""])();
     r.setProperty("--patron", img || "none");
     r.setProperty("--patron-tam", tam || "auto");
-    document.documentElement.dataset.modo = e.modo || "oscuro";
+    apariencia.aplicar(e.modo === "claro" ? "claro" : "oscuro");  // cada universo decide su modo (no hay «Apariencia»)
     document.documentElement.dataset.u = t.id;
     document.documentElement.dataset.patron = e.patron || "";
     document.documentElement.dataset.mayus = e.mayusculas ? "1" : "0";
@@ -1008,18 +965,12 @@
     const c = tipo === "idiomas" ? (E.catI ||= { estado: "", lista: [] }) : E.catU;
     if (c.estado === "cargando") return;
     c.estado = "cargando";
-    if (E.plataforma === "web") {
-      fetch(`${CATALOGO_RAW}${tipo}/index.json`).then((r) => r.json()).then((lista) => window.Minuta.catalogo({ tipo, lista }))
-        .catch((e) => window.Minuta.catalogo({ tipo, lista: [], error: String(e) }));
-    } else host.enviar("catalogo", { tipo });
+    host.enviar("catalogo", { tipo });
   }
   const CATALOGO_RAW = "https://raw.githubusercontent.com/minuta-app/minuta-catalogo/main/";
   function descargarUniverso(id, usar) {
     E.catU.bajando = id; render({ mantenerScroll: true });
-    if (E.plataforma === "web") {
-      fetch(`${CATALOGO_RAW}universos/${id}.json`).then((r) => r.json()).then((t) => { const u = limpiarUniverso(t); if (!u) throw new Error("formato"); E.temas.push({ ...u, descargado: true }); window.Minuta.descargado({ tipo: "universo", id, ok: true, usar }); })
-        .catch((e) => window.Minuta.descargado({ tipo: "universo", id, ok: false, error: String(e) }));
-    } else host.enviar("descargarUniverso", { id, usar: !!usar });
+    host.enviar("descargarUniverso", { id, usar: !!usar });
   }
 
   /** Votos de la comunidad: cada universo tiene un issue en el catálogo y los votos son sus reacciones 👍/👎 en GitHub. */
@@ -1042,8 +993,8 @@
     const v = E.votosU?.[id]; if (!v?.url) return;
     const numero = +(/\/issues\/(\d+)/.exec(v.url)?.[1] || 0);
     // Con su cuenta de GitHub conectada, el voto queda como reacción sin salir de la app.
-    if (E.comentCuenta && numero && voto && E.plataforma !== "web") { host.enviar("votarUniverso", { id, numero, positivo: voto === "si" }); return; }
-    if (E.plataforma === "web") window.open(v.url, "_blank"); else host.enviar("abrirURL", { url: v.url });
+    if (E.comentCuenta && numero && voto && !host.esWeb) { host.enviar("votarUniverso", { id, numero, positivo: voto === "si" }); return; }
+    host.enviar("abrirURL", { url: v.url });
   }
 
   function galeria() {
@@ -1061,7 +1012,7 @@
     const porBajar = E.catU.lista.filter((u) => !instalados.has(u.id) && calza(u)).sort((a, b) => puntajeVotos(b.id) - puntajeVotos(a.id));
     const sinNada = (q || cat) && !propios.length && !porBajar.length && E.catU.estado !== "cargando";
     const prev = E.previa && E.catU.lista.find((u) => u.id === E.previa);
-    return `<div class="galeria" data-accion="cerrar-galeria"><div class="galeria-caja" role="dialog" aria-label="Elige tu universo">
+    return `<div class="galeria" data-accion="cerrar-galeria"><div class="galeria-caja" role="dialog" aria-modal="true" aria-label="Elige tu universo">
       <div class="galeria-cab"><div><h2>Elige tu universo</h2><p>Cambia colores, formas, personajes, rangos y logros.</p></div><button class="boton" data-accion="cerrar-galeria" title="Cerrar (Esc)">✕</button></div>
       ${forja()}
       <div class="u-filtros">
@@ -1074,7 +1025,7 @@
       ${propios.length || !(q || cat) ? `<div class="u-sub">Tus universos</div>
       <div class="galeria-grid">${propios.map((t) => {
         const borrable = !t.incluido && t.id !== "cine";
-        return `<div class="u-celda"><button class="universo${t.id === E.temaId ? " elegido" : ""}" data-tema="${t.id}" style="${varsUniverso(t.estilo)}">
+        return `<div class="u-celda"><button class="universo${t.id === E.temaId ? " elegido" : ""}" data-universo="${t.id}" style="${varsUniverso(t.estilo)}">
           <span class="u-emoji">${t.emoji}</span><span class="u-nombre">${esc(t.nombre)}</span><span class="u-xp">XP: ${esc(t.xp)}${t.creado ? "" : chipVotos(t.id)}</span>
           <span class="u-iconos">${(t.iconos_rangos || []).slice(0, 7).join(" ")}</span>${t.id === E.temaId ? '<span class="u-check">✓</span>' : ""}${t.creado ? '<span class="u-creado">⚒️ creado</span>' : t.incluido ? "" : '<span class="u-creado">⬇ descargado</span>'}</button>
           ${borrable ? `<button class="boton-mini u-quitar" data-forja="borrar-u" data-id="${esc(t.id)}" title="Quitar este universo">🗑</button>` : ""}
@@ -1092,7 +1043,7 @@
   /** Vista previa de un universo del catálogo, con sus colores, rangos, arquetipos y logros, sin descargarlo. */
   function previaUniverso(u) {
     const m = u.muestra || {};
-    return `<div class="u-previa" style="${varsUniverso(u.estilo)}" role="dialog" aria-label="Vista previa de ${esc(u.nombre)}">
+    return `<div class="u-previa" style="${varsUniverso(u.estilo)}" role="dialog" aria-modal="true" aria-label="Vista previa de ${esc(u.nombre)}">
       <div class="up-cab"><span class="up-emoji">${u.emoji}</span><div><h3>${esc(u.nombre)}</h3><p>${esc(u.descripcion || "")}</p>${E.votosU?.[u.id] ? `<div class="up-votos"><span>${E.comentCuenta ? "¿Te gusta?" : "¿Te gusta? Vota en GitHub:"}</span><button class="boton-mini${E.votosU[u.id].mio === "si" ? " activo" : ""}" data-votar-u="${esc(u.id)}" data-voto="si" title="${E.comentCuenta ? "Votar a favor" : "Abre GitHub para votar"}">👍 ${E.votosU[u.id].si}</button><button class="boton-mini${E.votosU[u.id].mio === "no" ? " activo" : ""}" data-votar-u="${esc(u.id)}" data-voto="no" title="${E.comentCuenta ? "Votar en contra" : "Abre GitHub para votar"}">👎 ${E.votosU[u.id].no}</button><button class="boton-mini" data-comentar-u="${esc(u.id)}" title="Comentar este universo">💬</button></div>` : ""}</div><button class="boton-mini" data-previa-cerrar title="Cerrar">✕</button></div>
       ${m.elogio ? `<blockquote class="up-elogio">“${esc(m.elogio)}”</blockquote>` : ""}
       <div class="up-cols">
@@ -1216,7 +1167,7 @@
     return `<div class="pn-tit">Elige tu universo<button class="pn-link" data-pn-vista="inicio">← Volver</button></div>
       <div class="pn-universos">${E.temas.map((t) => {
         const e = t.estilo || {};
-        return `<button class="pn-u${t.id === E.temaId ? " elegido" : ""}" data-tema="${t.id}" title="${esc(t.nombre)}" style="--u-fondo:${e.fondo};--u-fondo2:${e.fondo2};--u-acento:${e.acento};--u-texto:${e.texto};--u-radio:${Math.min(e.radio, 14)}px">
+        return `<button class="pn-u${t.id === E.temaId ? " elegido" : ""}" data-universo="${t.id}" title="${esc(t.nombre)}" style="--u-fondo:${e.fondo};--u-fondo2:${e.fondo2};--u-acento:${e.acento};--u-texto:${e.texto};--u-radio:${Math.min(e.radio, 14)}px">
           <span>${t.emoji}</span><small>${esc(t.nombre.replace(/ \(.*\)/, ""))}</small></button>`;
       }).join("")}</div>`;
   }
@@ -1275,7 +1226,7 @@
   function confirmarBorrado() {
     const n = E.notas.find((x) => x.ruta === E.borrar);
     if (!n) return "";
-    return `<div class="galeria borrar-fondo" data-accion="cancelar-borrar"><div class="galeria-caja borrar-caja" role="alertdialog" aria-label="Borrar reunión">
+    return `<div class="galeria borrar-fondo" data-accion="cancelar-borrar"><div class="galeria-caja borrar-caja" role="alertdialog" aria-modal="true" aria-label="Borrar reunión">
       <div class="borrar-ico">🗑</div>
       <h2>¿Borrar esta reunión?</h2>
       <p class="borrar-nota"><span class="tipo-barra t-${esc(n.tipo || "Otra")}"></span><b>${esc(n.titulo)}</b><small>${hhmm(n.fecha)}${n.duracion ? ` · ${Math.round(n.duracion)} min` : ""}${n.tipo ? ` · ${esc(nombreTipo(n.tipo))}` : ""}</small></p>
@@ -1428,7 +1379,7 @@
   function dialogoCorregir() {
     const c = E.corr;
     if (!c || !notaActual()) return "";
-    return `<div class="galeria borrar-fondo" data-accion="cancelar-corr"><div class="galeria-caja borrar-caja corr-caja" role="dialog" aria-label="Corregir palabra">
+    return `<div class="galeria borrar-fondo" data-accion="cancelar-corr"><div class="galeria-caja borrar-caja corr-caja" role="dialog" aria-modal="true" aria-label="Corregir palabra">
       <h2>✎ Corregir en toda la nota</h2>
       <p class="borrar-det">Cambia la palabra en los puntos, el feedback, las métricas y la transcripción.</p>
       <div class="corr-campos">
@@ -1450,12 +1401,12 @@
   function dialogoCorregirIA() {
     const c = E.corrIA;
     if (!c) return "";
-    if (c.listo) return `<div class="galeria borrar-fondo" data-accion="cerrar-corria"><div class="galeria-caja borrar-caja corr-caja" role="dialog" aria-label="Nota corregida">
+    if (c.listo) return `<div class="galeria borrar-fondo" data-accion="cerrar-corria"><div class="galeria-caja borrar-caja corr-caja" role="dialog" aria-modal="true" aria-label="Nota corregida">
       <h2>✓ Nota corregida</h2><p class="borrar-det" data-sin-traducir>${esc(c.listo.cambios || "")}</p>
       ${c.listo.recordados?.length ? `<p class="corr-info">Lo recordaré en las próximas reuniones:</p><ul class="corria-rec" data-sin-traducir>${c.listo.recordados.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
       <p class="corr-info nada">Guardé una copia de la nota anterior por si quieres volver atrás.</p>
       <div class="borrar-botones"><span></span><button class="boton-txt aplicar" data-accion="cerrar-corria">Listo</button></div></div></div>`;
-    return `<div class="galeria borrar-fondo" data-accion="cerrar-corria"><div class="galeria-caja borrar-caja corr-caja" role="dialog" aria-label="Corregir la nota con tu IA">
+    return `<div class="galeria borrar-fondo" data-accion="cerrar-corria"><div class="galeria-caja borrar-caja corr-caja" role="dialog" aria-modal="true" aria-label="Corregir la nota con tu IA">
       <h2>✎ Corregir la nota con tu IA</h2>
       <p class="borrar-det">Dile qué está mal, como se lo dirías a una persona. Tu IA lo arregla en el resumen, los próximos pasos, las personas, el feedback y quién habla en la transcripción, y lo recuerda para las próximas reuniones.</p>
       <label class="cat-campo"><span>¿Qué hay que corregir?</span><textarea id="corria-txt" rows="4" ${c.trabajando ? "disabled" : ""} placeholder="ej: Matías no es el PO, es el Scrum Master. La Persona 2 es Ana y ella es la PO.">${esc(c.texto || "")}</textarea></label>
@@ -1470,7 +1421,6 @@
     if (!c.texto) { $("#corria-txt")?.focus(); return; }
     c.trabajando = true; c.error = "";
     render({ mantenerScroll: true });
-    if (E.plataforma === "web") { setTimeout(() => window.Minuta.corregido({ ok: true, cambios: "(vista previa) Aquí verías qué corrigió tu IA.", recordados: [c.texto] }), 1200); return; }
     host.enviar("corregirIA", { ruta: c.ruta, instruccion: c.texto });
   }
   function abrirCorregir(de = "") {
@@ -1558,7 +1508,7 @@
       <p>Tu IA está escribiendo 40 arquetipos, 10 rangos, 24 logros, la paleta y la ventana. Tarda unos 5 minutos; puedes seguir usando Minuta y te aviso al terminar.</p><div class="forja-barra"><i></i></div></div>`;
     if (f.estado === "listo") return `<div class="forja listo"><div class="forja-yunque">✨</div><h2>¡${esc(f.nombreFinal || f.nombre)} está listo!</h2>
       <p>Ya aparece en la galería. Si un personaje no te calza, dímelo en la tarjeta "Personaje de la reunión" y lo voy puliendo.</p>
-      <div class="borrar-botones"><button class="boton-txt" data-forja="cerrar">Seguir viendo</button><button class="boton-txt aplicar" data-tema="${esc(f.id)}">Probarlo ahora</button></div></div>`;
+      <div class="borrar-botones"><button class="boton-txt" data-forja="cerrar">Seguir viendo</button><button class="boton-txt aplicar" data-universo="${esc(f.id)}">Probarlo ahora</button></div></div>`;
     return `<div class="forja"><h2>＋ Crear un universo</h2>
       <p>Escribe una saga, serie, película, videojuego o lo que quieras. Tu IA arma los personajes, rangos, logros, colores y la forma de la ventana.</p>
       ${f.estado === "error" ? `<p class="forja-error">No resultó: ${esc(f.error || "error desconocido")}. Intenta de nuevo.</p>` : ""}
@@ -2373,9 +2323,7 @@
     E.preg.lista.unshift({ id, q, estado: "pensando" });
     E.preg.borrador = "";
     render({ mantenerScroll: true });
-    if (E.plataforma === "web") {
-      setTimeout(() => window.Minuta.respuesta({ id, ok: true, respuesta: "En la vista previa no hay IA. En tu Mac, aquí aparece la respuesta con citas como [1] o [1@00:27:05].", fuentes: [{ n: 1, ruta: E.notas[0]?.ruta, titulo: E.notas[0]?.titulo, fecha: "" }] }), 900);
-    } else host.enviar("preguntar", { id, pregunta: q });
+    host.enviar("preguntar", { id, pregunta: q });
   }
   function respuestaHTML(r) {
     if (r.estado === "pensando") return `<div class="pr-pensando"><span></span><span></span><span></span> Buscando en tus reuniones…</div>`;
@@ -2391,7 +2339,7 @@
   }
   function overlayPreguntar() {
     if (!E.preg.abierta) return "";
-    return `<div class="galeria pr-fondo" data-accion="cerrar-preg"><div class="galeria-caja pr-caja" role="dialog" aria-label="Pregúntale a tus reuniones">
+    return `<div class="galeria pr-fondo" data-accion="cerrar-preg"><div class="galeria-caja pr-caja" role="dialog" aria-modal="true" aria-label="Pregúntale a tus reuniones">
       <div class="pr-cab"><span class="pr-ico">✦</span><input id="preg-txt" value="${esc(E.preg.borrador || "")}" placeholder="Pregúntale a tus reuniones…" autocomplete="off"><kbd>↵</kbd><button class="boton" data-accion="cerrar-preg" title="Cerrar (Esc)">✕</button></div>
       ${E.preg.lista.length ? `<div class="pr-lista">${E.preg.lista.map((r) => `<section class="pr-item"><div class="pr-q">${esc(r.q)}</div>${respuestaHTML(r)}</section>`).join("")}</div>`
         : `<div class="pr-sug"><div class="co-eti">Prueba con</div>${SUGERENCIAS.map((s) => `<button class="pr-chip" data-sugerencia="${esc(s)}">${esc(s)}</button>`).join("")}
@@ -2428,16 +2376,12 @@
   function pedirGym(modo) {
     const g = E.gym, F = foco();
     const entrada = { escenario: g.escenario, dificultad: g.dificultad, contexto: g.contexto, foco: F ? `${F.debil.titulo}. Hábito: ${F.habito}` : "", historial: g.historial };
-    if (E.plataforma === "web") {
-      setTimeout(() => window.Minuta.gym(modo === "turno" ? { modo, ok: true, datos: { nombre: "Carlos, dueño del club", texto: g.historial.length ? "Ya, pero ¿cuánto me va a costar al mes? Hoy con la planilla no pago nada." : "Hola, cuéntame rápido, que tengo una clase en 20 minutos." } }
-        : { modo, ok: true, datos: { veredicto: "Buen diagnóstico, pero cerraste sin fecha concreta.", puntajes: { claridad: 7, escucha: 8, preguntas: 6, cierre: 5 }, costo: [{ cita: "lo vemos y te aviso", texto: "Sin fecha ni responsable.", prueba: "¿Te parece el jueves a las 10 para mostrarte la configuración?" }], bien: [{ cita: "¿cuántas horas valle tienes vacías?", texto: "Pregunta con números." }], habito: "Cerrar siempre con fecha y hora" } }), 700);
-    } else host.enviar("gimnasio", { modo, entrada });
+    host.enviar("gimnasio", { modo, entrada });
   }
   /** Abre el micrófono para la próxima intervención (si conversas por voz y no estás silenciado). */
   function escucharGym() {
     const g = E.gym; if (!g || g.paso !== "ensayo" || g.esperando || !g.mic || g.silenciado || g.escuchando) return;
     g.escuchando = true; g.micError = "";
-    if (E.plataforma === "web") { render({ mantenerScroll: true }); return; }
     host.enviar("escuchar", { silencio: 1.6 });
     render({ mantenerScroll: true });
   }
@@ -2498,7 +2442,7 @@
       </div>`;
     }
     if (g.error) cuerpo = `<p class="forja-error">No resultó: ${esc(g.error)}</p>` + cuerpo;
-    return `<div class="galeria gy-fondo" data-accion="cerrar-gym"><div class="galeria-caja gy-caja" role="dialog" aria-label="Gimnasio">
+    return `<div class="galeria gy-fondo" data-accion="cerrar-gym"><div class="galeria-caja gy-caja" role="dialog" aria-modal="true" aria-label="Gimnasio">
       <div class="gy-cab"><div><h2>🥊 Gimnasio</h2><p>${g.paso === "elegir" ? "Ensaya antes de la reunión de verdad. Tu IA hace de la otra persona y al final te evalúa." : esc(g.titulo || "")}</p></div>
         <button class="boton" data-accion="cerrar-gym" title="Cerrar (Esc)">✕</button></div>
       ${cuerpo}</div></div>`;
@@ -2551,7 +2495,7 @@
   function overlayEnviar() {
     const e = E.env; if (!e) return "";
     const sinCorreos = !e.para.trim();
-    return `<div class="galeria borrar-fondo" data-accion="cerrar-env"><div class="galeria-caja env-caja" role="dialog" aria-label="Enviar resumen">
+    return `<div class="galeria borrar-fondo" data-accion="cerrar-env"><div class="galeria-caja env-caja" role="dialog" aria-modal="true" aria-label="Enviar resumen">
       <div class="gy-cab"><div><h2>✉︎ Enviar resumen</h2><p>Se abre listo en la app que elijas; tú revisas y presionas Enviar.</p></div><button class="boton" data-accion="cerrar-env" title="Cerrar (Esc)">✕</button></div>
       <label class="cat-campo"><span>Para <small>${sinCorreos ? "no venían correos en el evento del calendario; escríbelos si quieres" : "invitados del evento"}</small></span><input id="env-para" value="${esc(e.para)}" placeholder="correo@empresa.cl, otro@empresa.cl"></label>
       <label class="cat-campo"><span>Asunto</span><input id="env-asunto" value="${esc(e.asunto)}"></label>
@@ -2571,7 +2515,6 @@
     const e = E.env; if (!e) return;
     e.redactando = forzar ? true : "abriendo"; e.error = "";
     render({ mantenerScroll: true });
-    if (E.plataforma === "web") { setTimeout(() => window.Minuta.redactado({ ok: true, texto: textoResumen(E.notas.find((x) => x.ruta === e.ruta)), asunto: e.asunto, guardado: !forzar }), forzar ? 900 : 50); return; }
     host.enviar("redactar", { ruta: e.ruta, indicaciones: e.indic || "", forzar });
   }
   let _guardarEnv = 0;
@@ -2596,6 +2539,7 @@
       app.className = `modo-panel${animar ? " animar" : " quieto"}`;
       app.innerHTML = panel() + confirmarBorrado();
       traducirDOM(app);
+      ui.despuesDePintar();
       if (foco === "pn-titulo") { const b = $("#pn-titulo"); b?.focus(); b?.setSelectionRange(b.value.length, b.value.length); }
       tic(); reportarAlto();
       return;
@@ -2608,6 +2552,7 @@
     if ($(".lista")) $(".lista").scrollTo({ top: scrollLista, behavior: "instant" });
     contar(app);
     const chat = document.getElementById("gym-chat"); if (chat) chat.scrollTop = chat.scrollHeight;
+    ui.despuesDePintar();  // foco al abrir una ventana, adentro mientras está abierta y de vuelta al cerrarla
     if (enPantallaIdioma() && !document.activeElement?.closest?.(".bv-lenguas")) $(".bv-lengua.sugerido")?.focus();
     if (foco && /^(buscar|corr-de|corr-a|voto-txt|forja-nombre|forja-notas|busca-persona|u-busca|preg-txt|gym-txt|gym-propio|env-para|env-asunto|env-cuerpo|env-indic|ics-url)$/.test(foco)) { const b = document.getElementById(foco); if (b) { b.focus(); try { b.setSelectionRange(b.value.length, b.value.length); } catch {} } }
   }
@@ -2634,6 +2579,7 @@
   }
 
   document.addEventListener("click", (ev) => {
+    if (ui.manejarClic(ev)) return;  // la pieza recuerda qué botón abrió una ventana (para devolverle el foco)
     const rv = ev.target.closest("[data-revivir]");
     if (rv) { const t = tema(), def = LOGROS.find((d) => d.id === rv.dataset.revivir); if (def) revelar([{ tipo: "logro", emoji: icoLogro(t, def), ...logroTexto(t, def.id) }], { moneda: t.xp }); return; }
     const ac = ev.target.closest("[data-act]");
@@ -2643,16 +2589,16 @@
       if (ac.dataset.act === "instalar" && PANEL) { host.enviar("actualizar"); return; }
       if (ac.dataset.act === "instalar") {
         E.act.progreso = { paso: "1", texto: "Descargando la versión nueva…", total: 3 }; E.act.oculto = false; render({ mantenerScroll: true });
-        if (E.plataforma === "web") simularActualizacion(); else host.enviar("actualizar");
+        host.enviar("actualizar");
         return;
       }
       if (ac.dataset.act === "buscar") {
         if (E.act.buscando) return;
         E.act.buscando = true; E.act.alDia = false; render({ mantenerScroll: true });
-        if (E.plataforma === "web") setTimeout(() => window.Minuta.actualizacion({ hay: false }), 900); else host.enviar("buscarActualizacion");
+        host.enviar("buscarActualizacion");
         return;
       }
-      host.enviar("actualizar"); if (E.plataforma === "web") toast("Actualizando…"); return;
+      host.enviar("actualizar"); return;
     }
     if (E.bv) {
       const t = ev.target, b = E.bv;
@@ -2661,30 +2607,28 @@
       if (t.closest("[data-bv-fin]")) { terminarBienvenida(); return; }
       const pr = t.closest("[data-bv-probar]");
       if (pr) { b.probando = b.probado = pr.dataset.bvProbar; b.iaTexto = ""; render({ mantenerScroll: true });
-        if (E.plataforma === "web") setTimeout(() => window.Minuta.iaProbada({ id: b.probando, ok: true, texto: "listo" }), 800); else host.enviar("probarIA", { id: b.probando }); return; }
+        host.enviar("probarIA", { ia: b.probando }); return; }
       if (t.closest("[data-bv-saltar-ia]")) { b.iaOk = "despues"; bvPaso(1); return; }
       if (t.closest("[data-bv-recargar]")) { b.cargando = true; render({ mantenerScroll: true }); host.enviar("bienvenidaEstado"); return; }
-      const u = t.closest("[data-bv-url]"); if (u) { guardarCamposBV(); if (E.plataforma === "web") window.open(u.dataset.bvUrl, "_blank"); else host.enviar("abrirURL", { url: u.dataset.bvUrl }); return; }
+      const u = t.closest("[data-bv-url]"); if (u) { guardarCamposBV(); host.enviar("abrirURL", { url: u.dataset.bvUrl }); return; }
       const mo = t.closest("[data-bv-modelo]"); if (mo) { b.modeloElegido = mo.dataset.bvModelo; render({ mantenerScroll: true }); return; }
       if (t.closest("[data-bv-descargar]")) { const id = b.modeloElegido || b.modelos?.elegido || b.modelos?.recomendado; b.descargando = id; b.pct = 0; render({ mantenerScroll: true });
-        if (E.plataforma === "web") { let k = 0; const iv = setInterval(() => { k += 20; window.Minuta.modeloProgreso({ id, pct: k }); if (k >= 100) { clearInterval(iv); window.Minuta.modeloListo({ id, ok: true, modelos: { ...b.modelos, lista: b.modelos.lista.map((x) => ({ ...x, listo: x.listo || x.id === id })) } }); } }, 300); }
-        else host.enviar("descargarModelo", { id }); return; }
+        host.enviar("descargarModelo", { id }); return; }
       const nm = t.closest("[data-bv-notas]"); if (nm) { guardarCamposBV(); b.notasModo = nm.dataset.bvNotas; b.repoTexto = ""; render({ mantenerScroll: true }); return; }
-      if (t.closest("[data-bv-carpeta]")) { if (E.plataforma === "web") window.Minuta.carpetaNotas({ ruta: "~/Documents/Notas", notas: 12 }); else host.enviar("elegirCarpetaNotas"); return; }
+      if (t.closest("[data-bv-carpeta]")) { host.enviar("elegirCarpetaNotas"); return; }
       if (t.closest("[data-bv-clonar]")) { guardarCamposBV(); if (!/^https:\/\//.test(b.repoUrl || "")) { b.repoTexto = "Pega la dirección https del repositorio."; b.repoOk = false; render({ mantenerScroll: true }); return; }
         b.trabajando = true; render({ mantenerScroll: true }); host.enviar("clonarNotas", { url: b.repoUrl, token: b.token || "" }); return; }
       const rs = t.closest("[data-bv-respaldo]"); if (rs) { guardarCamposBV(); b.respaldoModo = rs.dataset.bvRespaldo; b.repoTexto = ""; render({ mantenerScroll: true }); return; }
       if (t.closest("[data-bv-crear-repo]")) { guardarCamposBV(); if (!b.token) { b.repoTexto = "Pega tu token de acceso (botón \"Crear token\")."; b.repoOk = false; render({ mantenerScroll: true }); return; }
         b.trabajando = true; render({ mantenerScroll: true }); host.enviar("crearRepoNotas", { proveedor: b.respaldoModo, token: b.token, nombre: b.repoNombre || "minuta-notas" }); return; }
       const pm = t.closest("[data-bv-permiso]"); if (pm) { host.enviar("pedirMicrofono"); return; }
-      const te = t.closest("[data-tema]"); if (te) { elegirTema(te.dataset.tema); return; }
+      const te = t.closest("[data-universo]"); if (te) { elegirTema(te.dataset.universo); return; }
       if (t.closest("[data-av]")) { /* lo maneja el bloque de avisos */ } else if (t.closest(".bienvenida")) return;
     }
     const bi = ev.target.closest("[data-bajar-idioma]");
     if (bi) {
       const c = bi.dataset.bajarIdioma; E.catI.bajando = c; render({ mantenerScroll: true });
-      if (E.plataforma === "web") { E.idioma.instalados = [...E.idioma.instalados, E.catI.lista.find((x) => x.codigo === c)]; window.Minuta.descargado({ tipo: "idioma", id: c, ok: true, instalados: E.idioma.instalados }); }
-      else host.enviar("descargarIdioma", { codigo: c });
+      host.enviar("descargarIdioma", { codigo: c });
       return;
     }
     if (E.coment) {
@@ -2718,8 +2662,8 @@
       const d = t.closest("[data-env-dest]");
       if (d && !d.disabled) {
         const k = d.dataset.envDest, e = E.env;
-        if (k === "copiar") { host.enviar("copiarFormato", { texto: `${e.asunto}\n\n${e.cuerpo}`, html: `<p><b>${esc(e.asunto)}</b></p>${htmlCorreo(e.cuerpo)}` }); if (E.plataforma === "web") navigator.clipboard?.writeText(e.cuerpo); toast("Copiado con formato ✓"); }
-        else { host.enviar("abrir", { url: urlDestino(k, e) }); if (E.plataforma === "web") window.open(urlDestino(k, e), "_blank"); toast("Abriendo… revisa y presiona Enviar"); }
+        if (k === "copiar") { host.enviar("copiarFormato", { texto: `${e.asunto}\n\n${e.cuerpo}`, html: `<p><b>${esc(e.asunto)}</b></p>${htmlCorreo(e.cuerpo)}` }); toast("Copiado con formato ✓"); }
+        else { host.enviar("abrir", { url: urlDestino(k, e) }); toast("Abriendo… revisa y presiona Enviar"); }
         return;
       }
       if (t.closest("[data-env-claude]")) { redactarEnv(true); return; }
@@ -2729,7 +2673,6 @@
     if (rc) {
       const lista = rc.dataset.recordar === "mios" ? compromisos().filter((c) => c.mio && !c.hecho) : compromisos().filter((c) => c.linea === rc.dataset.recordar && !c.hecho);
       host.enviar("recordatorios", { lista: lista.map((c) => ({ titulo: c.mio ? c.que.replace(/\*\*/g, "") : `${c.resp}: ${c.que.replace(/\*\*/g, "")}`, notas: `De la reunión «${c.nota.titulo}» (${fmtFechaCorta(c.nota.fecha)}) · Minuta`, fecha: c.fecha ? +c.fecha : null })) });
-      if (E.plataforma === "web") toast(`${lista.length} a Recordatorios (solo en la app de Mac)`);
       return;
     }
     if (E.gym) {
@@ -2815,7 +2758,7 @@
       return;
     }
     const au = !E.bv && ev.target.closest(".acerca [data-bv-url]");
-    if (au) { if (E.plataforma === "web") window.open(au.dataset.bvUrl, "_blank"); else host.enviar("abrirURL", { url: au.dataset.bvUrl }); return; }
+    if (au) { host.enviar("abrirURL", { url: au.dataset.bvUrl }); return; }
     const vu = ev.target.closest("[data-votar-u]");
     if (vu) { abrirVoto(vu.dataset.votarU, vu.dataset.voto); return; }
     const uc = ev.target.closest("[data-u-cat]");
@@ -2850,7 +2793,7 @@
       return;
     }
     const bb = ev.target.closest("[data-borrar]");
-    if (bb) { E.borrar = bb.dataset.borrar; render({ mantenerScroll: true }); setTimeout(() => $(".borrar-caja .peligro")?.focus(), 30); return; }
+    if (bb) { E.borrar = bb.dataset.borrar; render({ mantenerScroll: true }); return; }
     const ab = ev.target.closest("[data-accion=si-borrar],[data-accion=cancelar-borrar]");
     if (ab) {
       if (ab.dataset.accion === "si-borrar") borrarNota(E.borrar, ab.dataset.delRespaldo !== "0");
@@ -2874,12 +2817,12 @@
     if (ev.target.closest("[data-ics-quitar]")) { host.enviar("calendarioICS", { url: "" }); return; }
     const v = ev.target.closest("[data-ventana]");
     if (v) { host.enviar("ventana", { op: v.dataset.ventana }); return; }
-    const b = ev.target.closest("[data-accion],[data-vista],[data-nota],[data-tema],[data-seccion]");
+    const b = ev.target.closest("[data-accion],[data-vista],[data-nota],[data-universo],[data-seccion]");
     if (!b) return;
     if (b.dataset.nota) { E.sel = b.dataset.nota; E.seccion = "reuniones"; host.enviar("seleccion", { ruta: E.sel }); render(); return; }
     if (b.dataset.seccion) { E.seccion = b.dataset.seccion; render(); return; }
     if (b.dataset.vista) { E.vista = b.dataset.vista; E.seccion = "reuniones"; render(); return; }
-    if (b.dataset.tema) { if (PANEL) E.panVista = "inicio"; elegirTema(b.dataset.tema); return; }
+    if (b.dataset.universo) { if (PANEL) E.panVista = "inicio"; elegirTema(b.dataset.universo); return; }
     const n = notaActual();
     switch (b.dataset.accion) {
       case "galeria": E.galeria = true; render({ mantenerScroll: true }); break;
@@ -2897,7 +2840,7 @@
       case "a-palabra": E.corrIA = null; if (n) abrirCorregir(""); break;
       case "cancelar-corr": if (ev.target === b || b.classList.contains("boton-txt")) { E.corr = null; render({ mantenerScroll: true }); } break;
       case "aplicar-corr": aplicarCorregir(); break;
-      case "borrar": if (n) { E.borrar = n.ruta; render({ mantenerScroll: true }); setTimeout(() => $(".borrar-caja .peligro")?.focus(), 30); } break;
+      case "borrar": if (n) { E.borrar = n.ruta; render({ mantenerScroll: true }); } break;
       case "copiar": host.enviar("copiar", { texto: textoCopiable() }); toast("Copiado ✓"); break;
       case "obsidian": n && host.enviar("obsidian", { ruta: n.ruta }); render({ mantenerScroll: true }); break;
       case "finder": n && host.enviar("finder", { ruta: n.ruta }); render({ mantenerScroll: true }); break;
@@ -2909,7 +2852,6 @@
     if (el.dataset?.idiomaUi) {
       const c = el.value; E.perfil = { ...(E.perfil || {}), idioma_ui: c };
       host.enviar("perfil", { cambios: { idioma_ui: c } });
-      if (E.plataforma === "web") cambiarIdiomaWeb(c);
       return;
     }
     if (el.dataset?.perfilSel) { const k = el.dataset.perfilSel; E.perfil = { ...(E.perfil || {}), [k]: el.value }; host.enviar("perfil", { cambios: { [k]: el.value } }); toast("Guardado ✓"); }
@@ -2932,11 +2874,14 @@
   function abrirBienvenida(pintar = true) {
     E.bv = { paso: 0, perfil: { ...(E.perfil || {}) }, ia: [], modelos: null, carpeta: "", notas: 0, tokens: {}, cargando: true, notasModo: "", respaldoModo: "" };
     if (!E.bv.perfil.idioma_ui) E.bv.perfil.idioma_ui = E.idioma.codigo;
-    if (E.plataforma === "web") setTimeout(() => window.Minuta.bienvenida({ ia: [{ id: "claude", nombre: "Claude", ruta: "/opt/homebrew/bin/claude", soportada: true }, { id: "codex", nombre: "ChatGPT (Codex)", ruta: null, soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#codex" }, { id: "gemini", nombre: "Gemini", ruta: null, soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#gemini" }],
-      modelos: { recomendado: "turbo", ram: 16, lista: [{ id: "turbo", nombre: "Preciso", mb: 574, detalle: "El mejor para reuniones; recomendado con 8 GB de RAM o más.", listo: false }, { id: "small", nombre: "Liviano", mb: 190, detalle: "Más rápido y pequeño; para Macs con poca memoria.", listo: false }], vadListo: false },
-      perfil: E.perfil || {}, carpeta: "~/Documents/Minuta/Reuniones", notas: 0, tokens: {} }), 300);
-    else host.enviar("bienvenidaEstado");
+    host.enviar("bienvenidaEstado");
     if (pintar) render({ mantenerScroll: true });
+  }
+  /** La bienvenida de la vista previa: IAs, modelos y carpeta ficticios. */
+  function bienvenidaSimulada() {
+    return ({ ia: [{ id: "claude", nombre: "Claude", ruta: "/opt/homebrew/bin/claude", soportada: true }, { id: "codex", nombre: "ChatGPT (Codex)", ruta: null, soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#codex" }, { id: "gemini", nombre: "Gemini", ruta: null, soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#gemini" }],
+      modelos: { recomendado: "turbo", ram: 16, lista: [{ id: "turbo", nombre: "Preciso", mb: 574, detalle: "El mejor para reuniones; recomendado con 8 GB de RAM o más.", listo: false }, { id: "small", nombre: "Liviano", mb: 190, detalle: "Más rápido y pequeño; para Macs con poca memoria.", listo: false }], vadListo: false },
+      perfil: E.perfil || {}, carpeta: "~/Documents/Minuta/Reuniones", notas: 0, tokens: {} });
   }
   /** Idioma sugerido en la pantalla de idioma: la primera vez, el del sistema; si no, el que ya se usa. */
   function idiomaSugerido() {
@@ -2948,10 +2893,9 @@
   function elegirIdiomaBV(c) {
     const b = E.bv; if (!b || b.lengua) return;
     b.perfil.idioma_ui = c; E.perfil = { ...(E.perfil || {}), idioma_ui: c };
-    host.enviar("perfil", { cambios: { idioma_ui: c } });
-    if (E.idioma.codigo === c) { bvTrasIdioma(); return; }
+    if (E.idioma.codigo === c) { host.enviar("perfil", { cambios: { idioma_ui: c } }); bvTrasIdioma(); return; }
     b.lengua = c; render({ mantenerScroll: true });
-    if (E.plataforma === "web") cambiarIdiomaWeb(c);
+    host.enviar("perfil", { cambios: { idioma_ui: c } });  // la app manda el idioma en cargar (en la vista previa, simular)
     setTimeout(() => { if (E.bv?.lengua === c) bvTrasIdioma(); }, 2500);  // si la traducción no llega, se sigue igual
   }
   function bvTrasIdioma() {
@@ -3074,10 +3018,10 @@
       cuerpo = `<div class="bv-hero"><div class="bv-logo">🎉</div><h2>¡Todo listo${p.nombre ? `, ${esc(p.nombre)}` : ""}!</h2>
         <p>Cuando empiece una reunión en Teams, Zoom o Meet te aviso arriba a la derecha: un clic y grabo. Al terminar, tus notas y tu feedback quedan listos solos.</p></div>
         <div class="u-sub">Elige tu universo</div>
-        <div class="galeria-grid bv-universos">${E.temas.slice(0, 8).map((t) => `<button class="universo${t.id === E.temaId ? " elegido" : ""}" data-tema="${t.id}" style="${varsUniverso(t.estilo)}"><span class="u-emoji">${t.emoji}</span><span class="u-nombre">${esc(t.nombre)}</span></button>`).join("")}</div>`;
+        <div class="galeria-grid bv-universos">${E.temas.slice(0, 8).map((t) => `<button class="universo${t.id === E.temaId ? " elegido" : ""}" data-universo="${t.id}" style="${varsUniverso(t.estilo)}"><span class="u-emoji">${t.emoji}</span><span class="u-nombre">${esc(t.nombre)}</span></button>`).join("")}</div>`;
     }
     const ultimo = b.paso === BV_PASOS.length - 1;
-    return `<div class="bienvenida" role="dialog" aria-label="Bienvenida"><div class="bv-caja">
+    return `<div class="bienvenida" role="dialog" aria-modal="true" aria-label="Bienvenida"><div class="bv-caja">
       <div class="bv-puntos">${puntos}</div>
       <div class="bv-cuerpo">${cuerpo}</div>
       ${b.error ? `<p class="forja-error">${esc(b.error)}</p>` : ""}
@@ -3138,7 +3082,7 @@
   function overlayComentarios() {
     const c = E.coment; if (!c) return "";
     const cuenta = E.comentCuenta;
-    if (c.enviado) return `<div class="galeria borrar-fondo" data-accion="cerrar-coment"><div class="galeria-caja env-caja" role="dialog" aria-label="Comentario publicado">
+    if (c.enviado) return `<div class="galeria borrar-fondo" data-accion="cerrar-coment"><div class="galeria-caja env-caja" role="dialog" aria-modal="true" aria-label="Comentario publicado">
       <div class="gy-cab"><div><h2>✓ Publicado</h2><p>${c.tipo === "propuesta" ? "Tu universo quedó propuesto en el catálogo. Cuando lo revisemos, aparecerá para que todos lo descarguen." : "Gracias. Quedó publicado en GitHub y te llegarán las respuestas ahí."}</p></div><button class="boton" data-accion="cerrar-coment" title="Cerrar (Esc)">✕</button></div>
       <div class="borrar-botones"><button class="boton-txt" data-accion="cerrar-coment">Cerrar</button><button class="boton-txt aplicar" data-coment-ver>Verlo en GitHub</button></div></div></div>`;
     const sobre = c.tipo === "nota" ? "el feedback de una nota" : c.universo ? `${c.universo.emoji || "🌌"} ${c.universo.nombre}` : "";
@@ -3148,7 +3092,7 @@
       : "No incluyas datos de tus reuniones.";
     const donde = cuenta ? `Se publica en GitHub con tu cuenta <b>@${esc(cuenta)}</b> y es público.` : "Se abre GitHub con tu mensaje listo; lo revisas y lo publicas tú. Es público.";
     const general = !c.universo && c.tipo !== "nota";
-    return `<div class="galeria borrar-fondo" data-accion="cerrar-coment"><div class="galeria-caja env-caja" role="dialog" aria-label="${esc(titulo)}">
+    return `<div class="galeria borrar-fondo" data-accion="cerrar-coment"><div class="galeria-caja env-caja" role="dialog" aria-modal="true" aria-label="${esc(titulo)}">
       <div class="gy-cab"><div><h2>${titulo}</h2><p><span>${donde}</span> <span>${ayuda}</span></p></div><button class="boton" data-accion="cerrar-coment" title="Cerrar (Esc)">✕</button></div>
       ${sobre ? `<p class="coment-sobre">Sobre: <b data-sin-traducir>${esc(sobre)}</b></p>` : ""}
       ${general ? `<div class="pestanas">${TIPOS_COMENT.map(([k, n]) => `<button class="pestana${c.tipo === k ? " activa" : ""}" data-coment-tipo="${k}">${n}</button>`).join("")}</div>
@@ -3166,7 +3110,7 @@
     const general = !c.universo && c.tipo !== "nota";
     if (general && !c.titulo) { $("#coment-titulo")?.focus(); return; }
     if (!general && c.tipo !== "propuesta" && !c.texto) { $("#coment-texto")?.focus(); return; }
-    const so = ESCRITORIO ? (window.MINUTA_HOST === "windows" ? "Windows" : "Linux") : navigator.userAgent.match(/Mac OS X [\d_]+/)?.[0]?.replace(/_/g, ".") || "macOS";
+    const so = ESCRITORIO ? (host.plataforma === "windows" ? "Windows" : "Linux") : navigator.userAgent.match(/Mac OS X [\d_]+/)?.[0]?.replace(/_/g, ".") || "macOS";
     const ia = { claude: "Claude", codex: "ChatGPT (Codex)", gemini: "Gemini" }[E.perfil?.ia || "claude"] || "";
     const sistema = c.sistema && c.tipo !== "propuesta" ? `\n\n---\nMinuta ${E.version || ""} · idioma ${E.idioma.codigo} · ${so}${c.tipo === "nota" ? ` · IA: ${ia} · universo: ${E.temaId}` : ""}` : "";
     const resumen = (t) => t.replace(/\s+/g, " ").slice(0, 70) + (t.length > 70 ? "…" : "");
@@ -3191,10 +3135,7 @@
         titulo: `${pre} ${c.titulo}`, cuerpo: (c.texto || "") + sistema };
     }
     if (modo === "directo") { c.enviando = true; c.error = ""; render({ mantenerScroll: true }); host.enviar("comentarios", { ...datos, directo: true }); return; }
-    if (E.plataforma === "web") {
-      const r = datos.repo === "catalogo" ? "minuta-app/minuta-catalogo" : "minuta-app/minuta";
-      window.open(`https://github.com/${r}/issues/new?title=${encodeURIComponent(datos.titulo)}&body=${encodeURIComponent(datos.cuerpo)}&labels=${datos.etiqueta}`, "_blank");
-    } else host.enviar("comentarios", datos);
+    host.enviar("comentarios", datos);
     E.coment = null; render({ mantenerScroll: true });
     toast(c.tipo === "propuesta" && datos.cuerpo.includes("quedó copiado") ? "Se abrió GitHub: pega tu universo y publica ✓" : "Se abrió GitHub: revisa y publica ✓");
   }
@@ -3238,6 +3179,22 @@
     if (ev.target.id === "buscar") { E.busqueda = ev.target.value; render({ mantenerScroll: true }); }
   });
 
+  /** Esc (o el ✕ de la pieza) sobre una ventana: cierra la de más arriba. Devuelve true si cerró algo. */
+  function cerrarArriba() {
+    const cerrar = (f) => { f(); render({ mantenerScroll: true }); return true; };
+    if (E.coment) return cerrar(() => { E.coment = null; });
+    if (E.previa) return cerrar(() => { E.previa = null; });
+    if (E.env) return cerrar(() => { E.env = null; });
+    if (E.gym) return cerrar(() => { host.enviar("callar"); E.gym = null; });
+    if (E.preg.abierta) return cerrar(() => { E.preg.abierta = false; });
+    if (E.corr) return cerrar(() => { E.corr = null; });
+    if (E.corrIA && !E.corrIA.trabajando) return cerrar(() => { E.corrIA = null; });
+    if (E.votoAbierto) return cerrar(() => { E.votoAbierto = null; });
+    if (E.forja) { if (E.forja.estado === "trabajando") return false; return cerrar(() => { E.forja = null; }); }
+    if (E.borrar) return cerrar(() => { E.borrar = null; });
+    if (E.galeria) return cerrar(() => { E.galeria = false; });
+    return false;
+  }
   document.addEventListener("keydown", (ev) => {
     const mod = ev.metaKey || ev.ctrlKey;
     if (enPantallaIdioma()) {
@@ -3249,40 +3206,31 @@
       return;
     }
     if (E.menuTipo && ev.key === "Escape") { E.menuTipo = null; render({ mantenerScroll: true }); ev.preventDefault(); return; }
-    if (E.coment && ev.key === "Escape") { E.coment = null; render({ mantenerScroll: true }); ev.preventDefault(); return; }
-    if (E.previa && ev.key === "Escape") { E.previa = null; render({ mantenerScroll: true }); ev.preventDefault(); return; }
-    if (E.env && ev.key === "Escape") { E.env = null; render({ mantenerScroll: true }); ev.preventDefault(); return; }
+    // Una ventana abierta (aria-modal): Tab no se sale de ella y Esc la cierra (cerrarArriba).
+    if (ui.manejarTecla(ev)) return;
     if (E.env && ev.key === "Enter" && ev.target.id === "env-indic") { redactarEnv(true); ev.preventDefault(); return; }
     if (E.env) return;
     if (E.gym) {
-      if (ev.key === "Escape") { host.enviar("callar"); E.gym = null; render({ mantenerScroll: true }); ev.preventDefault(); }
       if (ev.key === "Enter" && !ev.shiftKey && ev.target.id === "gym-txt") { enviarGym(); ev.preventDefault(); }
       return;
     }
     if (!PANEL && mod && ev.key.toLowerCase() === "g") { abrirGimnasio(); ev.preventDefault(); return; }
     if (!PANEL && mod && ev.key.toLowerCase() === "k") { E.preg.abierta ? (E.preg.abierta = false, render({ mantenerScroll: true })) : abrirPreguntar(); ev.preventDefault(); return; }
     if (E.preg.abierta) {
-      if (ev.key === "Escape") { E.preg.abierta = false; render({ mantenerScroll: true }); ev.preventDefault(); }
       if (ev.key === "Enter" && ev.target.id === "preg-txt") { preguntar(ev.target.value); ev.preventDefault(); }
       return;
     }
     if (ev.key === "Enter" && ev.target.id === "buscar" && /\?\s*$|^(que|qué|cuando|cuándo|como|cómo|quien|quién|cuanto|cuánto|donde|dónde|por que|por qué)\s/i.test(ev.target.value.trim())) { abrirPreguntar(ev.target.value.trim()); preguntar(ev.target.value); ev.preventDefault(); return; }
     if (E.menu && ev.key === "Escape") { E.menu = false; render({ mantenerScroll: true }); return; }
     if (E.corr) {
-      if (ev.key === "Escape") { E.corr = null; render({ mantenerScroll: true }); ev.preventDefault(); }
       if (ev.key === "Enter" && /^corr-/.test(ev.target.id || "")) { aplicarCorregir(); ev.preventDefault(); }
       return;
     }
     if (E.votoAbierto && ev.target.id === "voto-txt" && ev.key === "Enter") { cerrarComentario(); ev.preventDefault(); return; }
-    if (E.votoAbierto && ev.key === "Escape") { E.votoAbierto = null; render({ mantenerScroll: true }); return; }
-    if (E.forja && ev.key === "Escape" && E.forja.estado !== "trabajando") { E.forja = null; render({ mantenerScroll: true }); return; }
     if (!PANEL && (ev.metaKey || (ESCRITORIO && ev.ctrlKey)) && ev.key.toLowerCase() === "e" && notaActual() && E.seccion === "reuniones") { abrirCorregir(getSelection()?.toString().trim().slice(0, 60) || ""); ev.preventDefault(); return; }
-    if (E.borrar) {
-      if (ev.key === "Escape") { E.borrar = null; render({ mantenerScroll: true }); ev.preventDefault(); }
-      return;
-    }
+    if (E.borrar) return;
     if (!PANEL && (ev.metaKey || (ESCRITORIO && ev.ctrlKey)) && (ev.key === "Backspace" || (ESCRITORIO && ev.key === "Delete")) && document.activeElement?.id !== "buscar" && notaActual()) {
-      E.borrar = notaActual().ruta; render({ mantenerScroll: true }); setTimeout(() => $(".borrar-caja .peligro")?.focus(), 30); ev.preventDefault(); return;
+      E.borrar = notaActual().ruta; render({ mantenerScroll: true }); ev.preventDefault(); return;
     }
     if (PANEL) {
       if (ev.key === "Enter" && ev.target.id === "pn-titulo" && E.pan.fase === "inactiva") { host.enviar("grabar", { titulo: E.pan.titulo, tipo: E.pan.tipo }); ev.preventDefault(); }
@@ -3297,7 +3245,6 @@
     }
     if (VENTANA && (ESCRITORIO ? ev.ctrlKey && !ev.altKey : ev.metaKey && !ev.ctrlKey) && (ev.key === "w" || ev.key === "m")) { host.enviar("ventana", { op: ev.key === "w" ? "cerrar" : "minimizar" }); ev.preventDefault(); return; }
     if (VENTANA && (ESCRITORIO ? ev.key === "F11" : ev.metaKey && ev.ctrlKey && ev.key.toLowerCase() === "f")) { host.enviar("ventana", { op: "pantalla" }); ev.preventDefault(); return; }
-    if (ev.key === "Escape" && E.galeria) { E.galeria = false; render({ mantenerScroll: true }); return; }
     if (mod && /^[1-3]$/.test(ev.key)) { if (+ev.key <= VISTAS.length) { E.seccion = "reuniones"; E.vista = VISTAS[+ev.key - 1][0]; render(); } ev.preventDefault(); return; }
     if (mod && ev.key === ",") { E.seccion = "preferencias"; render(); ev.preventDefault(); return; }
     if (mod && /^[4-7]$/.test(ev.key)) { E.seccion = Object.keys(ATAJO).find((k) => ATAJO[k] === +ev.key); render(); ev.preventDefault(); return; }
@@ -3313,7 +3260,8 @@
   });
 
   // ───────────────────────── API pública ─────────────────────────
-  window.Minuta = {
+  // Lo que la app llama (window.Minuta.<funcion>): host-ui lo deja en window.Minuta sin reemplazar el objeto.
+  host.responder({
     /** datos: { notas: [{ruta, texto}], temas: [...], estilos: {id: estilo}, temaId, seleccion, plataforma } */
     cargar(datos) {
       if (datos.perfil) E.perfil = datos.perfil;
@@ -3382,7 +3330,7 @@
       b.perfil = { ...(d.perfil || {}), ...b.perfil };
       render({ mantenerScroll: true });
     },
-    iaProbada(r) { const b = E.bv; if (!b) return; b.probando = null; if (r.ok) { b.iaOk = r.id; b.iaTexto = ""; b.perfil.ia = r.id; } else b.iaTexto = r.codigo === "no_instalada" ? "No está instalada" : r.texto || "No respondió."; render({ mantenerScroll: true }); },
+    iaProbada(r) { const b = E.bv; if (!b) return; b.probando = null; if (r.ok) { b.iaOk = r.ia; b.iaTexto = ""; b.perfil.ia = r.ia; } else b.iaTexto = r.codigo === "no_instalada" ? "No está instalada" : r.texto || "No respondió."; render({ mantenerScroll: true }); },
     modeloProgreso(r) { const b = E.bv; if (!b) return; b.pct = r.pct; const bar = document.querySelector(".bv-barra i"); if (bar) { bar.style.width = r.pct + "%"; const t = bar.parentElement.nextElementSibling; if (t) t.textContent = tr(`Descargando… ${r.pct}% · puedes seguir con los demás pasos.`); } },
     modeloListo(r) { const b = E.bv; if (!b) { toast(r.ok ? "Modelo descargado ✓" : `No se pudo descargar: ${r.error}`); return; } b.descargando = null; if (r.modelos) b.modelos = r.modelos; if (r.ok) { b.perfil.modelo_whisper = r.id; b.modeloElegido = r.id; } else b.error = r.error || "No se pudo descargar."; render({ mantenerScroll: true }); },
     carpetaNotas(r) { const b = E.bv; if (!b) return; b.carpeta = r.ruta; b.notas = r.notas; b.perfil.carpeta_notas = r.ruta; render({ mantenerScroll: true }); },
@@ -3497,7 +3445,6 @@
     ir(seccion) { E.seccion = seccion; render(); if (seccion === "preferencias") host.enviar("estadoAvisos"); },
     /** Solo para pruebas automáticas (recorrer todas las vistas). */
     /** Para las pruebas automáticas (pruebas/interfaz.mjs): funciones puras de la interfaz. */
-    _pruebas: { limpiarNombre: (t) => limpiarNombre(t), leerParticipantes: (t) => leerParticipantes(t), nombreValido: (t) => nombreValido(t), limpiarUniverso: (u) => limpiarUniverso(u) },
     _probar(cambios) { if (typeof cambios === "function") cambios(E); else Object.assign(E, cambios); render(); return E.notas.map((n) => n.ruta); },
     /** Resultado del creador de universos: { ok, id, nombre, error } */
     forjado(r) {
@@ -3520,14 +3467,73 @@
       if ("pantalla" in d) { RAIZ.classList.toggle("pantalla", !!d.pantalla); RAIZ.classList.toggle("forma", !d.pantalla && !ESCRITORIO); regiones(); }
       if ("activa" in d) RAIZ.classList.toggle("inactiva", !d.activa);
     },
+  });
+
+  // Funciones puras para las pruebas automáticas (pruebas/interfaz.mjs) y lo que recibió la vista previa.
+  window.Minuta._pruebas = {
+    limpiarNombre: (t) => limpiarNombre(t), leerParticipantes: (t) => leerParticipantes(t), nombreValido: (t) => nombreValido(t),
+    limpiarUniverso: (u) => limpiarUniverso(u), simulados: () => _simulados.map((m) => JSON.parse(JSON.stringify(m))),
   };
+
+  // ───────────────────────── Vista previa del navegador ─────────────────────────
+  // Sin app alrededor, host-ui le pasa cada acción a simular(): responde como la app, con datos ficticios.
+  const _simulados = [];
+  const COMUNES = PiezaHost.simulacionesComunes({ espera: 800 });
+  const abrirWeb = (url) => { if (/^(https|mailto):/.test(String(url || ""))) window.open(url, "_blank", "noopener"); };
+  const SIMULAR = {
+    copiar: COMUNES.copiar,
+    probarIA: COMUNES.probarIA,
+    copiarFormato: (d, c) => COMUNES.copiar({ texto: d.texto }, c),
+    tema: (d) => { try { localStorage.setItem("minuta.tema", d.id); } catch {} },
+    abrirURL: (d) => abrirWeb(d.url),
+    abrir: (d) => abrirWeb(d.url),
+    perfil: (d) => { if (d.cambios?.idioma_ui) cambiarIdiomaWeb(d.cambios.idioma_ui); },
+    bienvenidaEstado: (d, c) => c.luego(300, () => c.responder("bienvenida", bienvenidaSimulada())),
+    catalogo: (d, c) => fetch(`${CATALOGO_RAW}${d.tipo}/index.json`).then((r) => r.json()).then((lista) => c.responder("catalogo", { tipo: d.tipo, lista }))
+      .catch((e) => c.responder("catalogo", { tipo: d.tipo, lista: [], error: String(e) })),
+    descargarUniverso: (d, c) => fetch(`${CATALOGO_RAW}universos/${d.id}.json`).then((r) => r.json())
+      .then((t) => { const u = limpiarUniverso(t); if (!u) throw new Error("formato"); E.temas.push({ ...u, descargado: true }); c.responder("descargado", { tipo: "universo", id: d.id, ok: true, usar: d.usar }); })
+      .catch((e) => c.responder("descargado", { tipo: "universo", id: d.id, ok: false, error: String(e) })),
+    descargarIdioma: (d, c) => {
+      E.idioma.instalados = [...E.idioma.instalados, E.catI.lista.find((x) => x.codigo === d.codigo)];
+      c.responder("descargado", { tipo: "idioma", id: d.codigo, ok: true, instalados: E.idioma.instalados });
+    },
+    descargarModelo: (d, c) => {
+      const b = E.bv; let k = 0;
+      const paso = () => c.luego(300, () => {
+        k += 20; c.responder("modeloProgreso", { id: d.id, pct: k });
+        if (k < 100) return paso();
+        c.responder("modeloListo", { id: d.id, ok: true, modelos: { ...b?.modelos, lista: (b?.modelos?.lista || []).map((x) => ({ ...x, listo: x.listo || x.id === d.id })) } });
+      });
+      paso();
+    },
+    elegirCarpetaNotas: (d, c) => c.responder("carpetaNotas", { ruta: "~/Documents/Notas", notas: 12 }),
+    corregirIA: (d, c) => c.luego(1200, () => c.responder("corregido", { ok: true, cambios: "(vista previa) Aquí verías qué corrigió tu IA.", recordados: [d.instruccion] })),
+    preguntar: (d, c) => c.luego(900, () => c.responder("respuesta", { id: d.id, ok: true, respuesta: "En la vista previa no hay IA. En tu Mac, aquí aparece la respuesta con citas como [1] o [1@00:27:05].", fuentes: [{ n: 1, ruta: E.notas[0]?.ruta, titulo: E.notas[0]?.titulo, fecha: "" }] })),
+    gimnasio: (d, c) => c.luego(700, () => c.responder("gym", d.modo === "turno"
+      ? { modo: d.modo, ok: true, datos: { nombre: "Carlos, dueño del club", texto: d.entrada.historial.length ? "Ya, pero ¿cuánto me va a costar al mes? Hoy con la planilla no pago nada." : "Hola, cuéntame rápido, que tengo una clase en 20 minutos." } }
+      : { modo: d.modo, ok: true, datos: { veredicto: "Buen diagnóstico, pero cerraste sin fecha concreta.", puntajes: { claridad: 7, escucha: 8, preguntas: 6, cierre: 5 }, costo: [{ cita: "lo vemos y te aviso", texto: "Sin fecha ni responsable.", prueba: "¿Te parece el jueves a las 10 para mostrarte la configuración?" }], bien: [{ cita: "¿cuántas horas valle tienes vacías?", texto: "Pregunta con números." }], habito: "Cerrar siempre con fecha y hora" } })),
+    redactar: (d, c) => c.luego(d.forzar ? 900 : 50, () => c.responder("redactado", { ok: true, texto: textoResumen(E.notas.find((x) => x.ruta === d.ruta)), asunto: E.env?.asunto, guardado: !d.forzar })),
+    buscarActualizacion: (d, c) => c.luego(900, () => c.responder("actualizacion", { hay: false })),
+    actualizar: () => simularActualizacion(),
+    recordatorios: (d) => toast(`${(d.lista || []).length} a Recordatorios (solo en la app de Mac)`),
+    comentarios: (d) => {
+      const r = d.repo === "catalogo" ? "minuta-app/minuta-catalogo" : "minuta-app/minuta";
+      abrirWeb(`https://github.com/${r}/issues/new?title=${encodeURIComponent(d.titulo)}&body=${encodeURIComponent(d.cuerpo)}&labels=${encodeURIComponent(d.etiqueta || "")}`);
+    },
+  };
+  function simular(accion, datos, ctx) {
+    _simulados.push({ accion, datos });
+    if (_simulados.length > 100) _simulados.shift();
+    if (Object.hasOwn(SIMULAR, accion)) return SIMULAR[accion](datos, ctx);
+  }
 
   // Reloj: refresca "en 12 min" y vencimientos sin molestar
   setInterval(() => { if (E.cargado && (PANEL || E.seccion === "agenda") && !document.activeElement?.matches?.("input,textarea")) render({ mantenerScroll: true }); }, 60000);
 
   // Navegador sin contenedor: datos de ejemplo
   setTimeout(() => {
-    if (E.cargado || window.MINUTA_HOST) return;
+    if (E.cargado || !host.esWeb) return;
     fetch("demo.json").then((r) => r.json()).then((d) => {
       E.idioma.instalados = [...E.idioma.instalados, { codigo: "en", nombre: "English", bandera: "🇬🇧", incluido: true }];
       const lang = new URLSearchParams(location.search).get("idioma"); if (lang) setTimeout(() => cambiarIdiomaWeb(lang), 50);

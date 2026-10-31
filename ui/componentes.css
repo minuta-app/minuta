@@ -1,0 +1,116 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+/* Pieza «componentes»: botón, diálogo (hoja desde abajo en el celular), avisos, filas, selector segmentado, chips, campos y el
+   giro de espera. Solo usa los tokens de la pieza «tema» (cárgala antes). Clases con prefijo pz- para no chocar con las de la app.
+   Lo que se toca mide --pz-boton-alto (botones) y --pz-chip-alto (chips, selector): 36 y 32 px, y --pz-tactil (44 px) en pantallas
+   táctiles y a 760 px o menos. La app los cambia en su :root (p. ej. --pz-boton-alto: 44px para botones grandes también en
+   escritorio, o --pz-tactil: 48px); dentro de un diálogo, en táctil, nunca bajan de --pz-tactil. Las reglas sobre elementos
+   (p, h2) van con :where() para que cualquier clase de la app les gane. Con movimiento reducido no hay animaciones. */
+:root { --pz-tactil: 44px; --pz-boton-alto: 36px; --pz-chip-alto: 32px; }
+.pz-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Botones (el texto largo se parte en dos líneas antes de salirse a 390 px) */
+.pz-boton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--pz-boton-alto); padding: 6px 14px;
+  border: 1px solid var(--linea); border-radius: var(--radio-chico); background: var(--panel); color: var(--texto); font: inherit;
+  line-height: 1.25; text-align: center; cursor: pointer; max-width: 100%; }
+.pz-boton:hover { background: var(--hover); }
+.pz-boton.pz-principal { background: var(--acento); border-color: var(--acento); color: var(--sobre-acento); font-weight: 600; }
+.pz-boton.pz-principal:hover { background: color-mix(in srgb, var(--acento) 90%, var(--texto)); }
+.pz-boton.pz-plano { background: transparent; border-color: transparent; }
+.pz-boton.pz-plano:hover { background: var(--hover); }
+.pz-boton.pz-peligro:not(.pz-principal) { color: var(--rojo); }
+.pz-boton.pz-principal.pz-peligro { background: var(--rojo); border-color: var(--rojo); color: var(--sobre-rojo); }
+.pz-boton[disabled] { opacity: .5; cursor: default; }
+/* Un enlace dentro de un texto: el área que se toca crece sin agrandar la línea (nada de huecos en una fila). */
+.pz-enlace { position: relative; border: 0; background: none; padding: 0; color: var(--acento); font: inherit; text-decoration: underline; cursor: pointer; }
+.pz-enlace::after { content: ""; position: absolute; inset: -6px -4px; }
+
+/* Diálogo */
+.pz-capa { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: var(--velo); }
+.pz-dialogo { width: min(560px, 100%); max-height: calc(100dvh - 32px); overflow: auto; padding: 22px; background: var(--panel);
+  color: var(--texto); border: 1px solid var(--linea); border-radius: var(--radio); box-shadow: var(--sombra); outline: none;
+  animation: pz-entrar .16s ease-out; }
+.pz-dialogo.pz-ancho { width: min(860px, 100%); }
+.pz-cabeza { display: flex; align-items: flex-start; gap: 8px; }
+.pz-cabeza h2 { flex: 1; }
+.pz-cabeza.pz-sin-titulo { justify-content: flex-end; float: right; margin-left: 8px; }
+:where(.pz-dialogo) h2 { margin: 0 0 8px; font-size: 19px; line-height: 1.3; }
+/* El título recibe el foco al abrir (para el lector de pantalla): sin anillo, no es un control. */
+:where(.pz-dialogo) :is(h1, h2, h3)[tabindex="-1"]:focus { outline: none; }
+:where(.pz-dialogo) > p, :where(.pz-dialogo > .pz-cabeza) + p { margin: 0 0 12px; color: var(--texto-suave); }
+.pz-cerrar { min-width: var(--pz-boton-alto); padding: 6px; margin: -6px -8px 0 0; color: var(--texto-suave); }
+.pz-pie { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.pz-pie .pz-izq { margin-right: auto; }
+@keyframes pz-entrar { from { opacity: 0; transform: translateY(8px); } }
+
+/* Filas (Ajustes, Tu IA, actualizaciones) */
+.pz-filas { display: grid; }
+.pz-fila { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--linea); }
+.pz-fila:last-child { border-bottom: 0; }
+.pz-txt { flex: 1; min-width: 0; }
+.pz-txt b, .pz-txt > span { display: block; }
+.pz-txt small { display: block; color: var(--texto-suave); }
+.pz-notas { white-space: pre-line; overflow-wrap: anywhere; margin-top: 4px; }
+.pz-progreso { display: block; width: 100%; height: 6px; margin-top: 6px; accent-color: var(--acento); }
+.pz-ok { color: var(--verde); font-weight: 600; }
+.pz-error-texto, .pz-txt small.pz-error-texto, .pz-dialogo .pz-error-texto { color: var(--rojo); }
+.pz-ayuda { color: var(--texto-suave); }
+
+/* Selector segmentado (tema, idioma) y chips. El riel es un tinte del texto (se ve sobre --panel y sobre --panel-2), no se parte
+   en varias líneas: si no cabe, el texto de cada opción se parte adentro. */
+.pz-seg { display: inline-flex; flex-wrap: nowrap; max-width: 100%; gap: 2px; padding: 2px; border: 1px solid var(--linea); border-radius: var(--radio-chico);
+  background: color-mix(in srgb, var(--texto) 7%, transparent); }
+.pz-seg button { flex: 1 1 auto; min-width: 0; min-height: var(--pz-chip-alto); padding: 4px 12px; border: 0; border-radius: calc(var(--radio-chico) - 2px);
+  background: transparent; color: var(--texto-suave); font: inherit; line-height: 1.2; cursor: pointer; }
+.pz-seg button:hover { color: var(--texto); }
+.pz-seg button[aria-pressed="true"] { background: var(--panel); color: var(--texto); font-weight: 600;
+  box-shadow: 0 0 0 1px var(--linea), 0 1px 2px rgba(0, 0, 0, .12); }
+.pz-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.pz-chip { min-height: var(--pz-chip-alto); padding: 4px 12px; border: 1px solid var(--linea); border-radius: 999px; background: var(--panel); color: var(--texto); font: inherit; cursor: pointer; }
+.pz-chip[aria-pressed="true"] { border-color: var(--acento); background: var(--acento-suave); font-weight: 600; }
+
+/* Campos */
+.pz-campo { display: block; margin: 12px 0 0; }
+.pz-campo > span { display: block; margin-bottom: 6px; font-weight: 600; }
+.pz-campo input, .pz-campo textarea, .pz-campo select { width: 100%; padding: 9px 11px; border: 1px solid var(--linea); border-radius: var(--radio-chico);
+  background: var(--fondo); color: var(--texto); font: inherit; }
+.pz-campo textarea { min-height: 96px; resize: vertical; }
+.pz-campo [aria-invalid="true"] { border-color: var(--rojo); }
+.pz-casilla { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; cursor: pointer; }
+.pz-casilla input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--acento); flex: none; }
+.pz-casilla small { display: block; color: var(--texto-suave); }
+
+/* Esperando */
+.pz-giro { width: 18px; height: 18px; flex: none; border: 2px solid var(--linea); border-top-color: var(--acento); border-radius: 50%; animation: pz-giro .8s linear infinite; }
+@keyframes pz-giro { to { transform: rotate(360deg); } }
+
+/* Avisos (toast): uno a la vez, abajo al centro. --pz-toast-abajo para dejar espacio a una barra inferior. Colores sólidos
+   (--texto/--sobre-texto, --rojo/--sobre-rojo): se leen aunque la app tenga --fondo o --panel transparentes. */
+.pz-toast { position: fixed; left: 50%; bottom: calc(var(--pz-toast-abajo, 24px) + env(safe-area-inset-bottom, 0px)); z-index: 80;
+  max-width: min(520px, calc(100% - 32px)); padding: 10px 16px; border-radius: var(--radio); background: var(--texto); color: var(--sobre-texto);
+  font-weight: 600; text-align: center; opacity: 0; pointer-events: none; transform: translate(-50%, 16px); transition: opacity .18s, transform .18s; }
+.pz-toast.visible { opacity: 1; transform: translate(-50%, 0); }
+.pz-toast.pz-error { background: var(--rojo); color: var(--sobre-rojo); }
+.pz-toast.pz-con-accion { display: flex; align-items: center; gap: 12px; text-align: left; }
+.pz-toast.pz-con-accion.visible { pointer-events: auto; }
+.pz-toast-accion { flex: none; min-height: var(--pz-chip-alto); padding: 4px 10px; margin: -4px -6px -4px auto; border: 1px solid currentColor;
+  border-radius: var(--radio-chico); background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
+.pz-toast-accion:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+/* Táctil y celular: objetivos de --pz-tactil, diálogos como hojas desde abajo. */
+@media (pointer: coarse), (max-width: 760px) {
+  :root { --pz-boton-alto: var(--pz-tactil); --pz-chip-alto: var(--pz-tactil); }
+  :where(.pz-dialogo, .pz-toast) { --pz-boton-alto: var(--pz-tactil); --pz-chip-alto: var(--pz-tactil); }
+  .pz-enlace::after { inset: -12px -6px; }
+}
+@media (max-width: 760px) {
+  .pz-capa { place-items: end center; padding: 0; }
+  .pz-dialogo { width: 100%; max-height: 92dvh; border-radius: var(--radio) var(--radio) 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); }
+  .pz-pie .pz-boton { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pz-dialogo { animation: none; }
+  .pz-toast { transition: none; }
+  .pz-giro { animation-duration: 2.4s; }   /* sigue diciendo «espera», pero sin girar rápido */
+}

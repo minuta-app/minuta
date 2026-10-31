@@ -5,7 +5,9 @@ Uso: python3 pruebas/contrato.py   (desde la raíz del repo)
 Revisa que:
   1. cada acción que la interfaz manda con host.enviar("…") exista en la ventana de Mac (VisorWeb.swift) y en ACCIONES de Electron;
   2. cada acción del panel de la barra de menú (data-pn="…") exista en BarraMenu.swift y en ACCIONES;
-  3. cada función que Swift o Electron llaman en la interfaz (window.Minuta.…) exista.
+  3. cada función que Swift o Electron llaman en la interfaz (window.Minuta.…) exista;
+  4. los tres puentes hablen la forma común de la pieza «host-ui»: {accion, datos} (Swift lee cuerpo["datos"], Electron msg.datos,
+     el preload expone window.minutaEscritorio) y probarIA lleve {ia}.
 Si una acción es de un solo sistema a propósito, va en EXCEPCIONES con el motivo.
 """
 import os
@@ -50,7 +52,7 @@ def main():
         if a not in electron:
             errores.append(f"«{a}» (panel): falta en ACCIONES de escritorio/src/main.js")
 
-    obj = ui[ui.index("window.Minuta = {"):]
+    obj = ui[ui.index("host.responder({"):]
     funciones = set(re.findall(r"^    (?:async )?([A-Za-z_]+)\s*(?:\(|:)", obj, re.M))
     llamadas = {}
     for ruta in ["app/Sources/Minuta/VisorWeb.swift", "app/Sources/Minuta/BarraMenu.swift", "app/Sources/Minuta/MinutaApp.swift",
@@ -61,6 +63,19 @@ def main():
     for f, ruta in sorted(llamadas.items()):
         if f not in funciones:
             errores.append(f"{ruta} llama window.Minuta.{f}, que no existe en ui/app.js")
+
+    # La forma del mensaje (pieza «host-ui»): nada de campos sueltos al lado de `accion`.
+    if re.search(r"crearHost\(\{[^}]*plano", ui) or 'nombre: "minuta"' not in ui:
+        errores.append("ui/app.js: el puente es PiezaHost.crearHost({nombre: \"minuta\", …}) sin «plano»")
+    for ruta in ["app/Sources/Minuta/VisorWeb.swift", "app/Sources/Minuta/BarraMenu.swift"]:
+        if 'let datos = cuerpo["datos"] as? [String: Any] ?? [:]' not in leer(ruta):
+            errores.append(f"{ruta}: el mensaje es {{accion, datos}}: los datos se leen de cuerpo[\"datos\"]")
+    if "fn(datos, w)" not in main_js or "msg.datos" not in main_js:
+        errores.append("escritorio/src/main.js: el mensaje es {accion, datos}: las acciones reciben msg.datos")
+    if 'exposeInMainWorld("minutaEscritorio"' not in leer("escritorio/src/preload.js"):
+        errores.append("escritorio/src/preload.js: el canal se llama window.minutaEscritorio (lo busca host-ui)")
+    if 'datos["ia"]' not in leer("app/Sources/Minuta/VisorWeb.swift") or "d.ia" not in main_js or 'host.enviar("probarIA", { ia:' not in ui:
+        errores.append("probarIA va con {ia} (pieza «host-ui») en la interfaz, VisorWeb.swift y escritorio/src/main.js")
 
     if errores:
         print("✗ El contrato entre la interfaz y las apps no calza:")

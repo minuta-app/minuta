@@ -1,0 +1,97 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+/* Pieza «tema»: sistema, claro u oscuro con UN juego de tokens. Cada color se escribe una vez como par (--x-claro, --x-oscuro) y
+   el token (--x) lo elige con light-dark() según color-scheme: <html data-pz-modo="claro|oscuro"> lo fija, sin atributo sigue al
+   sistema (con prefijo: un `closest("[data-tema]")` de la app nunca lo encuentra). light-dark() solo acepta colores: la sombra
+   se elige con selectores. La app pone su acento redefiniendo en :root --acento-claro, --acento-oscuro (y, si hace falta, --sobre-acento-*),
+   cargando su CSS DESPUÉS de este. Nada de la app adentro. Los tokens y su significado: README.md de la pieza. */
+:root {
+  /* Pares de color (neutros con contraste AA entre sí: lo revisa pruebas/interfaz.mjs). */
+  --fondo-claro: #f6f7f9;         --fondo-oscuro: #10141b;
+  --panel-claro: #ffffff;         --panel-oscuro: #161b24;
+  --panel-2-claro: #eef1f5;       --panel-2-oscuro: #1d2430;
+  --linea-claro: #dde2ea;         --linea-oscuro: #2b3446;
+  --texto-claro: #1b2230;         --texto-oscuro: #e8ecf3;
+  --texto-suave-claro: #556075;   --texto-suave-oscuro: #9ba6b9;
+  --tenue-claro: #b4bccb;         --tenue-oscuro: #4a5468;
+  --acento-claro: #2f5fd0;        --acento-oscuro: #7fa2ff;
+  --sobre-acento-claro: #ffffff;  --sobre-acento-oscuro: #0c1120;
+  --rojo-claro: #b42727;          --rojo-oscuro: #ff8a8a;
+  --verde-claro: #1a6e40;         --verde-oscuro: #6fd39b;
+  /* Texto sólido sobre un fondo de color (aviso, botón de peligro): nunca --fondo/--panel, que una app puede hacer transparentes. */
+  --sobre-rojo-claro: #ffffff;    --sobre-rojo-oscuro: #1a0b0b;
+  --sobre-texto-claro: #ffffff;   --sobre-texto-oscuro: #10141b;
+  --sombra-claro: 0 8px 28px rgba(20, 30, 50, .14);
+  --sombra-oscuro: 0 10px 30px rgba(0, 0, 0, .5);
+
+  /* Los tokens que usa la interfaz (y las piezas). */
+  color-scheme: light dark;
+  --fondo: light-dark(var(--fondo-claro), var(--fondo-oscuro));
+  --panel: light-dark(var(--panel-claro), var(--panel-oscuro));
+  --panel-2: light-dark(var(--panel-2-claro), var(--panel-2-oscuro));
+  --linea: light-dark(var(--linea-claro), var(--linea-oscuro));
+  --texto: light-dark(var(--texto-claro), var(--texto-oscuro));
+  --texto-suave: light-dark(var(--texto-suave-claro), var(--texto-suave-oscuro));
+  --tenue: light-dark(var(--tenue-claro), var(--tenue-oscuro));
+  --acento: light-dark(var(--acento-claro), var(--acento-oscuro));
+  --sobre-acento: light-dark(var(--sobre-acento-claro), var(--sobre-acento-oscuro));
+  --rojo: light-dark(var(--rojo-claro), var(--rojo-oscuro));
+  --verde: light-dark(var(--verde-claro), var(--verde-oscuro));
+  --sobre-rojo: light-dark(var(--sobre-rojo-claro), var(--sobre-rojo-oscuro));
+  --sobre-texto: light-dark(var(--sobre-texto-claro), var(--sobre-texto-oscuro));
+  --sombra: var(--sombra-claro);   /* el oscuro, abajo: light-dark() con una sombra entera es inválido (queda en «none») */
+  /* Derivados: nunca se escriben a mano (cambian solos con el acento y con el modo). */
+  --hover: color-mix(in srgb, var(--texto) 7%, var(--panel));
+  --acento-suave: color-mix(in srgb, var(--acento) 14%, transparent);
+  --rojo-suave: color-mix(in srgb, var(--rojo) 12%, transparent);
+  --verde-suave: color-mix(in srgb, var(--verde) 12%, transparent);
+  --velo: color-mix(in srgb, #0f141e 42%, transparent);
+  --foco: var(--acento);
+  /* Forma y letra. */
+  --radio: 12px;
+  --radio-chico: 8px;
+  --fuente: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  /* La bienvenida (pieza «bienvenida») usa sus propias variables: aquí quedan conectadas a los tokens. */
+  --bv-acento: var(--acento); --bv-linea: var(--linea); --bv-panel: var(--panel); --bv-texto-suave: var(--texto-suave);
+  --bv-sobre-acento: var(--sobre-acento);
+}
+:root[data-pz-modo="claro"] { color-scheme: light; }
+:root[data-pz-modo="oscuro"] { color-scheme: dark; }
+/* La sombra no es un color: se elige por modo con selectores (igual en todos los navegadores). */
+@media (prefers-color-scheme: dark) { :root:not([data-pz-modo="claro"]) { --sombra: var(--sombra-oscuro); } }
+:root[data-pz-modo="oscuro"] { --sombra: var(--sombra-oscuro); }
+
+/* Sin light-dark() (Safari < 17.5, Chrome < 123): los mismos pares, elegidos por la consulta del sistema. Solo nombres, sin colores.
+   Un token PROPIO de la app escrito con light-dark() no tiene este respaldo: si importa en esos navegadores, repítelo aquí. */
+@supports not (color: light-dark(#000, #fff)) {
+  :root, :root[data-pz-modo="claro"] {
+    --fondo: var(--fondo-claro); --panel: var(--panel-claro); --panel-2: var(--panel-2-claro); --linea: var(--linea-claro);
+    --texto: var(--texto-claro); --texto-suave: var(--texto-suave-claro); --tenue: var(--tenue-claro); --acento: var(--acento-claro);
+    --sobre-acento: var(--sobre-acento-claro); --rojo: var(--rojo-claro); --verde: var(--verde-claro);
+    --sobre-rojo: var(--sobre-rojo-claro); --sobre-texto: var(--sobre-texto-claro);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-pz-modo="claro"]) {
+      --fondo: var(--fondo-oscuro); --panel: var(--panel-oscuro); --panel-2: var(--panel-2-oscuro); --linea: var(--linea-oscuro);
+      --texto: var(--texto-oscuro); --texto-suave: var(--texto-suave-oscuro); --tenue: var(--tenue-oscuro); --acento: var(--acento-oscuro);
+      --sobre-acento: var(--sobre-acento-oscuro); --rojo: var(--rojo-oscuro); --verde: var(--verde-oscuro);
+      --sobre-rojo: var(--sobre-rojo-oscuro); --sobre-texto: var(--sobre-texto-oscuro);
+    }
+  }
+  :root[data-pz-modo="oscuro"] {
+    --fondo: var(--fondo-oscuro); --panel: var(--panel-oscuro); --panel-2: var(--panel-2-oscuro); --linea: var(--linea-oscuro);
+    --texto: var(--texto-oscuro); --texto-suave: var(--texto-suave-oscuro); --tenue: var(--tenue-oscuro); --acento: var(--acento-oscuro);
+    --sobre-acento: var(--sobre-acento-oscuro); --rojo: var(--rojo-oscuro); --verde: var(--verde-oscuro);
+      --sobre-rojo: var(--sobre-rojo-oscuro); --sobre-texto: var(--sobre-texto-oscuro);
+  }
+}
+
+/* Lo mínimo que todo documento necesita del tema. */
+html, body { background: var(--fondo); color: var(--texto); }
+body { font-family: var(--fuente); }
+:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+/* Un diálogo recibe el foco cuando lo que lo abrió ya no está: sin anillo alrededor de toda la caja (sí en sus controles). */
+:where([role="dialog"], [role="alertdialog"])[aria-modal="true"]:focus-visible { outline: none; }
+::selection { background: color-mix(in srgb, var(--acento) 30%, transparent); }

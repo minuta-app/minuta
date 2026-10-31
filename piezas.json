@@ -2,9 +2,9 @@
  "formato": 1,
  "piezas": {
   "nucleo": {
-   "version": "0.6.0",
+   "version": "0.7.0",
    "archivos": {
-    "bin/nucleo.py": "3254be100d75d3a066b9a3ae0a7bbf9badcdef822d809756981a9345055f13a0"
+    "bin/nucleo.py": "071763cbcacedee9bb55db8704a6098b8f68346f549bbd7ce6befa86a295a3fb"
    },
    "ficha": {
     "requiere": [],
@@ -13,13 +13,65 @@
    }
   },
   "ia": {
-   "version": "0.4.0",
+   "version": "0.6.0",
    "archivos": {
-    "bin/ia.py": "4da328270059d3e6f354b30a0f84d75a442b76b252f72a417fb2d09d84486f8e"
+    "bin/ia.py": "1e65cee46498e99dc9af8ad37567ff6f8279ef2a47c153ef01a75fceb13622dc"
    },
    "ficha": {
     "requiere": [
      "nucleo"
+    ],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "host-ui": {
+   "version": "0.2.0",
+   "archivos": {
+    "ui/host.js": "cdca43b52982db53c3c018b807a8df0bc9282c9ff61b4ecee8037ddc3e5521aa"
+   },
+   "ficha": {
+    "requiere": [],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "i18n": {
+   "version": "0.3.0",
+   "archivos": {
+    "ui/i18n.js": "c6169349238b0d94769136b04f1a0cb30a8e8a373ee57f97cad90930084faca7"
+   },
+   "ficha": {
+    "requiere": [],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "tema": {
+   "version": "0.2.0",
+   "archivos": {
+    "ui/tema.css": "b4d579772dc1023f1d995da83b601df3e0387527846cef554b76c12d4d1a8f68",
+    "ui/tema.js": "b679ecb7bc80556b70e3f3fe768f0e3af0086bdf44c0d73ed0867da6a8f33f6e"
+   },
+   "sin_config": [
+    "tema"
+   ],
+   "ficha": {
+    "requiere": [],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "componentes": {
+   "version": "0.2.0",
+   "archivos": {
+    "ui/componentes.js": "b95fd032ab648f3f12d724b0a6354d76ebf66b930c96257772ecd791794bacee",
+    "ui/componentes.css": "ffda7917ec5bac49bd1fea8d5edf239adf0220e7d0e833d2b428cab3ddfbfaf8"
+   },
+   "ficha": {
+    "requiere": [
+     "i18n",
+     "tema"
     ],
     "permisos": {},
     "red": []

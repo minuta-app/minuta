@@ -167,7 +167,7 @@ const Extras = {
     const todos = this.votos();
     const v = Math.round(Number(d.v) || 0);
     if (v === 0) delete todos[d.clave];
-    else { const { accion, clave, ...resto } = d; todos[d.clave] = { ...resto, v, fecha: new Date().toISOString() }; }
+    else { const { clave, ...resto } = d; todos[d.clave] = { ...resto, v, fecha: new Date().toISOString() }; }
     escribirJSON(this.votosURL, todos);
   },
   /** Solo notas .md dentro de la carpeta de reuniones. */

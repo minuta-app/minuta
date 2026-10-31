@@ -9,7 +9,7 @@ Qué sabes:
 - Es la misma interfaz (`ui/`) y el mismo procesamiento (`bin/`) que en Mac. `escritorio/src/main.js` hace lo de AppModel + BarraMenu + VisorWeb + Alerta:
   estado `M`, ventanas (visor, panel de la bandeja, alerta, grabadora oculta) y `ACCIONES` (un caso por cada `host.enviar(accion)` de la UI).
   Si agregas una acción en Swift, agrégala también aquí (y al revés).
-- La UI se sirve en `minuta://ui/…` (protocolo propio), las páginas propias en `minuta://app/…`. Preload: `window.minutaHost.enviar(msg)`; respuesta:
+- La UI se sirve en `minuta://ui/…` (protocolo propio), las páginas propias en `minuta://app/…`. Preload: `window.minutaEscritorio.enviar({accion, datos})` (pieza «host-ui»; `ipcMain.on("minuta")` le pasa `msg.datos` a `ACCIONES`); respuesta:
   `executeJavaScript("window.Minuta.<fn>(json)")`. Usa `cargada(w)` antes de enviar (durante `did-finish-load` isLoading() aún es true).
 - Grabación: `grabadora.html` (ventana oculta, AudioWorklet a 16 kHz) → `yo.grabacion.wav`; audio del sistema: Windows con `getDisplayMedia`
   + `audio: "loopback"`; Linux con `parec` desde `@DEFAULT_MONITOR@` (o `pw-record`). `procesar.py` acepta `<pista>.grabacion.wav`.
