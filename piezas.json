@@ -24,6 +24,55 @@
     "permisos": {},
     "red": []
    }
+  },
+  "host-ui": {
+   "version": "0.1.0",
+   "archivos": {
+    "ui/host.js": "0c6e4716ec3056d2a4952c76c9250e85900d21118fb6d3c28206b2639e23b748"
+   },
+   "ficha": {
+    "requiere": [],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "i18n": {
+   "version": "0.2.0",
+   "archivos": {
+    "ui/i18n.js": "9cdae929afea783542af322018e47730e400cbee90777717d7c1ecd422d89180"
+   },
+   "ficha": {
+    "requiere": [],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "tema": {
+   "version": "0.1.0",
+   "archivos": {
+    "ui/tema.css": "1089d8fe0feb96733f414f8dcb3917b4b2dc3c9a013b8203b7c381c1dcb6a1a9",
+    "ui/tema.js": "14066a7054175c59390d654f5f4f51bdfc52947a502a1f6f55aeeb34d88779a4"
+   },
+   "ficha": {
+    "requiere": [],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "componentes": {
+   "version": "0.1.0",
+   "archivos": {
+    "ui/componentes.js": "3f0327be158ac5744945ef156e7d01136982be6ca4e6b61f2470da0457ce0d50",
+    "ui/componentes.css": "aa5bc184d851b181cb6da881bb4982bc644c9ca7f124f18a6f5e1638f642a6f7"
+   },
+   "ficha": {
+    "requiere": [
+     "i18n",
+     "tema"
+    ],
+    "permisos": {},
+    "red": []
+   }
   }
  }
 }

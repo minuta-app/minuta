@@ -239,7 +239,9 @@ private struct WebHost: NSViewRepresentable {
         func userContentController(_ c: WKUserContentController, didReceive mensaje: WKScriptMessage) {
             // Solo la interfaz local (marco principal, archivo de ui/) le pide cosas a la app; un iframe o una página de afuera, nunca.
             guard mensaje.frameInfo.isMainFrame, mensaje.frameInfo.securityOrigin.protocol == "file" else { return }
-            guard let datos = mensaje.body as? [String: Any], let accion = datos["accion"] as? String else { return }
+            // El mensaje es {accion, datos} (pieza «host-ui», igual en todas las apps de la familia).
+            guard let cuerpo = mensaje.body as? [String: Any], let accion = cuerpo["accion"] as? String else { return }
+            let datos = cuerpo["datos"] as? [String: Any] ?? [:]
             switch accion {
             case "tema":
                 if let id = datos["id"] as? String { ultimoTema = id; model.temaID = id }
@@ -313,7 +315,7 @@ private struct WebHost: NSViewRepresentable {
             case "probarIA":
                 // Pieza «ia»: `ia.py probar <entrada.json> <salida.json>`, con las mismas protecciones que una nota (sin herramientas
                 // ni MCP, sin la memoria de la persona, en una carpeta temporal). La IA elegida va en el archivo, nunca como argumento.
-                let pedida = datos["id"] as? String ?? ""
+                let pedida = datos["ia"] as? String ?? ""
                 let id = IA.conocidas.contains(where: { $0.id == pedida }) ? pedida : "claude"
                 let archivo = FileManager.default.temporaryDirectory.appendingPathComponent("minuta-ia-\(UUID().uuidString).json")
                 guard let d = try? JSONSerialization.data(withJSONObject: ["ia": id]), (try? d.write(to: archivo)) != nil else { break }
@@ -321,7 +323,7 @@ private struct WebHost: NSViewRepresentable {
                     try? FileManager.default.removeItem(at: archivo)
                     let ok = r?["ok"] as? Bool ?? false
                     if ok { var p = Perfil.datos(); p["ia"] = id; Perfil.guardar(p) }
-                    self?.llamarFuncion("iaProbada", ["id": id, "ok": ok, "texto": ok ? "listo" : (r?["error"] as? String ?? error),
+                    self?.llamarFuncion("iaProbada", ["ia": id, "ok": ok, "texto": ok ? "listo" : (r?["error"] as? String ?? error),
                                                       "codigo": r?["codigo"] as? String ?? ""])
                 }
             case "descargarModelo":

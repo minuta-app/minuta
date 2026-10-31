@@ -52,7 +52,6 @@ enum Extras {
             todos.removeValue(forKey: clave)
         } else {
             var registro = d
-            registro.removeValue(forKey: "accion")
             registro.removeValue(forKey: "clave")
             registro["v"] = v
             registro["fecha"] = ISO8601DateFormatter().string(from: Date())
