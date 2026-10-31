@@ -462,6 +462,21 @@ async function correrScriptJSON(script, args) {
   return { datos, error };
 }
 
+/** `script <accion> <entrada.json> <salida.json>`: lo que manda la interfaz va en un archivo privado, nunca como argumento. */
+async function conEntrada(script, accion, datos) {
+  const entrada = temporal(`minuta-entrada-${Math.random().toString(36).slice(2)}.json`);
+  fs.writeFileSync(entrada, JSON.stringify(datos || {}), { mode: 0o600 });
+  try { return (await correrScriptJSON(script, [accion, entrada])).datos; } finally { fs.rmSync(entrada, { force: true }); }
+}
+
+/** Pieza «catálogo» (repo y tipos de app.json). Se crea al usarla: net.fetch necesita la app lista. */
+let _catalogo = null;
+function catalogo() {
+  _catalogo ||= require("./catalogo").crear({ fetch: net.fetch, procesador: { conEntrada }, appJson: leerJSON(path.join(recursos(), "app.json"), {}),
+    agente: `Minuta/${app.getVersion()}` });
+  return _catalogo;
+}
+
 async function procesarSiguiente() {
   if (M.procesandoAhora || !M.enCola.length) return;
   const siguiente = M.enCola[0];
@@ -739,19 +754,21 @@ const ACCIONES = {
     catch (e) { llamarFuncion(w, "actualizacionProgreso", { paso: "error", texto: String(e.message || e) }); }
   },
   catalogo: async (d, w) => {
-    const tipo = d.tipo === "idiomas" ? "idiomas" : "universos";
-    const r = await Catalogo.indice(tipo);
-    llamarFuncion(w, "catalogo", { tipo, lista: r.lista, ...(r.error ? { error: r.error } : {}) });
+    // Pieza «catálogo»: el índice con huellas, validado por bin/catalogo.py con el validador de Minuta.
+    const pedido = d.tipo === "idiomas" ? "idiomas" : "universos", tipo = Catalogo.tipo(pedido);
+    const r = await catalogo().listar(tipo);
+    llamarFuncion(w, "catalogo", { tipo: pedido, lista: r[tipo] || [], ...(r.ok ? {} : { error: t(r.plantilla || "No pude leer el catálogo.") }) });
   },
   descargarUniverso: async (d, w) => {
-    const error = await Catalogo.descargarUniverso(String(d.id || ""));
-    if (!error && d.usar) { M.temaID = d.id; Temas.guardarId(d.id); }
+    // Solo lo del último índice validado, con su tamaño y su huella; Python lo vuelve a validar y lo deja en ~/minuta/temas.
+    const r = await catalogo().descargar("temas", String(d.id || ""));
+    if (r.ok && d.usar) { M.temaID = d.id; Temas.guardarId(d.id); }
     notasCambiaron();
-    llamarFuncion(w, "descargado", { tipo: "universo", id: d.id, ok: !error, error: error || "" });
+    llamarFuncion(w, "descargado", { tipo: "universo", id: d.id, ok: !!r.ok, error: r.ok ? "" : t(r.plantilla || "Eso no es válido.") });
   },
   descargarIdioma: async (d, w) => {
-    const error = await Catalogo.descargarIdioma(String(d.codigo || ""));
-    llamarFuncion(w, "descargado", { tipo: "idioma", id: d.codigo, ok: !error, error: error || "", instalados: Idioma.instalados() });
+    const r = await catalogo().descargar("idiomas", String(d.codigo || ""));
+    llamarFuncion(w, "descargado", { tipo: "idioma", id: d.codigo, ok: !!r.ok, error: r.ok ? "" : t(r.plantilla || "Eso no es válido."), instalados: Idioma.instalados() });
   },
   perfil: (d) => { Perfil.mezclar(d.cambios || {}); Idioma.olvidar(); actualizarBandeja(); notasCambiaron(); },
   corregirIA: async (d, w) => {

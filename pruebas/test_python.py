@@ -74,6 +74,13 @@ def ayuda_falsa(texto=AYUDA_CLAUDE):
     return f'[ "$1" = "--help" ] && {{ echo "{texto}"; exit 0; }}\n'
 
 
+def modelo_falso():
+    """Un archivo que hace de modelo de whisper (el transcriptor de las pruebas es falso: no lo lee)."""
+    ruta = os.path.join(HOME, "modelo-falso.bin")
+    open(ruta, "wb").close()
+    return ruta
+
+
 def ia_falsa(respuesta):
     """Deja un `claude` falso en el PATH que responde siempre lo mismo."""
     ruta = os.path.join(BIN_FALSO, "claude")
@@ -232,8 +239,10 @@ class Piezas(unittest.TestCase):
         self.assertEqual(r["codigo"], "desconocida")
 
     def test_datos_siguen_en_minuta(self):
-        # Minuta no usa la carpeta de datos de «nucleo» (Application Support / ~/.config): todo sigue en ~/minuta.
+        # La carpeta de datos de «nucleo» es ~/minuta (app.json → datos.carpeta): nada en Application Support ni ~/.config.
+        import nucleo
         self.assertEqual(perfil.BASE, os.path.join(HOME, "minuta"))
+        self.assertEqual(os.path.realpath(nucleo.carpeta_datos()), os.path.realpath(os.path.join(HOME, "minuta")))
         self.assertEqual(os.path.realpath(perfil.RECURSOS), os.path.realpath(RAIZ))
         for d in (os.path.join(HOME, "Library", "Application Support", "Minuta"), os.path.join(HOME, ".config", "minuta"),
                   os.path.join(HOME, "Minuta", ".minuta")):
@@ -327,12 +336,13 @@ json.dump({{"transcription": [{{"offsets": {{"from": 0, "to": 1000}}, "text": "h
         import procesar
         self.transcriptor_falso(nombre)
         procesar.VOCABULARIO = self.VOCAB
-        salida = os.path.join(tempfile.mkdtemp(dir=HOME), "ellos")
+        procesar.MODELO = modelo_falso()
+        carpeta = tempfile.mkdtemp(dir=HOME)
         try:
-            segs = procesar.transcribir(os.path.join(HOME, "audio.wav"), salida)
+            segs = procesar.transcribir_pista(os.path.join(HOME, "audio.wav"), carpeta, "ellos")
         finally:
             os.environ.pop("MINUTA_HERRAMIENTAS", None)
-        self.assertEqual(segs[0]["texto"], "hola")
+        self.assertEqual(segs, [{"desde": 0.0, "hasta": 1.0, "texto": "hola"}])
         with open(self.registro, encoding="utf-8") as f:
             return json.load(f)
 
@@ -362,16 +372,200 @@ json.dump({{"transcription": [{{"offsets": {{"from": 0, "to": 1000}}, "text": "h
         self.assertEqual(self.revisar(r), self.VOCAB)
 
     def test_vocabulario_en_una_linea(self):
-        import procesar
-        cmd, temporales = procesar.comando_transcribir("/x/whisper-cli", "a.wav", "s", "Ana\nPérez\r\n-m otro.bin")
+        import transcribir
+        cmd, temporales = transcribir.comando("/x/whisper-cli", ["-f", "a.wav"], "Ana\nPérez\r\n-m otro.bin")
         try:
             with open(temporales[0], encoding="utf-8") as f:
                 lineas = f.read().split("\n")
             self.assertEqual(lineas[lineas.index("--prompt") + 1], "Ana Pérez -m otro.bin")
-            self.assertEqual(lineas.count("-m"), 1, "un salto de línea en el vocabulario no puede agregar opciones")
+            self.assertNotIn("-m", lineas, "un salto de línea en el vocabulario no puede agregar opciones")
         finally:
             for x in temporales:
                 os.remove(x)
+
+
+class Segmentos(unittest.TestCase):
+    """Una reunión de punta a punta con la pieza «transcribir»: los segmentos son {desde, hasta, texto} (segundos) en todo el
+    camino (limpiar, separar por silencios, eco, turnos, métricas) y la nota sale con el formato de siempre."""
+
+    @staticmethod
+    def wav(ruta, voz):
+        """10 s de WAV 16 kHz mono: un tono donde hay `voz` [(desde, hasta)], silencio en lo demás."""
+        import math
+        import struct
+        import wave
+        with wave.open(ruta, "wb") as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(16000)
+            w.writeframes(b"".join(struct.pack("<h", int(8000 * math.sin(i / 8)) if any(a <= i / 16000 < b for a, b in voz) else 0)
+                                   for i in range(16000 * 10)))
+
+    def setUp(self):
+        self.herr = tempfile.mkdtemp(dir=HOME)
+        ruta = os.path.join(self.herr, "whisper-cli")
+        with open(ruta, "w", encoding="utf-8") as f:
+            f.write(f"""#!{sys.executable}
+import json, sys
+lineas = open(sys.argv[1][1:], encoding="utf-8").read().split("\\n")
+wav, salida = lineas[lineas.index("-f") + 1], lineas[lineas.index("-of") + 1]
+segs = [[0, 3000, "Hola, soy Ana y les cuento el plan de hoy."]] if wav.endswith("yo.wav") else [
+    [4000, 7000, "Perfecto, me parece muy bien todo eso."], [8000, 9500, "Gracias por ver el video."]]
+json.dump({{"transcription": [{{"offsets": {{"from": a, "to": b}}, "text": t}} for a, b, t in segs]}}, open(salida + ".json", "w"))
+""")
+        os.chmod(ruta, 0o755)
+        os.environ["MINUTA_HERRAMIENTAS"] = self.herr
+
+    def tearDown(self):
+        os.environ.pop("MINUTA_HERRAMIENTAS", None)
+
+    def test_reunion_de_punta_a_punta(self):
+        import procesar
+        procesar.MODELO = modelo_falso()
+        procesar.VOCABULARIO = "Ana Pérez"
+        carpeta = os.path.join(HOME, "minuta", "grabaciones", "2026-10-20 1000")
+        os.makedirs(carpeta, exist_ok=True)
+        self.wav(os.path.join(carpeta, "yo.grabacion.wav"), [(0, 3)])
+        self.wav(os.path.join(carpeta, "ellos.grabacion.wav"), [(4, 7)])
+        with open(os.path.join(carpeta, "meta.json"), "w", encoding="utf-8") as f:
+            json.dump({"inicio": 1792500000, "fin": 1792500010, "titulo": "Plan de hoy", "tipo": "Otra"}, f)
+        ia_falsa("TITULO: Plan de hoy\n\n### Plan\n- Ana cuenta el plan\n\n## Feedback para Ana\n- **Veredicto:** bien")
+        argv = sys.argv
+        sys.argv = ["procesar.py", carpeta]
+        from unittest import mock
+        try:
+            popen = subprocess.Popen  # sin el mensaje para los participantes (redactar.py corre aparte)
+            with mock.patch.object(subprocess, "Popen", side_effect=lambda cmd, *a, **k: (
+                    mock.MagicMock() if any("redactar.py" in str(x) for x in cmd) else popen(cmd, *a, **k))):
+                procesar.main()
+        finally:
+            sys.argv = argv
+        for pista in ("yo", "ellos"):
+            with open(os.path.join(carpeta, pista + ".segmentos.json"), encoding="utf-8") as f:
+                segs = json.load(f)
+            self.assertTrue(segs and all(set(x) == {"desde", "hasta", "texto"} for x in segs), segs)
+            self.assertNotIn("Gracias por ver", json.dumps(segs, ensure_ascii=False))  # un invento de whisper no queda
+        with open(os.path.join(carpeta, "nota.txt"), encoding="utf-8") as f:
+            ruta = f.read().strip()
+        with open(ruta, encoding="utf-8") as f:
+            nota = f.read()
+        self.assertIn("duracion_min: 0.2", nota)
+        self.assertIn("habla_yo_min: 0.1", nota)
+        self.assertIn("monologo_max_seg: 3", nota)
+        self.assertIn("habla_yo_pct: 50", nota)
+        self.assertIn("> [00:00:00] Yo: Hola, soy Ana y les cuento el plan de hoy.", nota)
+        self.assertIn("> [00:00:04] Ellos: Perfecto, me parece muy bien todo eso.", nota)
+        self.assertIn("## Métricas\n| Métrica | Valor |", nota)
+        self.assertIn("### Plan", nota)
+
+    def test_recalcular_lee_los_segmentos(self):
+        import recalcular_interrupciones
+        carpeta = tempfile.mkdtemp(dir=HOME)
+        with open(os.path.join(carpeta, "yo.segmentos.json"), "w", encoding="utf-8") as f:
+            json.dump([{"desde": 1.0, "hasta": 2.0, "texto": "hola"}], f)
+        with open(os.path.join(carpeta, "ellos.json"), "w", encoding="utf-8") as f:  # una grabación de antes: el JSON de whisper
+            json.dump({"transcription": [{"offsets": {"from": 3000, "to": 4000}, "text": "qué tal"}]}, f)
+        meta = {"inicio": 100, "yo_primer_buffer": 100.5}
+        yo = recalcular_interrupciones.segmentos(carpeta, "yo", "Yo", meta, {})
+        ellos = recalcular_interrupciones.segmentos(carpeta, "ellos", "Ellos", meta, {})
+        self.assertEqual(yo, [{"desde": 1.5, "hasta": 2.5, "texto": "hola", "quien": "Yo"}])
+        self.assertEqual(ellos, [{"desde": 3.0, "hasta": 4.0, "texto": "qué tal", "quien": "Ellos"}])
+
+
+class CatalogoSeguro(unittest.TestCase):
+    """Universos e idiomas del catálogo con la pieza «catálogo»: se instala solo lo que calza con el índice validado (id, tamaño y
+    SHA-256 obligatorios), con el validador de Minuta, y queda donde siempre (~/minuta/temas, ~/minuta/idiomas)."""
+
+    def correr(self, accion, datos):
+        entrada, salida = os.path.join(HOME, "cat-entrada.json"), os.path.join(HOME, "cat-salida.json")
+        with open(entrada, "w", encoding="utf-8") as f:
+            json.dump(datos, f)
+        subprocess.run([sys.executable, os.path.join(RAIZ, "bin", "catalogo.py"), accion, entrada, salida], check=True, timeout=60,
+                       env={**os.environ, "MINUTA_RECURSOS": RAIZ})
+        with open(salida, encoding="utf-8") as f:
+            return json.load(f)
+
+    def catalogo(self, tipo, obj, ruta):
+        """Un catálogo de mentira con un solo elemento: (archivo del índice, archivo bajado)."""
+        crudo = json.dumps(obj, ensure_ascii=False).encode("utf-8")
+        import hashlib
+        indice = os.path.join(HOME, f"indice-{tipo}.json")
+        with open(indice, "w", encoding="utf-8") as f:
+            json.dump({"formato": 1, tipo: [{**obj, "ruta": ruta, "sha256": hashlib.sha256(crudo).hexdigest(), "tamano": len(crudo)}]}, f)
+        bajado = os.path.join(HOME, f"bajado-{tipo}.json")
+        with open(bajado, "wb") as f:
+            f.write(crudo)
+        return indice, bajado, hashlib.sha256(crudo).hexdigest()
+
+    def universo(self):
+        with open(os.path.join(RAIZ, "universos", "starwars.json"), encoding="utf-8") as f:
+            u = json.load(f)
+        u.pop("descargado", None)
+        return {**u, "id": "pruebasw", "categoria": "peliculas"}
+
+    def test_universo_con_huella_buena_queda_en_temas(self):
+        indice, bajado, huella = self.catalogo("temas", self.universo(), "temas/peliculas/pruebasw.json")
+        r = self.correr("indice", {"tipo": "temas", "archivo": indice})
+        self.assertTrue(r["ok"], r)
+        self.assertEqual([x["id"] for x in r["temas"]], ["pruebasw"])
+        r = self.correr("instalar", {"tipo": "temas", "archivo": bajado, "id": "pruebasw", "sha256": huella})
+        self.assertTrue(r["ok"], r)
+        destino = os.path.join(HOME, "minuta", "temas", "pruebasw.json")
+        with open(destino, encoding="utf-8") as f:
+            self.assertEqual(json.load(f)["nombre"], self.universo()["nombre"])
+        self.assertNotIn("origen", r["universo"])
+        os.remove(destino)
+
+    def test_universo_con_huella_mala_se_rechaza(self):
+        indice, bajado, huella = self.catalogo("temas", self.universo(), "temas/peliculas/pruebasw.json")
+        self.assertTrue(self.correr("indice", {"tipo": "temas", "archivo": indice})["ok"])
+        with open(bajado, "r+b") as f:  # alguien cambió el archivo en el camino (mismo tamaño, otra huella)
+            f.seek(-3, 2)
+            f.write(b"  }")
+        r = self.correr("instalar", {"tipo": "temas", "archivo": bajado, "id": "pruebasw", "sha256": huella})
+        self.assertFalse(r["ok"])
+        self.assertEqual(r["codigo"], "danado")
+        # Ni con la huella del archivo cambiado: el índice validado manda.
+        import hashlib
+        with open(bajado, "rb") as f:
+            otra = hashlib.sha256(f.read()).hexdigest()
+        self.assertEqual(self.correr("instalar", {"tipo": "temas", "archivo": bajado, "id": "pruebasw", "sha256": otra})["codigo"], "no_esta")
+        self.assertFalse(os.path.exists(os.path.join(HOME, "minuta", "temas", "pruebasw.json")))
+
+    def test_indice_sin_huella_no_ofrece_nada(self):
+        u = self.universo()
+        indice = os.path.join(HOME, "indice-viejo.json")
+        with open(indice, "w", encoding="utf-8") as f:
+            json.dump({"formato": 1, "temas": [{**u, "ruta": "temas/peliculas/pruebasw.json"}]}, f)
+        self.assertEqual(self.correr("indice", {"tipo": "temas", "archivo": indice})["temas"], [])
+
+    def test_universo_con_codigo_se_rechaza(self):
+        u = self.universo()
+        u["nombre"] = 'Malo<img src=x onerror="alert(1)">'
+        indice, bajado, huella = self.catalogo("temas", u, "temas/peliculas/pruebasw.json")
+        self.assertEqual(self.correr("indice", {"tipo": "temas", "archivo": indice})["temas"], [])
+
+    def test_idioma_queda_en_idiomas(self):
+        with open(os.path.join(RAIZ, "ui", "idiomas", "en.json"), encoding="utf-8") as f:
+            en = json.load(f)
+        obj = {"id": "fr", "categoria": "comunidad", "codigo": "fr", "nombre": "Français", "bandera": "🇫🇷",
+               "textos": dict(list(en["textos"].items())[:5]), "palabras": en.get("palabras", {})}
+        indice, bajado, huella = self.catalogo("idiomas", obj, "idiomas/comunidad/fr.json")
+        self.assertTrue(self.correr("indice", {"tipo": "idiomas", "archivo": indice})["ok"])
+        r = self.correr("instalar", {"tipo": "idiomas", "archivo": bajado, "id": "fr", "sha256": huella})
+        self.assertTrue(r["ok"], r)
+        with open(os.path.join(HOME, "minuta", "idiomas", "fr.json"), encoding="utf-8") as f:
+            self.assertEqual(json.load(f)["codigo"], "fr")
+
+    def test_validadores_iguales_al_catalogo(self):
+        # Los validadores y la pieza viven también en minuta-catalogo/herramientas: si el catálogo está al lado, son iguales.
+        otro = os.path.join(RAIZ, "..", "minuta-catalogo", "herramientas")
+        if not os.path.isdir(otro):
+            self.skipTest("el catálogo no está al lado")
+        for nombre in ("universo_formato.py", "idioma_formato.py", "catalogo.py", "nucleo.py"):
+            if os.path.exists(os.path.join(otro, nombre)):
+                with open(os.path.join(RAIZ, "bin", nombre), encoding="utf-8") as a, open(os.path.join(otro, nombre), encoding="utf-8") as b:
+                    self.assertEqual(a.read(), b.read(), nombre)
 
 
 class LimpiarNotas(unittest.TestCase):

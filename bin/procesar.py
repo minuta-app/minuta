@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Minuta: transcribe una grabación (yo.caf + ellos.caf), calcula métricas y genera
 notas + feedback con Claude Code (tu suscripción Max). Uso: procesar.py <carpeta>"""
-import array
 import datetime as dt
 import json
 import math
@@ -10,23 +9,19 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
 import time
 import unicodedata
 import wave
 
 from perfil import NOMBRE, NOMBRE_FB, IDIOMA, IDIOMA_AUDIO, HUMOR, CARPETA_NOTAS, es_usuario, P as PERFIL, ejecutar_ia, NOMBRE_IA, limpiar_nombre, hechos
-PERFIL_MODELO = (PERFIL.get("modelo_whisper") or "").strip()  # noqa: E402
+import transcribir  # noqa: E402  (pieza «transcribir» de Pieza)
 
 HOME = os.path.expanduser("~")
 BASE = os.path.join(HOME, "minuta")
-# Modelo de transcripción: el que se eligió en la bienvenida (si falta, el que esté descargado).
-_MODELOS = {"turbo": "ggml-large-v3-turbo-q5_0.bin", "small": "ggml-small-q5_1.bin"}
-_elegido = os.path.join(BASE, "models", _MODELOS.get(PERFIL_MODELO, ""))
-MODELO = _elegido if PERFIL_MODELO in _MODELOS and os.path.exists(_elegido) else next(
-    (os.path.join(BASE, "models", f) for f in _MODELOS.values() if os.path.exists(os.path.join(BASE, "models", f))),
-    os.path.join(BASE, "models", _MODELOS["turbo"]))
-VAD = os.path.join(BASE, "models", "ggml-silero-v5.1.2.bin")
+# Los modelos de voz de Minuta viven en ~/minuta/models (desde siempre; la pieza los busca en <datos>/modelos): no se mueven.
+transcribir.carpeta_modelos = lambda: os.path.join(BASE, "models")
+# Modelo de transcripción: el que se eligió en la bienvenida (si falta, el que esté descargado). El detector de voz (VAD), si está.
+MODELO = transcribir.modelo_elegido((PERFIL.get("modelo_whisper") or "").strip())
 VAULT = CARPETA_NOTAS
 HISTORIAL = os.path.join(BASE, "historial.jsonl")
 DIAS_AUDIO = 14  # se borran los audios más antiguos que esto
@@ -38,15 +33,9 @@ if os.path.exists(_vocab):
     with open(_vocab, encoding="utf-8") as _f:
         VOCABULARIO = _f.read().strip() or VOCABULARIO
 
-SR = 16000
-UMBRAL_SILENCIO = 0.004  # RMS normalizado bajo el cual un segmento se considera silencio
-ALUCINACIONES = [
-    "subtitulos realizados por la comunidad de amara",
-    "subtitulos por la comunidad de amara",
-    "gracias por ver",
-    "suscribete",
-    "subtitulado por",
-]
+SR = transcribir.SR
+UMBRAL_SILENCIO = transcribir.UMBRAL_SILENCIO  # RMS normalizado bajo el cual un tramo se considera silencio
+FRAME = transcribir.CUADRO  # segundos por cuadro de energía
 MULETILLAS_EN = {
     "um / uh": r"\b(?:u+m+|u+h+|e+r+m*)\b",
     "like": r"\blike\b(?! to\b)",
@@ -80,19 +69,6 @@ def norm(texto):
     return re.sub(r"[^a-z0-9ñ ]+", " ", t).split()
 
 
-def herramienta(*candidatos):
-    """Primer ejecutable que exista: el que trae la app (MINUTA_HERRAMIENTAS), el de bin/ o el del sistema."""
-    dirs = [d for d in (os.environ.get("MINUTA_HERRAMIENTAS"), os.path.join(BASE, "bin")) if d]
-    for nombre in candidatos:
-        for d in dirs:
-            for ruta in (os.path.join(d, nombre), os.path.join(d, nombre + ".exe")):
-                if os.path.isfile(ruta) and os.access(ruta, os.X_OK):
-                    return ruta
-        if shutil.which(nombre):
-            return shutil.which(nombre)
-    return None
-
-
 def es_wav_whisper(ruta):
     """¿Ya es WAV 16 kHz mono 16 bits? (lo que graba la app de Windows/Linux)."""
     try:
@@ -115,33 +91,14 @@ def a_wav(origen, destino):
                     "-ac", "1", "-ar", str(SR), "-c:a", "pcm_s16le", destino], check=True)
 
 
-FRAME = 0.1  # segundos por cuadro de energía
+leer_muestras = transcribir.energia  # energía (RMS normalizado) de cada cuadro de 100 ms de la pista
+rms = transcribir.rms
 
 
-def leer_muestras(ruta):
-    """Devuelve la energía (RMS normalizado) de cada cuadro de 100 ms de la pista."""
-    with wave.open(ruta, "rb") as w:
-        datos = array.array("h")
-        datos.frombytes(w.readframes(w.getnframes()))
-    n = int(SR * FRAME)
-    energia = []
-    for i in range(0, len(datos), n):
-        tramo = datos[i:i + n:4]
-        energia.append(math.sqrt(sum(x * x for x in tramo) / len(tramo)) / 32768.0 if tramo else 0.0)
-    return energia
-
-
-def rms(energia, ini, fin):
-    a, b = max(0, int(ini / FRAME)), min(len(energia), int(math.ceil(fin / FRAME)))
-    if b <= a:
-        return 0.0
-    return math.sqrt(sum(e * e for e in energia[a:b]) / (b - a))
-
-
-def regiones_voz(energia, ini, fin, pausa=1.0, minimo=0.3):
-    """Tramos con voz dentro de [ini, fin], uniendo pausas menores a `pausa` segundos."""
+def regiones_voz(energia, desde, hasta, pausa=1.0, minimo=0.3):
+    """Tramos con voz dentro de [desde, hasta], uniendo pausas menores a `pausa` segundos."""
     regiones = []
-    a, b = max(0, int(ini / FRAME)), min(len(energia), int(math.ceil(fin / FRAME)))
+    a, b = max(0, int(desde / FRAME)), min(len(energia), int(math.ceil(hasta / FRAME)))
     for i in range(a, b):
         if energia[i] >= UMBRAL_SILENCIO * 2:
             t = i * FRAME
@@ -155,17 +112,17 @@ def regiones_voz(energia, ini, fin, pausa=1.0, minimo=0.3):
 def partir_por_silencios(s, energia):
     """Whisper a veces junta en un segmento frases separadas por silencios largos (mientras habla
     el otro). Lo corta donde la pista tiene silencio real y reparte el texto según la duración."""
-    regiones = regiones_voz(energia, s["ini"], s["fin"])
+    regiones = regiones_voz(energia, s["desde"], s["hasta"])
     if not regiones:
         return [s]
     return repartir(s, regiones)
 
 
 def repartir(s, regiones, etiquetas=None):
-    """Reparte el texto de `s` entre `regiones` [(ini, fin)] en proporción a su duración,
+    """Reparte el texto de `s` entre `regiones` [(desde, hasta)] en proporción a su duración,
     cortando de preferencia en fin de frase. `etiquetas` asigna 'quien' a cada parte."""
     if len(regiones) == 1:
-        parte = {**s, "ini": regiones[0][0], "fin": regiones[0][1]}
+        parte = {**s, "desde": regiones[0][0], "hasta": regiones[0][1]}
         if etiquetas:
             parte["quien"] = etiquetas[0]
         return [parte]
@@ -188,7 +145,7 @@ def repartir(s, regiones, etiquetas=None):
     partes = []
     for k, ((a, b), i, j) in enumerate(zip(regiones, cortes, cortes[1:])):
         if j > i:
-            parte = {**s, "ini": a, "fin": b, "texto": " ".join(palabras[i:j])}
+            parte = {**s, "desde": a, "hasta": b, "texto": " ".join(palabras[i:j])}
             if etiquetas:
                 parte["quien"] = etiquetas[k]
             partes.append(parte)
@@ -198,13 +155,13 @@ def repartir(s, regiones, etiquetas=None):
 def diarizar(wav, salida):
     """Separa las voces de la pista 'Ellos'. Devuelve [{hablante, ini, fin}] o [].
     En Mac: FluidAudio (minuta-diarizar). En Windows y Linux: sherpa-onnx con pyannote + 3D-Speaker (vienen con la app)."""
-    binario = herramienta("minuta-diarizar")
+    binario = transcribir.herramienta("minuta-diarizar")
     try:
         if binario:
             subprocess.run([binario, wav, salida], check=True, timeout=3600)
             with open(salida, encoding="utf-8") as f:
                 return json.load(f)
-        sherpa = herramienta("sherpa-onnx-offline-speaker-diarization")
+        sherpa = transcribir.herramienta("sherpa-onnx-offline-speaker-diarization")
         dir_modelos = os.path.dirname(sherpa) if sherpa else ""
         segmentacion, huella = (os.path.join(dir_modelos, f) for f in ("voces-segmentacion.onnx", "voces-huella.onnx"))
         if not sherpa or not os.path.exists(segmentacion) or not os.path.exists(huella):
@@ -235,7 +192,7 @@ def asignar_hablantes(segs, diar):
     for s in segs:
         tramos = []
         for d in diar:
-            a, b = max(s["ini"], d["ini"]), min(s["fin"], d["fin"])
+            a, b = max(s["desde"], d["ini"]), min(s["hasta"], d["fin"])
             if b - a > 0.2:
                 quien = etiqueta[d["hablante"]]
                 if tramos and tramos[-1][2] == quien:
@@ -243,7 +200,7 @@ def asignar_hablantes(segs, diar):
                 else:
                     tramos.append([a, b, quien])
         if not tramos:  # sin voz detectada por el diarizador: el hablante más cercano en el tiempo
-            mitad = (s["ini"] + s["fin"]) / 2
+            mitad = (s["desde"] + s["hasta"]) / 2
             cercano = min(diar, key=lambda d: min(abs(d["ini"] - mitad), abs(d["fin"] - mitad)))
             salida.append({**s, "quien": etiqueta[cercano["hablante"]]})
             continue
@@ -286,81 +243,26 @@ def corregir(texto):
     return texto
 
 
-def _archivo_privado(contenido, sufijo):
-    """Archivo temporal que solo puede leer la persona (0600). Devuelve su ruta; quien lo pide lo borra."""
-    fd, ruta = tempfile.mkstemp(prefix="minuta-", suffix=sufijo)
-    with os.fdopen(fd, "wb") as f:
-        f.write(contenido)
-    return ruta
-
-
-def _linea_ruta(texto):
-    """Una ruta o una opción para el archivo de argumentos de whisper-cli, codificada como la leería de argv:
-    en Windows, whisper-cli abre archivos con la página de códigos del sistema (no UTF-8)."""
-    return texto.encode("mbcs", "replace") if os.name == "nt" else os.fsencode(texto)
-
-
-def comando_transcribir(motor, wav, salida, vocabulario):
-    """Arma el comando del transcriptor y los archivos temporales que hay que borrar al terminar.
-
-    El vocabulario (nombres, empresas: lo que escribió la persona) **nunca** va como argumento, porque otros programas
-    ven los argumentos en la lista de procesos. minuta-transcribir (Mac) lo lee con --prompt-archivo; whisper-cli
-    (Windows/Linux) con su archivo de argumentos oficial: `whisper-cli @archivo`, una opción por línea."""
-    hilos = str(max(2, min(8, os.cpu_count() or 4)))  # en Windows/Linux whisper corre en el procesador: usa los núcleos que hay
-    opciones = ["-m", MODELO, "-l", IDIOMA_AUDIO, "-t", hilos, "-f", wav, "-oj", "-of", salida, "-np", "-sns", "-mc", "64"]
-    if os.path.exists(VAD):
-        opciones += ["--vad", "-vm", VAD]
-    # Una sola línea: el archivo de argumentos separa por saltos de línea.
-    prompt = " ".join(vocabulario.split())
-    if os.path.basename(motor).startswith("minuta-transcribir"):
-        archivo = _archivo_privado(prompt.encode("utf-8"), ".vocabulario.txt")
-        return [motor] + opciones + ["--prompt-archivo", archivo], [archivo]
-    # whisper-cli: el prompt en UTF-8 (lo que espera el tokenizador de whisper) y las rutas como las abre el sistema.
-    lineas = [_linea_ruta(x) for x in opciones] + [b"--prompt", prompt.encode("utf-8")]
-    archivo = _archivo_privado(b"\n".join(lineas) + b"\n", ".argumentos.txt")
-    return [motor, "@" + archivo], [archivo]
-
-
-def transcribir(wav, salida):
-    motor = herramienta("minuta-transcribir", "whisper-cli")
-    if not motor:
-        raise SystemExit("No encontré el transcriptor (minuta-transcribir o whisper-cli).")
-    cmd, temporales = comando_transcribir(motor, wav, salida, VOCABULARIO)
+def transcribir_pista(wav, carpeta, archivo):
+    """Transcribe una pista con la pieza «transcribir»: segmentos {desde, hasta, texto} en segundos, sin marcas, inventos ni
+    bucles. El vocabulario nunca va como argumento del transcriptor (la pieza lo pasa en un archivo privado que se borra). Deja
+    los segmentos tal cual en <pista>.segmentos.json (recalcular_interrupciones.py los vuelve a leer)."""
     try:
-        subprocess.run(cmd, check=True)
-    finally:
-        for x in temporales:
-            if os.path.exists(x):
-                os.remove(x)
-    with open(salida + ".json", encoding="utf-8") as f:
-        datos = json.load(f)
-    segs = []
-    for s in datos.get("transcription", []):
-        texto = corregir(s.get("text", "").strip())
-        if texto:
-            segs.append({"ini": s["offsets"]["from"] / 1000, "fin": s["offsets"]["to"] / 1000, "texto": texto})
+        segs = transcribir.transcribir(wav, idioma=IDIOMA_AUDIO, modelo=MODELO, vocabulario=VOCABULARIO)
+    except transcribir.ErrorTranscribir as e:
+        raise SystemExit(f"{e} {e.detalle}".strip()) from None
+    with open(os.path.join(carpeta, archivo + ".segmentos.json"), "w", encoding="utf-8") as f:
+        json.dump(segs, f, ensure_ascii=False)
     return segs
 
 
 def limpiar(segs, muestras, quien):
+    """Lo propio de Minuta sobre los segmentos de la pieza: las correcciones que enseñó la persona, partir donde la pista tiene
+    silencio real y marcar de quién es. Después, lo que cae en silencio se descarta (`transcribir.limpiar` con la energía)."""
+    segs = [{**s, "texto": corregir(s["texto"])} for s in segs]
     if muestras is not None:
         segs = [p for s in segs for p in partir_por_silencios(s, muestras)]
-    buenos = []
-    for s in segs:
-        plano = " ".join(norm(s["texto"]))
-        if any(a in plano for a in ALUCINACIONES):
-            continue
-        if muestras is not None and rms(muestras, s["ini"], s["fin"]) < UMBRAL_SILENCIO:
-            continue
-        s["quien"] = quien
-        buenos.append(s)
-    # repeticiones en bucle (alucinación típica de Whisper)
-    final = []
-    for s in buenos:
-        if len(final) >= 2 and s["texto"] == final[-1]["texto"] == final[-2]["texto"]:
-            continue
-        final.append(s)
-    return final
+    return [{**s, "quien": quien} for s in transcribir.limpiar(segs, muestras)]
 
 
 def quitar_eco(yo, ellos):
@@ -373,7 +275,7 @@ def quitar_eco(yo, ellos):
             continue
         cerca = set()
         for e in ellos:
-            if e["fin"] >= s["ini"] - 1.5 and e["ini"] <= s["fin"] + 1.5:
+            if e["hasta"] >= s["desde"] - 1.5 and e["desde"] <= s["hasta"] + 1.5:
                 cerca.update(norm(e["texto"]))
         if cerca and len(palabras & cerca) / len(palabras) >= 0.55:
             continue
@@ -384,8 +286,8 @@ def quitar_eco(yo, ellos):
 def turnos(segs, pausa=2.0):
     out = []
     for s in segs:
-        if out and out[-1]["quien"] == s["quien"] and s["ini"] - out[-1]["fin"] <= pausa:
-            out[-1]["fin"] = max(out[-1]["fin"], s["fin"])
+        if out and out[-1]["quien"] == s["quien"] and s["desde"] - out[-1]["hasta"] <= pausa:
+            out[-1]["hasta"] = max(out[-1]["hasta"], s["hasta"])
             out[-1]["texto"] += " " + s["texto"]
         else:
             out.append(dict(s))
@@ -434,18 +336,18 @@ def interrupciones_de(yo, ellos, audio=None):
             ok = [t for t in ts if energia(pista, t) >= UMBRAL_SILENCIO * 2]
         return len(ok) / n
 
-    turnos_ellos = turnos(sorted(ellos, key=lambda s: s["ini"]), pausa=0.8)
+    turnos_ellos = turnos(sorted(ellos, key=lambda s: s["desde"]), pausa=0.8)
     usados, detalle, ultimo = set(), [], -99.0
-    for s in sorted(yo, key=lambda s: s["ini"]):
+    for s in sorted(yo, key=lambda s: s["desde"]):
         palabras = norm(s["texto"])
-        if len(palabras) < 4 or sum(1 for p in palabras if p not in CONFIRMACIONES) < 3 or s["ini"] - ultimo < 5:
+        if len(palabras) < 4 or sum(1 for p in palabras if p not in CONFIRMACIONES) < 3 or s["desde"] - ultimo < 5:
             continue
         for k, t in enumerate(turnos_ellos):
-            if k in usados or not (t["ini"] <= s["ini"] + 0.5 and t["fin"] >= s["ini"] - 0.5):
+            if k in usados or not (t["desde"] <= s["desde"] + 0.5 and t["hasta"] >= s["desde"] - 0.5):
                 continue
             if audio and "yo" in audio and "ellos" in audio:
                 # Momento real en que empezaste a hablar (Whisper suele marcarlo antes).
-                on = next((s["ini"] + i * FRAME for i in range(-3, 25) if frac("yo", s["ini"] + i * FRAME, s["ini"] + (i + 3) * FRAME) >= 0.67), None)
+                on = next((s["desde"] + i * FRAME for i in range(-3, 25) if frac("yo", s["desde"] + i * FRAME, s["desde"] + (i + 3) * FRAME) >= 0.67), None)
                 if on is None:
                     continue
                 antes, encima = frac("ellos", on - 1.0, on), frac("ellos", on, on + 0.6)
@@ -453,18 +355,18 @@ def interrupciones_de(yo, ellos, audio=None):
                 if not (antes >= 0.6 and encima >= 0.5 and se_callo):
                     continue
             else:
-                resto = t["fin"] - s["ini"]
-                if len(palabras) < 6 or not (s["ini"] - t["ini"] >= 1.5 and 1.0 <= resto <= 3.0):
+                resto = t["hasta"] - s["desde"]
+                if len(palabras) < 6 or not (s["desde"] - t["desde"] >= 1.5 and 1.0 <= resto <= 3.0):
                     continue
-            usados.add(k); ultimo = s["ini"]
-            detalle.append({"t": hhmmss(s["ini"]), "a": t["quien"], "cita": " ".join(s["texto"].split()[:14])})
+            usados.add(k); ultimo = s["desde"]
+            detalle.append({"t": hhmmss(s["desde"]), "a": t["quien"], "cita": " ".join(s["texto"].split()[:14])})
             break
     return detalle
 
 
 def metricas(yo, ellos, todos, duracion, audio=None):
-    habla_yo = sum(s["fin"] - s["ini"] for s in yo)
-    habla_ellos = sum(s["fin"] - s["ini"] for s in ellos)
+    habla_yo = sum(s["hasta"] - s["desde"] for s in yo)
+    habla_ellos = sum(s["hasta"] - s["desde"] for s in ellos)
     texto_yo = " ".join(s["texto"] for s in yo)
     palabras_yo = len(norm(texto_yo))
     trs = turnos(todos)
@@ -472,7 +374,7 @@ def metricas(yo, ellos, todos, duracion, audio=None):
     cortes = interrupciones_de(yo, ellos, audio)
     por_persona = {}
     for e in ellos:
-        por_persona[e["quien"]] = por_persona.get(e["quien"], 0) + e["fin"] - e["ini"]
+        por_persona[e["quien"]] = por_persona.get(e["quien"], 0) + e["hasta"] - e["desde"]
     por_persona = {k: round(v / 60, 1) for k, v in sorted(por_persona.items(), key=lambda x: -x[1])}
     plano = " ".join(norm(texto_yo))
     muletillas ={k: len(re.findall(p, plano)) for k, p in MULETILLAS.items()}
@@ -484,7 +386,7 @@ def metricas(yo, ellos, todos, duracion, audio=None):
         "habla_ellos_min": round(habla_ellos / 60, 1),
         "palabras_por_min_yo": round(palabras_yo / (habla_yo / 60)) if habla_yo > 30 else 0,
         "turnos_yo": len(mis_turnos),
-        "monologo_max_seg": round(max((t["fin"] - t["ini"] for t in mis_turnos), default=0)),
+        "monologo_max_seg": round(max((t["hasta"] - t["desde"] for t in mis_turnos), default=0)),
         "preguntas_yo": texto_yo.count("?"),
         "interrupciones_yo": len(cortes),
         "interrupciones_detalle": cortes,
@@ -722,7 +624,7 @@ def main():
             log("Pista en silencio:", quien)
             continue
         log("Transcribiendo", quien)
-        segs = transcribir(wav, os.path.join(carpeta, archivo))
+        segs = transcribir_pista(wav, carpeta, archivo)
         primer = meta.get(f"{archivo}_primer_buffer") or meta["inicio"]
         desfase = max(0.0, primer - meta["inicio"])
         segs = limpiar(segs, muestras, quien)
@@ -731,20 +633,20 @@ def main():
             diar = diarizar(wav, os.path.join(carpeta, "hablantes.json"))
             segs = asignar_hablantes(segs, diar)
         for s in segs:
-            s["ini"] += desfase
-            s["fin"] += desfase
+            s["desde"] += desfase
+            s["hasta"] += desfase
         pistas[quien] = segs
         audio[archivo] = (muestras, desfase)
 
     yo, ellos = pistas.get("Yo", []), pistas.get("Ellos", [])
     yo = quitar_eco(yo, ellos)
-    todos = sorted(yo + ellos, key=lambda s: s["ini"])
+    todos = sorted(yo + ellos, key=lambda s: s["desde"])
     if not todos:
         raise SystemExit("No se detectó voz en la grabación.")
 
     m = metricas(yo, ellos, todos, duracion, audio)
     nombres = {}
-    transcripcion = "\n".join(f"[{hhmmss(t['ini'])}] {t['quien']}: {t['texto']}" for t in turnos(todos))
+    transcripcion = "\n".join(f"[{hhmmss(t['desde'])}] {t['quien']}: {t['texto']}" for t in turnos(todos))
     with open(os.path.join(carpeta, "transcripcion.txt"), "w", encoding="utf-8") as f:
         f.write(transcripcion)
 

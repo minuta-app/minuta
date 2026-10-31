@@ -5,6 +5,16 @@ Lo que cambia para quien usa Minuta, en palabras simples. Las versiones anterior
 *What changes for people using Minuta, in plain words. Earlier versions are listed in Releases.*
 
 ## Sin publicar · Unreleased
+- **Universos e idiomas más seguros:** antes de guardar un universo o un idioma del catálogo, Minuta revisa que sea exactamente el
+  publicado (su huella SHA-256); si llega cambiado o dañado, no lo instala y te lo dice. Lo que ya descargaste sigue donde estaba.
+  · *Safer universes and languages: before saving a universe or a language from the catalog, Minuta checks it is exactly the one
+  published (its SHA-256 fingerprint); if it arrives changed or damaged, it isn't installed and Minuta tells you. What you already
+  downloaded stays where it was.*
+- **Por dentro, la transcripción es la pieza compartida «transcribir»:** igual que antes, en tu computador y con tu vocabulario en
+  un archivo privado (nunca a la vista de otros programas); ahora también descarta las marcas como [Música]. Tus modelos siguen en
+  la misma carpeta. · *Under the hood, transcription is the shared «transcribir» piece: same as before, on your computer and with
+  your vocabulary in a private file (never visible to other programs); it now also drops marks like [Music]. Your models stay in
+  the same folder.*
 - Al abrir «¿Borrar esta reunión?» con el teclado (⌘⌫), el foco ya no queda en «Borrar»: un Enter apurado no borra nada. Las
   tarjetas vuelven a tener su sombra suave. · *When you open «Delete this meeting?» with the keyboard (⌘⌫), the focus no longer
   lands on «Delete»: a hasty Enter deletes nothing. Cards have their soft shadow again.*

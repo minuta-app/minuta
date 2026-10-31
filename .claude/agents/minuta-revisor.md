@@ -22,7 +22,7 @@ mira las pruebas de GitHub y aplica la lista de abajo. No reescribas el aporte: 
 - Python solo con la biblioteca estándar. Español en código, comentarios y textos.
 - Datos de ejemplo ficticios (Ana, Matías, Carla…). Corre `bash herramientas/revisar_privacidad.sh --generico` sobre la rama.
 
-**Universos (`minuta-catalogo/universos/*.json` o un issue `propuesta`)**
+**Universos (`minuta-catalogo/temas/<categoria>/*.json` o un issue `propuesta`)**
 - `python3 herramientas/generar_indice.py` valida sin errores; 1 a 4 `categorias` de la lista; 10 rangos; logros y apartados completos.
 - Solo datos: nada de HTML, scripts, URLs raras ni campos que no existen.
 - Homenaje breve de fan: sin letras de canciones ni párrafos copiados de guiones o libros; nombres de personajes sí.
@@ -30,12 +30,12 @@ mira las pruebas de GitHub y aplica la lista de abajo. No reescribas el aporte: 
 - Contraste: el botón principal se lee (la prueba de la interfaz del repo `minuta` lo mide con el catálogo al lado).
 - Crea su issue de votos (`Votos: <Nombre> [<id>]`, etiqueta `votos`) al juntarlo.
 
-**Idiomas (`minuta-catalogo/idiomas/<código>.json`)**
-- Mismas claves que `idiomas/en.json` (ninguna falta ni sobra) y los mismos `{n}`/`{x}` en cada texto.
+**Idiomas (`minuta-catalogo/idiomas/comunidad/<código>.json`)**
+- Mismas claves que `idiomas/comunidad/en.json` (ninguna falta ni sobra) y los mismos `{n}`/`{x}` en cada texto.
 - Marcas sin traducir: Minuta, Claude, Codex, Gemini, GitHub, GitLab. Los marcadores de las notas no se traducen (van en español).
 - Muestra al azar 15–20 textos y revisa que la traducción tenga sentido; si no hablas el idioma, pide en el PR que otra persona
   nativa lo revise antes de juntarlo.
-- Entrada en `idiomas/index.json` (lo regenera `generar_indice.py`).
+- Va en `idiomas/comunidad/<codigo>.json` con `id` = `codigo`; su entrada en `idiomas/catalogo.json` (con huella) la regenera `generar_indice.py`.
 
 ## Veredicto
 Escribe para quien mantiene, en pocas líneas: qué cambia, si es seguro, qué pasó en las pruebas y tu recomendación
