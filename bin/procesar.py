@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import unicodedata
 import wave
@@ -285,28 +286,52 @@ def corregir(texto):
     return texto
 
 
+def _archivo_privado(contenido, sufijo):
+    """Archivo temporal que solo puede leer la persona (0600). Devuelve su ruta; quien lo pide lo borra."""
+    fd, ruta = tempfile.mkstemp(prefix="minuta-", suffix=sufijo)
+    with os.fdopen(fd, "wb") as f:
+        f.write(contenido)
+    return ruta
+
+
+def _linea_ruta(texto):
+    """Una ruta o una opción para el archivo de argumentos de whisper-cli, codificada como la leería de argv:
+    en Windows, whisper-cli abre archivos con la página de códigos del sistema (no UTF-8)."""
+    return texto.encode("mbcs", "replace") if os.name == "nt" else os.fsencode(texto)
+
+
+def comando_transcribir(motor, wav, salida, vocabulario):
+    """Arma el comando del transcriptor y los archivos temporales que hay que borrar al terminar.
+
+    El vocabulario (nombres, empresas: lo que escribió la persona) **nunca** va como argumento, porque otros programas
+    ven los argumentos en la lista de procesos. minuta-transcribir (Mac) lo lee con --prompt-archivo; whisper-cli
+    (Windows/Linux) con su archivo de argumentos oficial: `whisper-cli @archivo`, una opción por línea."""
+    hilos = str(max(2, min(8, os.cpu_count() or 4)))  # en Windows/Linux whisper corre en el procesador: usa los núcleos que hay
+    opciones = ["-m", MODELO, "-l", IDIOMA_AUDIO, "-t", hilos, "-f", wav, "-oj", "-of", salida, "-np", "-sns", "-mc", "64"]
+    if os.path.exists(VAD):
+        opciones += ["--vad", "-vm", VAD]
+    # Una sola línea: el archivo de argumentos separa por saltos de línea.
+    prompt = " ".join(vocabulario.split())
+    if os.path.basename(motor).startswith("minuta-transcribir"):
+        archivo = _archivo_privado(prompt.encode("utf-8"), ".vocabulario.txt")
+        return [motor] + opciones + ["--prompt-archivo", archivo], [archivo]
+    # whisper-cli: el prompt en UTF-8 (lo que espera el tokenizador de whisper) y las rutas como las abre el sistema.
+    lineas = [_linea_ruta(x) for x in opciones] + [b"--prompt", prompt.encode("utf-8")]
+    archivo = _archivo_privado(b"\n".join(lineas) + b"\n", ".argumentos.txt")
+    return [motor, "@" + archivo], [archivo]
+
+
 def transcribir(wav, salida):
     motor = herramienta("minuta-transcribir", "whisper-cli")
     if not motor:
         raise SystemExit("No encontré el transcriptor (minuta-transcribir o whisper-cli).")
-    hilos = str(max(2, min(8, os.cpu_count() or 4)))  # en Windows/Linux whisper corre en el procesador: usa los núcleos que hay
-    cmd = [motor, "-m", MODELO, "-l", IDIOMA_AUDIO, "-t", hilos, "-f", wav, "-oj", "-of", salida, "-np", "-sns", "-mc", "64"]
-    # El vocabulario (nombres, empresas) va en un archivo, no como argumento: minuta-transcribir (Mac) lo lee con
-    # --prompt-archivo. whisper-cli (Windows/Linux) no sabe leerlo de un archivo; ahí sigue como --prompt para no perderlo.
-    archivo_vocab = salida + ".vocabulario.txt"
-    if os.path.basename(motor).startswith("minuta-transcribir"):
-        with open(archivo_vocab, "w", encoding="utf-8") as f:
-            f.write(VOCABULARIO)
-        cmd += ["--prompt-archivo", archivo_vocab]
-    else:
-        cmd += ["--prompt", VOCABULARIO]
-    if os.path.exists(VAD):
-        cmd += ["--vad", "-vm", VAD]
+    cmd, temporales = comando_transcribir(motor, wav, salida, VOCABULARIO)
     try:
         subprocess.run(cmd, check=True)
     finally:
-        if os.path.exists(archivo_vocab):
-            os.remove(archivo_vocab)
+        for x in temporales:
+            if os.path.exists(x):
+                os.remove(x)
     with open(salida + ".json", encoding="utf-8") as f:
         datos = json.load(f)
     segs = []

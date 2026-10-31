@@ -42,6 +42,9 @@ Solo la última versión publicada en [Releases](https://github.com/minuta-app/m
 - La IA de cada persona corre sin herramientas, sin servidores MCP, sin su memoria y sin las variables de la app; si su
   versión no permite quitarle las herramientas, no se usa. El pedido va por la entrada estándar o en un archivo, nunca como
   argumento. El puente de la app solo atiende a su propia ventana (marco principal y origen de la app).
+- Lo que escribes (por ejemplo tu vocabulario de nombres y palabras propias) nunca va como argumento de un proceso, donde
+  otros programas lo verían en la lista de procesos: al transcriptor le llega en un archivo temporal privado (solo tú puedes
+  leerlo) que se borra al terminar.
 
 ---
 
