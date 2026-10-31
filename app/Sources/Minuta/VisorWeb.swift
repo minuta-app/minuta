@@ -1,5 +1,6 @@
 import AVFoundation
 import AppKit
+import PiezaCatalogo
 import SwiftUI
 import WebKit
 
@@ -392,24 +393,32 @@ private struct WebHost: NSViewRepresentable {
                     else { self?.llamarFuncion("actualizacionProgreso", ["paso": "error", "texto": error]) }
                 }
             case "catalogo":
-                let tipo = (datos["tipo"] as? String) == "idiomas" ? "idiomas" : "universos"
-                Catalogo.indice(tipo) { [weak self] lista, error in
-                    var d: [String: Any] = ["tipo": tipo, "lista": lista]
-                    if let error { d["error"] = error }
+                // Pieza «catálogo»: el índice con huellas, validado por bin/catalogo.py con el validador de Minuta.
+                let pedido = (datos["tipo"] as? String) == "idiomas" ? "idiomas" : "universos"
+                let tipo = CatalogoPublico.tipo(pedido)
+                Catalogo.listar(tipo) { [weak self] r in
+                    var d: [String: Any] = ["tipo": pedido, "lista": r[tipo] as? [[String: Any]] ?? []]
+                    if r["ok"] as? Bool != true { d["error"] = Idioma.t(r["plantilla"] as? String ?? "No pude leer el catálogo.") }
                     self?.llamarFuncion("catalogo", d)
                 }
             case "descargarUniverso":
                 guard let id = datos["id"] as? String else { break }
-                Catalogo.descargarUniverso(id) { [weak self] ok, error in
+                // Solo lo del último índice validado, con su tamaño y su huella; Python lo vuelve a validar y lo deja en ~/minuta/temas.
+                Catalogo.descargar("temas", id) { [weak self] r in
                     guard let self else { return }
+                    let ok = r["ok"] as? Bool == true
                     if ok { self.model.temas = Temas.todos(); if datos["usar"] as? Bool == true { self.model.temaID = id } }
                     self.enviarTodo()
-                    self.llamarFuncion("descargado", ["tipo": "universo", "id": id, "ok": ok, "error": error ?? ""])
+                    self.llamarFuncion("descargado", ["tipo": "universo", "id": id, "ok": ok,
+                                                      "error": ok ? "" : Idioma.t(r["plantilla"] as? String ?? "Eso no es válido.")])
                 }
             case "descargarIdioma":
                 guard let c = datos["codigo"] as? String else { break }
-                Catalogo.descargarIdioma(c) { [weak self] ok, error in
-                    self?.llamarFuncion("descargado", ["tipo": "idioma", "id": c, "ok": ok, "error": error ?? "", "instalados": Idioma.instalados()])
+                Catalogo.descargar("idiomas", c) { [weak self] r in
+                    let ok = r["ok"] as? Bool == true
+                    self?.llamarFuncion("descargado", ["tipo": "idioma", "id": c, "ok": ok,
+                                                       "error": ok ? "" : Idioma.t(r["plantilla"] as? String ?? "Eso no es válido."),
+                                                       "instalados": Idioma.instalados()])
                 }
             case "perfil":
                 // Cambios del perfil desde Preferencias (idioma, nombre…): se mezclan con lo que ya hay.

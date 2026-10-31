@@ -1,5 +1,6 @@
 import AVFoundation
 import EventKit
+import PiezaCatalogo
 import ServiceManagement
 import SwiftUI
 import UserNotifications
@@ -70,6 +71,12 @@ final class AppModel: ObservableObject {
         if !Perfil.falta { UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in } }
         UNUserNotificationCenter.current().delegate = delegadoNotificaciones
         registrarAccionesAvisos()
+        // Pieza «catálogo»: repo y tipos salen de app.json; los scripts corren con el Python de la app (entrada en un archivo).
+        Catalogo.configurar(appJSON: Temas.recursos.appendingPathComponent("app.json"), agente: "Minuta/\(Actualizaciones.version)") {
+            [weak self] script, accion, datos, fin in
+            guard let self else { return fin([:]) }
+            self.conEntrada(script, accion, datos) { r in fin(r ?? [:]) }
+        }
         delegadoNotificaciones.alResponder = { [weak self] categoria, accion, info in
             Task { @MainActor in self?.responderNotificacion(categoria: categoria, accion: accion, info: info) }
         }
@@ -726,6 +733,19 @@ final class AppModel: ObservableObject {
             let error = (try? String(contentsOf: log, encoding: .utf8))?.split(separator: "\n").last.map(String.init) ?? "sin respuesta"
             try? FileManager.default.removeItem(at: salida)
             alTerminar(datos, error)
+        }
+    }
+
+    /// Corre `script <accion> <entrada.json> <salida.json>`: lo que manda la interfaz va en un archivo privado, nunca como argumento.
+    func conEntrada(_ script: String, _ accion: String, _ datos: [String: Any], alTerminar: @escaping @MainActor ([String: Any]?) -> Void) {
+        let entrada = FileManager.default.temporaryDirectory.appendingPathComponent("minuta-entrada-\(UUID().uuidString).json")
+        guard let d = try? JSONSerialization.data(withJSONObject: datos),
+              FileManager.default.createFile(atPath: entrada.path, contents: d, attributes: [.posixPermissions: 0o600]) else {
+            return alTerminar(nil)
+        }
+        correrScriptJSON(script, [accion, entrada.path]) { r, _ in
+            try? FileManager.default.removeItem(at: entrada)
+            alTerminar(r)
         }
     }
 

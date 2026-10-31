@@ -10,7 +10,7 @@ Qué sabes:
 - La UI es web: `VisorWeb.swift` (ventana con forma por universo, clase `Puente`) y `BarraMenu.swift` (panel `PanelFlotante`). Mensajes JS→Swift entran por `userContentController` en un `switch accion`; respuestas con `llamarFuncion("nombre", datos)` / `llamar(...)` → `window.Minuta.nombre(json)`.
 - Avisos propios con `AlertaFlotante` (no dependen del permiso de notificaciones). Textos visibles siempre con `Idioma.t("…")` o `Idioma.f("… {x} …", valor)` y su entrada en `ui/idiomas/en.json`.
 - Perfil (`Perfil.swift`): carpeta de notas, nombre, idiomas. Nunca escribas rutas o nombres personales en el código.
-- Catálogo (`Catalogo.swift`): descarga y valida universos/idiomas antes de guardarlos; solo datos.
+- Catálogo: la pieza «catálogo» (`app/Sources/PiezaCatalogo/`, no se edita aquí; `Catalogo.configurar` en `AppModel.init`) baja universos/idiomas solo del catálogo, con tamaño y SHA-256 del índice validado, y `bin/catalogo.py` los valida y guarda. Lo propio de Minuta está en `Idioma.swift` (`CatalogoPublico`).
 
 Reglas:
 - No puedes compilar fuera del Mac: escribe código conservador, revisa tipos y opcionales a mano, y deja la compilación al agente `minuta-despliegue`.
