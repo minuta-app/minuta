@@ -5,6 +5,10 @@ Lo que cambia para quien usa Minuta, en palabras simples. Las versiones anterior
 *What changes for people using Minuta, in plain words. Earlier versions are listed in Releases.*
 
 ## Sin publicar · Unreleased
+- Con el panel de la barra de menú cerrado, Minuta ya no repinta el reloj cada segundo ni el panel cada minuto mientras graba:
+  menos trabajo de fondo en reuniones largas. Al abrirlo, todo aparece al día. · *With the menu bar panel closed, Minuta no longer
+  redraws the clock every second or the panel every minute while recording: less background work in long meetings. When you open
+  it, everything is up to date.*
 - **Ya no se pierde un «Gracias» de verdad:** antes, la transcripción borraba siempre «Gracias», «Thank you» y frases parecidas
   (whisper las inventa en los silencios), aunque alguien las hubiera dicho. Ahora solo se quitan si caen en silencio.
   · *A real «Thank you» is no longer lost: transcription used to always drop «Gracias», «Thank you» and similar phrases (whisper
