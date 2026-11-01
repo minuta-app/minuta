@@ -26,12 +26,12 @@ Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromis
 | `app.json`, `piezas.json` | **Pieza** (ver «Piezas»): `app.json` describe la app para las piezas (id, nombre, plataformas); `piezas.json` lo escribe `pieza.py` (versión y huella de cada archivo copiado). |
 | `ui/` | Interfaz web única (`app.js` + CSS) que usan la ventana y el panel de la barra de menú. `demo.json` = datos ficticios para la vista previa en navegador. `idiomas/en.json` = inglés incluido. |
 | `universos/` | Los 4 universos incluidos (cine, starwars, harrypotter, marvel). El resto está en el catálogo. |
-| `herramientas/` | `revisar_privacidad.sh` (auditoría antes de commitear) y `empaquetar.sh` (arma `dist/Minuta.app` + `dist/Minuta-macOS.zip` y su `.sha256`). |
+| `herramientas/` | `revisar_privacidad.sh` (auditoría antes de commitear), `empaquetar.sh` (arma `dist/Minuta.app` + `dist/Minuta-macOS.zip` y su `.sha256`) y `capturas.mjs` (rehace las capturas de `docs/img` y la imagen para compartir de 1200×630 desde la vista previa, con `demo.json` y hora fija). |
 | `build.sh` | Empaqueta e instala en `~/Applications/Minuta.app`. **Cierra la app** (ver Despliegue). |
 | `instalar.sh` | Instalador de un comando para usuarios (`curl … \| bash`): baja la última Release, verifica SHA-256 e instala. Sin Python ni Homebrew. |
 | `.github/workflows/` | `revisar.yml` (pruebas en cada cambio) y `publicar.yml` (al subir la versión en Info.plist: compila Mac, Windows y Linux y publica la Release). |
 | `pruebas/` | Pruebas automáticas (ver "Pruebas"). |
-| `docs/` | Página pública (GitHub Pages): `index.html` (español/inglés, detecta el sistema del visitante), `ia.html` (guía para instalar Claude Code, Codex o Gemini CLI) y capturas en `docs/img` hechas con `demo.json`. |
+| `docs/` | Página pública (GitHub Pages): `index.html` (español/inglés, detecta el sistema del visitante), `ia.html` (guía para instalar Claude Code, Codex o Gemini CLI) y capturas en `docs/img` hechas con `demo.json` (`node herramientas/capturas.mjs`; míralas antes de subirlas). `sitemap.xml` lista cada página. |
 | `CHANGELOG.md` | Lo que cambia para quien usa la app, en palabras simples (ver «Lo que rodea a un cambio»). |
 | `escritorio/` | App de **Windows y Linux** (Electron): misma `ui/` y mismo `bin/`. Ver "Windows y Linux" abajo. |
 | `instalar.ps1` | Instalador de un comando para Windows (`irm … \| iex`). `instalar.sh` sirve para Mac y Linux. |
