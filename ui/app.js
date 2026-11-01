@@ -1224,8 +1224,10 @@
   function tic() {
     clearInterval(_relojPanel);
     if (E.pan.fase !== "grabando") return;
-    _relojPanel = setInterval(() => { const r = $(".pn-reloj"); if (r) r.textContent = reloj(Date.now() - E.pan.desde); }, 1000);
+    _relojPanel = setInterval(ponerReloj, 1000);
   }
+  // El panel pasa casi todo el tiempo cerrado (oculto, pero vivo): ahí no se toca la pantalla y, al volver, se pone al día.
+  function ponerReloj() { if (document.hidden || E.pan.fase !== "grabando") return; const r = $(".pn-reloj"); if (r) r.textContent = reloj(Date.now() - E.pan.desde); }
   function reportarAlto() {
     if (!PANEL) return;
     requestAnimationFrame(() => {
@@ -3547,8 +3549,20 @@
     if (Object.hasOwn(SIMULAR, accion)) return SIMULAR[accion](datos, ctx);
   }
 
-  // Reloj: refresca "en 12 min" y vencimientos sin molestar
-  setInterval(() => { if (E.cargado && (PANEL || E.seccion === "agenda") && !document.activeElement?.matches?.("input,textarea")) render({ mantenerScroll: true }); }, 60000);
+  // Reloj: refresca "en 12 min" y vencimientos sin molestar. Oculto no pinta: al volver a la vista, una pintada lo pone al día.
+  let _refrescoPerdido = false;
+  function refrescarMinuto() {
+    if (!E.cargado || !(PANEL || E.seccion === "agenda") || document.activeElement?.matches?.("input,textarea")) return;
+    if (document.hidden) { _refrescoPerdido = true; return; }
+    _refrescoPerdido = false;
+    render({ mantenerScroll: true });
+  }
+  setInterval(refrescarMinuto, 60000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) return;
+    ponerReloj();
+    if (_refrescoPerdido) refrescarMinuto();
+  });
 
   // Navegador sin contenedor: datos de ejemplo
   setTimeout(() => {
