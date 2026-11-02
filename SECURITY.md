@@ -44,8 +44,10 @@ Solo la última versión publicada en [Releases](https://github.com/minuta-app/m
   argumento. El puente de la app solo atiende a su propia ventana: el marco principal con una página de la interfaz (`ui/`).
 - La parte nativa usa las piezas de [Pieza](https://github.com/pieza-app/pieza) (`host-escritorio` en Windows y Linux, lo que calza
   de `host-mac` en Mac): cada acción que solo corre un script está declarada (`acciones.json`) y sus datos se validan antes de
-  correrla; los scripts tienen un límite de tiempo (al cumplirse se corta también lo que lanzaron) y al cerrar la app no queda
-  ninguno corriendo; no heredan las variables `MINUTA_*` de afuera. Los tokens del respaldo van al Llavero (Mac) o cifrados con
+  correrla; esas acciones y los scripts que corre el procesador del host tienen un límite de tiempo (al cumplirse se corta
+  también lo que lanzaron), no heredan las variables `MINUTA_*` de afuera y al cerrar la app no queda ninguno corriendo. El
+  procesamiento de una reunión (`procesar.py`), el resumen semanal y el creador de universos todavía corren con el lanzador
+  propio de Minuta, sin ese límite (pasan al host en una versión siguiente). Los tokens del respaldo van al Llavero (Mac) o cifrados con
   `safeStorage` (Windows y Linux). Las actualizaciones solo bajan de los Releases de este repo y se instalan si su SHA-256 coincide.
 - Lo que escribes (por ejemplo tu vocabulario de nombres y palabras propias) nunca va como argumento de un proceso, donde
   otros programas lo verían en la lista de procesos: al transcriptor le llega en un archivo temporal privado (solo tú puedes
@@ -62,6 +64,7 @@ open a public issue or pull request with the details until it's fixed. We reply 
 apps update themselves) and publish an advisory, crediting you if you want. Only the latest release is supported.
 
 The native side uses [Pieza](https://github.com/pieza-app/pieza) pieces (`host-escritorio` on Windows and Linux, what fits from
-`host-mac` on Mac): actions that only run a script are declared (`acciones.json`) and their data is validated first; scripts have a
-time limit (anything they launched is stopped too) and nothing keeps running after you quit; backup tokens live in the Keychain (Mac)
+`host-mac` on Mac): actions that only run a script are declared (`acciones.json`) and their data is validated first; those actions and the scripts
+run by the host's processor have a time limit (anything they launched is stopped too) and nothing keeps running after you quit
+(processing a meeting, the weekly summary and the universe creator still use Minuta's own launcher, without that limit); backup tokens live in the Keychain (Mac)
 or encrypted with `safeStorage` (Windows and Linux); updates only come from this repo's Releases and install only if the SHA-256 matches.
