@@ -474,6 +474,74 @@ json.dump({{"transcription": [{{"offsets": {{"from": a, "to": b}}, "text": t}} f
         self.assertEqual(ellos, [{"desde": 3.0, "hasta": 4.0, "texto": "qué tal", "quien": "Ellos"}])
 
 
+class AccionesDeclaradas(unittest.TestCase):
+    """Lo que corren los hosts desde acciones.json (app.json → «acciones»): la entrada llega en un archivo (lo que escribe la
+    persona nunca va como argumento) y la respuesta es la que espera la interfaz."""
+
+    def correr(self, script, args, entrada):
+        carpeta = tempfile.mkdtemp(dir=HOME)
+        archivo, salida = os.path.join(carpeta, "entrada.json"), os.path.join(carpeta, "salida.json")
+        with open(archivo, "w", encoding="utf-8") as f:
+            json.dump(entrada, f)
+        subprocess.run([sys.executable, os.path.join(RAIZ, "bin", script), *args, archivo, salida], capture_output=True, env=os.environ)
+        with open(salida, encoding="utf-8") as f:
+            return json.load(f)
+
+    def test_preguntar_por_archivo(self):
+        with open(os.path.join(NOTAS, "pregunta.md"), "w", encoding="utf-8") as f:
+            f.write(NOTA)
+        args = os.path.join(HOME, "args-preguntar.txt")
+        cli_falso(f'printf "%s\\n" "$@" > "{args}"\ncat > /dev/null\necho "Matías revisa el tablero [1]."\n')
+        r = self.correr("preguntar.py", [], {"id": "q1", "pregunta": "¿Qué quedó pendiente con Kubernetes?"})
+        self.assertTrue(r["ok"], r)
+        self.assertIn("tablero", r["respuesta"])
+        self.assertTrue(r["fuentes"])
+        self.assertNotIn("Kubernetes", open(args, encoding="utf-8").read())  # la pregunta nunca va como argumento
+
+    def test_preguntar_sin_pregunta(self):
+        r = self.correr("preguntar.py", [], {"id": "q1"})
+        self.assertFalse(r["ok"])
+
+    def test_gimnasio_responde_con_datos(self):
+        ia_falsa('{"nombre": "Matías (cliente)", "texto": "Hola, ¿cuál es el precio?"}')
+        entrada = {"modo": "turno", "entrada": {"escenario": "Negociar el precio", "dificultad": "realista", "historial": []}}
+        r = self.correr("gimnasio.py", ["turno"], entrada)
+        self.assertEqual(r, {"ok": True, "datos": {"nombre": "Matías (cliente)", "texto": "Hola, ¿cuál es el precio?"}})
+
+    def test_gimnasio_sin_json_cuenta_el_error(self):
+        ia_falsa("no es json")
+        r = self.correr("gimnasio.py", ["turno"], {"modo": "turno", "entrada": {"historial": []}})
+        self.assertFalse(r["ok"])
+        self.assertTrue(r["error"])
+
+    def test_dictado_con_la_pieza_transcribir(self):
+        """Pendiente #18 de Pieza: el dictado del Gimnasio (Windows/Linux) pasa por la pieza «transcribir», no por whisper-cli directo."""
+        herr = tempfile.mkdtemp(dir=HOME)
+        ruta = os.path.join(herr, "whisper-cli")
+        with open(ruta, "w", encoding="utf-8") as f:
+            f.write(f"""#!{sys.executable}
+import json, sys
+args = sys.argv[1:]
+lineas = open(args[0][1:], encoding="utf-8").read().split("\\n") if len(args) == 1 and args[0].startswith("@") else args
+salida = lineas[lineas.index("-of") + 1]
+json.dump({{"transcription": [{{"offsets": {{"from": 0, "to": 2000}}, "text": " Quiero hablar del precio."}},
+                              {{"offsets": {{"from": 2500, "to": 3000}}, "text": " Gracias por ver el video."}}]}}, open(salida + ".json", "w"))
+""")
+        os.chmod(ruta, 0o755)
+        wav = os.path.join(HOME, "dictado.wav")
+        Segmentos.wav(wav, [(0, 2)])
+        os.environ.update({"MINUTA_HERRAMIENTAS": herr, "MINUTA_MODELO_PRUEBA": modelo_falso()})
+        try:
+            r = self.correr("dictado.py", [], {"wav": wav})
+        finally:
+            os.environ.pop("MINUTA_HERRAMIENTAS", None)
+            os.environ.pop("MINUTA_MODELO_PRUEBA", None)
+        self.assertEqual(r, {"ok": True, "texto": "Quiero hablar del precio."})  # lo inventado sobre silencio no queda
+
+    def test_dictado_rechaza_lo_que_no_es_wav(self):
+        self.assertEqual(self.correr("dictado.py", [], {"wav": "/etc/passwd"})["codigo"], "datos")
+
+
 class CatalogoSeguro(unittest.TestCase):
     """Universos e idiomas del catálogo con la pieza «catálogo»: se instala solo lo que calza con el índice validado (id, tamaño y
     SHA-256 obligatorios), con el validador de Minuta, y queda donde siempre (~/minuta/temas, ~/minuta/idiomas)."""

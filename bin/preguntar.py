@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Responde preguntas sobre tus reuniones con Claude (claude -p), citando notas y minutos.
 
-Uso: preguntar.py "<pregunta>" <salida.json>
+Uso: preguntar.py <entrada.json> <salida.json>  (acción declarada «preguntar» en app.json: la corre el host)
+entrada: {"id": "…", "pregunta": "…"}  (la pregunta nunca va como argumento: cualquier programa ve los argumentos)
 1) Busca localmente las notas y fragmentos de transcripción más relevantes (sin enviar todo).
 2) Le pasa a Claude un índice de todas las reuniones + el detalle de las relevantes, numeradas.
-3) Escribe {"respuesta": markdown con citas [n] o [n@hh:mm:ss], "fuentes": [...]} en <salida.json>.
+3) Escribe {"ok": true, "respuesta": markdown con citas [n] o [n@hh:mm:ss], "fuentes": [...]} en <salida.json>
+   (o {"ok": false, "error": "…"}).
 """
 import json
 import math
@@ -96,10 +98,17 @@ def fragmentos(n, pregunta, maximo=24):
 
 
 def main():
-    pregunta, salida = sys.argv[1], sys.argv[2]
+    entrada, salida = sys.argv[1], sys.argv[2]
+    with open(entrada, encoding="utf-8") as f:
+        d = json.load(f)
+    pregunta = d.get("pregunta") if isinstance(d, dict) else None
+    if not isinstance(pregunta, str) or not pregunta.strip():
+        raise SystemExit("Falta la pregunta.")
+    pregunta = pregunta.strip()[:2000]
     notas = leer_notas()
     if not notas:
-        json.dump({"respuesta": "Aún no tienes reuniones grabadas.", "fuentes": []}, open(salida, "w", encoding="utf-8"), ensure_ascii=False)
+        with open(salida, "w", encoding="utf-8") as f:
+            json.dump({"ok": True, "respuesta": "Aún no tienes reuniones grabadas.", "fuentes": []}, f, ensure_ascii=False)
         return
     top = [n for s, n in puntuar(notas, pregunta)[:7] if s > 0] or notas[-5:]
     fuentes = []
@@ -134,8 +143,14 @@ REUNIONES MÁS RELEVANTES:
     if r.returncode != 0 or not r.stdout.strip():
         raise SystemExit(f"{NOMBRE_IA} falló: {r.stderr.strip()[:300]}")
     with open(salida, "w", encoding="utf-8") as f:
-        json.dump({"respuesta": r.stdout.strip(), "fuentes": fuentes}, f, ensure_ascii=False)
+        json.dump({"ok": True, "respuesta": r.stdout.strip(), "fuentes": fuentes}, f, ensure_ascii=False)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit as fallo:
+        if len(sys.argv) == 3 and isinstance(fallo.code, str):
+            with open(sys.argv[2], "w", encoding="utf-8") as f:
+                json.dump({"ok": False, "error": fallo.code}, f, ensure_ascii=False)
+        raise

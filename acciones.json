@@ -1,0 +1,71 @@
+{
+ "formato": 1,
+ "acciones": {
+  "gimnasio": {
+   "script": "gimnasio.py",
+   "args": [
+    "$modo"
+   ],
+   "entrada": "archivo",
+   "datos": {
+    "modo": {
+     "tipo": "enum",
+     "valores": [
+      "turno",
+      "evaluar"
+     ]
+    },
+    "*": "pasar"
+   },
+   "responde": "gym",
+   "eco": [
+    "modo"
+   ],
+   "limite": 330,
+   "pieza": "app"
+  },
+  "preguntar": {
+   "script": "preguntar.py",
+   "args": [],
+   "entrada": "archivo",
+   "datos": {
+    "id": {
+     "tipo": "texto",
+     "max": 80,
+     "requerido": true
+    },
+    "pregunta": {
+     "tipo": "texto",
+     "max": 2000,
+     "requerido": true
+    }
+   },
+   "responde": "respuesta",
+   "eco": [
+    "id"
+   ],
+   "limite": 330,
+   "pieza": "app"
+  },
+  "probarIA": {
+   "script": "ia.py",
+   "args": [
+    "probar"
+   ],
+   "entrada": "archivo",
+   "datos": {
+    "ia": {
+     "tipo": "enum",
+     "valores": [
+      "claude",
+      "codex",
+      "gemini"
+     ]
+    }
+   },
+   "responde": "iaProbada",
+   "limite": 150,
+   "pieza": "ia"
+  }
+ }
+}

@@ -45,6 +45,13 @@ enum Temas {
     static var carpeta: URL { base.appendingPathComponent("temas") }
     static var config: URL { base.appendingPathComponent("config.json") }
 
+    /// ¿Es una página de ui/? Los puentes (ventana y panel) solo atienden el marco principal con un archivo de ui/, como el de
+    /// la pieza «host-mac»: un archivo de otra carpeta (una nota HTML, un adjunto) nunca habla con la app.
+    static func esDeLaInterfaz(_ url: URL?) -> Bool {
+        guard let u = url, u.isFileURL else { return false }
+        return u.resolvingSymlinksInPath().path.hasPrefix(recursos.appendingPathComponent("ui").resolvingSymlinksInPath().path + "/")
+    }
+
     /// Universos que vienen con la app (en el repo). Los descargados o creados viven en `carpeta` (~/minuta/temas).
     static var incluidos: URL { recursos.appendingPathComponent("universos") }
 

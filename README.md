@@ -143,8 +143,13 @@ así tus scripts funcionan igual. El feedback y `## Personas` son solo para ti: 
 
 ## Actualizaciones
 
-Minuta revisa sola si hay una versión nueva y te ofrece actualizar con un clic. Tus notas, perfil, universos y modelos viven fuera de la app,
+Minuta revisa sola si hay una versión nueva (al abrir y cada 6 horas) y te ofrece actualizar con un clic, dentro de la app. Solo baja de
+los [Releases](https://github.com/minuta-app/minuta/releases) de este repo y revisa la huella (SHA-256) antes de instalar; si estás grabando o
+generando notas, espera a que termines. Tus notas, perfil, universos, modelos, cuentas conectadas y permisos viven fuera de la app,
 así que actualizar no borra nada.
+
+**Qué permisos pide y a qué sale a internet:** la lista completa, en palabras simples, está en las
+[preguntas frecuentes de la página](https://minuta-app.github.io/minuta/#preguntas).
 
 ## Desarrollo
 
@@ -156,7 +161,10 @@ cd ui && python3 -m http.server 8765  # vista previa de la interfaz con datos fi
 
 - `app/` app de macOS en Swift (SwiftPM) · `bin/` procesamiento en Python (solo biblioteca estándar) · `ui/` interfaz web ·
   `universos/` universos incluidos · `herramientas/` empaquetado y revisión de privacidad · `docs/` sitio.
-- Con `~/minuta` como checkout git, la app usa ese código y se actualiza con `git pull`.
+- Con `~/minuta` como checkout git, la app usa ese código y se actualiza con `git pull` (en Mac, `build.sh` deja la ruta del checkout en
+  `~/minuta/desarrollo` para el actualizador).
+- La parte nativa corre sobre las piezas de [Pieza](https://github.com/pieza-app/pieza): `host-escritorio` (Windows y Linux) y lo que
+  calza de `host-mac` (Mac); las acciones que solo corren un script se declaran en `app.json` → `acciones`. Ver «Piezas» en [`AGENTS.md`](AGENTS.md).
 - Publicar una versión: sube la versión en `app/Info.plist` y `git tag vX.Y.Z && git push --tags`; GitHub Actions compila y crea la Release.
 - La guía completa para contribuir (arquitectura, reglas, agentes) está en [`AGENTS.md`](AGENTS.md).
 - **Pruebas:** `bash pruebas/correr.sh` corre lo mismo que GitHub revisa en cada cambio (sintaxis, privacidad, contrato entre la
@@ -169,6 +177,7 @@ cd ui && python3 -m http.server 8765  # vista previa de la interfaz con datos fi
 cd escritorio && npm install
 bash herramientas/preparar.sh linux     # o windows: Python portátil, whisper (compilado con zig) y separador de voces
 npx electron .                          # en desarrollo
+HOME=$(mktemp -d) xvfb-run -a node pruebas/puente.mjs   # el puente, las acciones declaradas y la grabadora (Linux, con Playwright)
 npx electron-builder --linux AppImage tar.gz                                        # paquetes de Linux
 npx electron-builder --win dir && bash herramientas/instalador-windows.sh           # instalador de Windows (makensis, sin Wine)
 ```
@@ -212,6 +221,10 @@ or download from the [latest release](https://github.com/minuta-app/minuta/relea
 Mac needs Apple silicon and macOS 15+, Windows 10/11 64-bit, Linux x86_64 with PulseAudio or PipeWire.
 The interface ships in Spanish and English (more languages downloadable). The code and comments are in Spanish.
 
+**Updates:** Minuta checks for new versions on its own and offers a one-click update inside the app; it only downloads from this repo's
+Releases and checks the SHA-256 fingerprint first. Your notes, profile, universes, models, connected accounts and permissions stay untouched.
+What permissions it asks for and what it connects to: see the [FAQ on the website](https://minuta-app.github.io/minuta/#preguntas).
+
 Security issues: please report them privately, see [SECURITY.md](SECURITY.md).
 
 ## Licencia / License
@@ -221,4 +234,5 @@ Security issues: please report them privately, see [SECURITY.md](SECURITY.md).
 
 ---
 
-[![Hecho con Pieza](https://pieza-app.github.io/pieza/sello.svg)](https://pieza-app.github.io/pieza/) · Las piezas comunes (tu IA, idiomas, actualizaciones…) viven en [Pieza](https://github.com/pieza-app/pieza).
+[![Hecho con Pieza](https://pieza-app.github.io/pieza/sello.svg)](https://pieza-app.github.io/pieza/) · Las piezas comunes (la app nativa, tu IA, idiomas, actualizaciones…) viven en [Pieza](https://github.com/pieza-app/pieza).
+[![Made with Pieza](https://pieza-app.github.io/pieza/sello-en.svg)](https://pieza-app.github.io/pieza/) · *The shared pieces (the native app, your AI, languages, updates…) live in Pieza.*
