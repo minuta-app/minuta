@@ -4,7 +4,7 @@ Lo que cambia para quien usa Minuta, en palabras simples. Las versiones anterior
 [Releases](https://github.com/minuta-app/minuta/releases).
 *What changes for people using Minuta, in plain words. Earlier versions are listed in Releases.*
 
-## Sin publicar · Unreleased
+## 0.4.0 · 2026-11-02
 - Con el panel de la barra de menú cerrado, Minuta ya no repinta el reloj cada segundo ni el panel cada minuto mientras graba:
   menos trabajo de fondo en reuniones largas. Al abrirlo, todo aparece al día. · *With the menu bar panel closed, Minuta no longer
   redraws the clock every second or the panel every minute while recording: less background work in long meetings. When you open

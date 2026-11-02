@@ -239,8 +239,8 @@ Security issues: please report them privately, see [SECURITY.md](SECURITY.md).
 
 ## Licencia / License
 
-[AGPL-3.0](LICENSE). Desde la versión que viene después de la 0.3.1, Minuta es AGPL-3.0; las versiones publicadas hasta la 0.3.1 siguen bajo MIT.
-*Starting with the release after 0.3.1, Minuta is AGPL-3.0; versions published up to 0.3.1 remain under MIT.*
+[AGPL-3.0](LICENSE). Desde la 0.4.0, Minuta es AGPL-3.0; las versiones publicadas hasta la 0.3.1 siguen bajo MIT.
+*Starting with 0.4.0, Minuta is AGPL-3.0; versions published up to 0.3.1 remain under MIT.*
 
 ---
 
