@@ -18,6 +18,9 @@ if [ -n "$ULTIMA" ] && [ ! -f "$ULTIMA/meta.json" ] && pgrep -x Minuta >/dev/nul
 fi
 
 bash "$RAIZ/herramientas/empaquetar.sh"
+# Instalación de desarrollo: la pieza «actualizaciones» lee aquí desde qué checkout se compiló (fuera de la app, para no romper
+# su firma) y se actualiza con git pull + herramientas/empaquetar.sh. ~/minuta es la carpeta de datos (y, en desarrollo, el checkout).
+mkdir -p "$HOME/minuta" && printf '%s\n' "$RAIZ" > "$HOME/minuta/desarrollo"
 APP="$HOME/Applications/Minuta.app"
 mkdir -p "$HOME/Applications"
 # Si lo lanzó el actualizador de la app, avisa que viene el último paso (la app muestra el avance).

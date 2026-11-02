@@ -1,6 +1,5 @@
 import AppKit
 import Foundation
-import Security
 
 // MARK: - Modelos de transcripción (se descargan en la bienvenida, verificados por SHA-256)
 
@@ -150,22 +149,16 @@ enum IA {
 
 @MainActor
 enum Respaldo {
+    /// El token va al Llavero de este Mac (pieza «host-mac»: `Secretos`), con el servicio y las cuentas («github», «gitlab») de
+    /// siempre: quien ya conectó su cuenta no la pierde al actualizar.
     private static let servicio = "Minuta · respaldo de notas"
 
     static func guardarToken(_ token: String, cuenta: String) {
-        let base: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: servicio, kSecAttrAccount as String: cuenta]
-        SecItemDelete(base as CFDictionary)
-        var nuevo = base
-        nuevo[kSecValueData as String] = Data(token.utf8)
-        SecItemAdd(nuevo as CFDictionary, nil)
+        PiezaMinuta.guardarSecreto(token, servicio: servicio, cuenta: cuenta)
     }
 
     static func token(_ cuenta: String) -> String? {
-        let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: servicio,
-                                kSecAttrAccount as String: cuenta, kSecReturnData as String: true]
-        var r: CFTypeRef?
-        guard SecItemCopyMatching(q as CFDictionary, &r) == errSecSuccess, let d = r as? Data else { return nil }
-        return String(data: d, encoding: .utf8)
+        PiezaMinuta.leerSecreto(servicio: servicio, cuenta: cuenta)
     }
 
     /// Cuántas notas .md hay en una carpeta (para mostrarlo al elegirla).
@@ -274,151 +267,5 @@ enum Respaldo {
                 }
             }
         }
-    }
-}
-
-// MARK: - Actualizaciones (sin perder nada: los datos viven fuera de la app)
-
-@MainActor
-enum Actualizaciones {
-    static var version: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0" }
-    /// Repo público de la app. Cada versión es un Release con `Minuta-macOS.zip` y `Minuta-macOS.zip.sha256`.
-    static let repoPublico = "minuta-app/minuta"
-
-    /// Solo se descarga desde los Releases de este repo en github.com (GitHub redirige luego a su almacenamiento, por https).
-    static func esDescargaNuestra(_ u: URL) -> Bool {
-        u.scheme == "https" && u.host == "github.com" && u.path.hasPrefix("/\(repoPublico)/releases/download/") && u.query == nil && u.user == nil
-    }
-
-    /// Texto entre comillas simples para bash: nada de lo que va adentro (rutas, URL, textos traducidos) se interpreta como código.
-    static func comillas(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'" }
-    private static var raiz: URL { Temas.base }
-    /// Instalación de desarrollo: ~/minuta es un checkout de git (se actualiza con git pull + build.sh).
-    static var esDesarrollo: Bool { FileManager.default.fileExists(atPath: raiz.appendingPathComponent(".git").path) }
-    private static var zip: URL?, huella: URL?
-
-    /// Revisa si hay versión nueva. Devuelve (hay, detalle) en el hilo principal.
-    /// Detalle que devuelve `revisar` cuando no pudo consultar (sin internet o GitHub no respondió).
-    static let sinConexion = "sin-conexion"
-
-    static func revisar(_ fin: @escaping @MainActor (Bool, String) -> Void) {
-        if esDesarrollo {
-            Respaldo.git(["fetch", "--quiet", "origin", "main"], en: raiz) { ok, _ in
-                guard ok else { fin(false, Actualizaciones.sinConexion); return }
-                Respaldo.git(["rev-list", "--count", "HEAD..origin/main"], en: raiz) { _, n in
-                    let cambios = Int(n.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
-                    guard cambios > 0 else { fin(false, ""); return }
-                    Respaldo.git(["log", "--format=%s", "-n", "3", "HEAD..origin/main"], en: raiz) { _, log in
-                        fin(true, log.split(separator: "\n").map { "• " + $0 }.joined(separator: "\n"))
-                    }
-                }
-            }
-            return
-        }
-        var pedido = URLRequest(url: URL(string: "https://api.github.com/repos/\(repoPublico)/releases/latest")!)
-        pedido.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        pedido.setValue("Minuta/\(version)", forHTTPHeaderField: "User-Agent")
-        URLSession.shared.dataTask(with: pedido) { datos, respuesta, _ in
-            let respondio = (respuesta as? HTTPURLResponse)?.statusCode == 200
-            let o = datos.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
-            let tag = (o["tag_name"] as? String ?? "").trimmingCharacters(in: CharacterSet(charactersIn: "v"))
-            let assets = o["assets"] as? [[String: Any]] ?? []
-            let url = { (n: String) in (assets.first { $0["name"] as? String == n }?["browser_download_url"] as? String).flatMap(URL.init(string:)) }
-            Task { @MainActor in
-                guard respondio else { fin(false, Actualizaciones.sinConexion); return }
-                guard !tag.isEmpty, tag.compare(version, options: .numeric) == .orderedDescending,
-                      let z = url("Minuta-macOS.zip"), let h = url("Minuta-macOS.zip.sha256"),
-                      esDescargaNuestra(z), esDescargaNuestra(h) else { fin(false, ""); return }
-                zip = z; huella = h
-                let notas = (o["body"] as? String ?? "").split(separator: "\n").prefix(4).joined(separator: "\n")
-                fin(true, "Versión \(tag)\n" + notas)
-            }
-        }.resume()
-    }
-
-    /// Instala la versión nueva y vuelve a abrir Minuta. Notas, perfil, universos y modelos no se tocan (viven en ~/minuta).
-    /// Avance de la instalación: el guion escribe "paso|texto" (o "error|texto") y swift build sus "[n/m]".
-    static let archivoEstado = URL(fileURLWithPath: "/tmp/minuta-actualizar.estado")
-    static let archivoProgreso = URL(fileURLWithPath: "/tmp/minuta-actualizar.progreso")
-    private static var reloj: Timer?
-
-    /// Lee el avance cada segundo y lo entrega a la interfaz hasta que termina (la app se cierra) o falla.
-    static func seguir(_ avisar: @escaping @MainActor ([String: Any]) -> Void) {
-        reloj?.invalidate()
-        reloj = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            Task { @MainActor in
-                let estado = ((try? String(contentsOf: archivoEstado, encoding: .utf8)) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                let partes = estado.split(separator: "|", maxSplits: 1).map(String.init)
-                guard partes.count == 2 else { return }
-                var d: [String: Any] = ["paso": partes[0], "texto": partes[1], "total": 3]
-                if partes[0] == "2", let log = try? String(contentsOf: archivoProgreso, encoding: .utf8),
-                   let m = log.matches(of: #/\[(\d+)/(\d+)\]/#).last, let n = Double(m.1), let t = Double(m.2), t > 0 {
-                    d["pct"] = Int(n / t * 100)
-                }
-                avisar(d)
-                if partes[0] == "error" { reloj?.invalidate(); reloj = nil }
-            }
-        }
-    }
-
-    static func instalar(_ fin: @escaping @MainActor (Bool, String) -> Void) {
-        let tmp = FileManager.default.temporaryDirectory.appendingPathComponent("minuta-actualizacion")
-        let guion = tmp.appendingPathComponent("actualizar.sh")
-        try? FileManager.default.removeItem(at: tmp)
-        try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
-        let pid = ProcessInfo.processInfo.processIdentifier
-        let e = archivoEstado.path, prog = archivoProgreso.path
-        let t1 = Idioma.t("Descargando la versión nueva…"), t2 = Idioma.t("Preparando la versión nueva…"), t3 = Idioma.t("Instalando: Minuta se cerrará y volverá a abrirse sola")
-        let tErrBajar = Idioma.t("No pude descargar la versión nueva. Revisa tu conexión e intenta de nuevo.")
-        let tErrArmar = Idioma.t("No pude preparar la versión nueva. Minuta sigue igual que antes; intenta de nuevo más tarde.")
-        try? FileManager.default.removeItem(at: archivoProgreso)
-        try? "1|\(t1)".write(to: archivoEstado, atomically: true, encoding: .utf8)
-        let texto: String
-        if esDesarrollo {
-            // Todo lo variable va con comillas(): las traducciones vienen de idiomas descargables y nunca deben poder correr comandos.
-            texto = """
-            #!/bin/bash
-            export PATH=/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin
-            cd \(comillas(raiz.path)) || exit 1
-            echo \(comillas("1|" + t1)) > \(comillas(e))
-            git pull --ff-only || { echo \(comillas("error|" + tErrBajar)) > \(comillas(e)); exit 1; }
-            echo \(comillas("2|" + t2)) > \(comillas(e))
-            MINUTA_ESTADO=\(comillas(e)) MINUTA_ETAPA3=\(comillas(t3)) MINUTA_PROGRESO=\(comillas(prog)) bash ./build.sh || { echo \(comillas("error|" + tErrArmar)) > \(comillas(e)); pgrep -x Minuta >/dev/null || open "$HOME/Applications/Minuta.app"; exit 1; }
-            rm -f \(comillas(e)) \(comillas(prog))
-            open "$HOME/Applications/Minuta.app"
-            """
-        } else {
-            guard let zip, let huella, esDescargaNuestra(zip), esDescargaNuestra(huella) else {
-                fin(false, Idioma.t("No encontré la descarga de la versión nueva.")); return
-            }
-            let app = Bundle.main.bundlePath, anterior = app + ".anterior"
-            // Todo lo variable va con comillas(): ni una URL ni un texto traducido se interpreta como código.
-            texto = """
-            #!/bin/bash
-            # Baja la versión nueva, verifica su huella, espera a que Minuta se cierre, la reemplaza y la abre.
-            cd \(comillas(tmp.path)) || exit 1
-            echo \(comillas("1|" + t1)) > \(comillas(e))
-            curl -fsSL --proto '=https' --proto-redir '=https' \(comillas(zip.absoluteString)) -o Minuta-macOS.zip && curl -fsSL --proto '=https' --proto-redir '=https' \(comillas(huella.absoluteString)) -o Minuta-macOS.zip.sha256 || { echo \(comillas("error|" + tErrBajar)) > \(comillas(e)); exit 1; }
-            echo \(comillas("2|" + t2)) > \(comillas(e))
-            [ "$(shasum -a 256 Minuta-macOS.zip | cut -d' ' -f1)" = "$(cut -d' ' -f1 Minuta-macOS.zip.sha256)" ] || { echo \(comillas("error|" + tErrBajar)) > \(comillas(e)); exit 1; }
-            ditto -x -k Minuta-macOS.zip nueva || { echo \(comillas("error|" + tErrArmar)) > \(comillas(e)); exit 1; }
-            xattr -dr com.apple.quarantine nueva/Minuta.app 2>/dev/null || true
-            echo \(comillas("3|" + t3)) > \(comillas(e))
-            sleep 1.5
-            osascript -e 'tell application id "app.minuta.mac" to quit' 2>/dev/null || true
-            while kill -0 \(pid) 2>/dev/null; do sleep 0.5; done
-            rm -rf \(comillas(anterior)); mv \(comillas(app)) \(comillas(anterior))
-            ditto nueva/Minuta.app \(comillas(app)) && rm -rf \(comillas(anterior)) || mv \(comillas(anterior)) \(comillas(app))
-            rm -f \(comillas(e))
-            open \(comillas(app))
-            """
-        }
-        do { try texto.write(to: guion, atomically: true, encoding: .utf8) } catch { fin(false, error.localizedDescription); return }
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/bin/bash")
-        p.arguments = ["-c", "nohup /bin/bash \(comillas(guion.path)) > /tmp/minuta-actualizar.log 2>&1 &"]
-        do {
-            try p.run(); fin(true, "")
-        } catch { fin(false, error.localizedDescription) }
     }
 }

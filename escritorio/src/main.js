@@ -1,11 +1,18 @@
-// Minuta para Windows y Linux. Misma interfaz (ui/) y mismo procesamiento (bin/) que la app de Mac;
-// aquí está lo que en Mac hacen MinutaApp.swift, BarraMenu.swift, VisorWeb.swift y Alerta.swift.
+// Minuta para Windows y Linux, sobre la pieza «host-escritorio» (host.js): la ventana con la interfaz de ui/ servida por
+// minuta://ui/…, el puente con sus guardas (solo el marco principal de la ventana propia con origen minuta://ui/), el
+// protocolo, los permisos, el menú, los scripts de bin/ con límite de tiempo y las acciones declaradas en acciones.json
+// (probarIA, gimnasio, preguntar). Aquí queda lo propio de Minuta, lo que en Mac hacen MinutaApp.swift, BarraMenu.swift,
+// VisorWeb.swift y Alerta.swift: grabar, detectar reuniones, el panel de la bandeja, la alerta flotante, el coach en vivo, el
+// dictado del Gimnasio, el calendario iCal, el respaldo y los comentarios (registrados con host.acciones.registrar).
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { spawn } = require("child_process");
-const { app, BrowserWindow, Tray, Menu, Notification, clipboard, desktopCapturer, ipcMain, nativeImage, net, protocol, screen, session, shell, systemPreferences } = require("electron");
-const { ES_WIN, PLATAFORMA, BASE, recursos, herramientas, python, corta, expandir, asegurarCarpetas } = require("./rutas");
+const electron = require("electron");
+const { app, BrowserWindow, Tray, Menu, clipboard, desktopCapturer, ipcMain, nativeImage, net, screen, session, shell, systemPreferences } = electron;
+const { crearHost } = require("./host");
+const { crear: crearActualizaciones } = require("./actualizaciones");
+const { ES_WIN, PLATAFORMA, BASE, recursos, herramientas, python, corta, asegurarCarpetas } = require("./rutas");
 const { Perfil, Temas, Categorias, Extras, Ajustes, Idioma, Catalogo, leerJSON } = require("./datos");
 const { Modelos, IA, Respaldo, Actualizaciones } = require("./bienvenida");
 const { DetectorReuniones } = require("./deteccion");
@@ -13,14 +20,8 @@ const { CoachVivo } = require("./vivo");
 const { EscritorWav } = require("./wav");
 const Calendario = require("./calendario");
 
-if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
-if (ES_WIN) app.setAppUserModelId("app.minuta.escritorio");
-app.setName("Minuta");
 // La grabadora es una ventana oculta: sin esto Chromium deja el AudioContext suspendido hasta un clic.
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
-
-// La interfaz se sirve desde minuta://ui/… (así fetch() de archivos relativos funciona igual que en Mac).
-protocol.registerSchemesAsPrivileged([{ scheme: "minuta", privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true } }]);
 
 /** Archivos temporales en una carpeta propia (solo la persona puede leerla): en Linux /tmp es compartida con otros usuarios. */
 let carpetaTemporal = null;
@@ -31,6 +32,61 @@ function temporal(nombre) {
 app.on("will-quit", () => { if (carpetaTemporal) try { fs.rmSync(carpetaTemporal, { recursive: true, force: true }); } catch {} });
 const ICONOS = path.join(__dirname, "..", "iconos");
 const icono = (n) => nativeImage.createFromPath(path.join(ICONOS, n));
+
+// ───────────────────────── El host (pieza «host-escritorio») ─────────────────────────
+// Lo que Chromium guarda (y la llave de safeStorage en Windows, en «Local State») sigue donde siempre: el host lo movería a
+// ~/minuta/electron y los tokens y el calendario cifrados de antes ya no se podrían leer. Se vuelve a poner justo después de iniciar.
+const USERDATA_DE_SIEMPRE = app.getPath("userData");
+// El tamaño y la posición de la ventana: el host los guarda en ~/minuta/ventana.json (antes, .ventana.json).
+try {
+  const viejo = path.join(BASE, ".ventana.json"), nuevo = path.join(BASE, "ventana.json");
+  if (fs.existsSync(viejo) && !fs.existsSync(nuevo)) fs.copyFileSync(viejo, nuevo);
+} catch {}
+/** La ventana del host es el visor de Minuta, sin marco: la interfaz dibuja su barra, sus botones y el borde de cada universo
+ *  (clase «ventana escritorio» de app.js). El host no tiene esa opción todavía (pendiente para Pieza): se la da esta clase. */
+class VentanaSinMarco extends BrowserWindow {
+  constructor(o = {}) { super({ ...o, frame: false }); }
+}
+const electronDelHost = new Proxy(electron, { get: (e, k) => (k === "BrowserWindow" ? VentanaSinMarco : e[k]) });
+/** Abierta sola al iniciar sesión (--oculta), Minuta queda en la bandeja; la primera vez, siempre se abre la bienvenida. */
+let mostrarAlAbrir = Perfil.falta || !process.argv.includes("--oculta");
+/** Avisos del sistema: qué hacer cuando la persona toca uno (por id). */
+const alTocar = new Map();
+let avisosHechos = 0;
+
+// Pieza «actualizaciones»: solo los Releases de minuta-app/minuta, con su .sha256 (Windows, AppImage o el tar.gz de
+// instalar.sh), los mismos nombres de siempre. Minuta atiende buscarActualizacion/actualizar (el panel, la grabación en curso
+// y la instalación de desarrollo), por eso no se le pasa al host.
+const actualizaciones = crearActualizaciones({ app, net, repo: "minuta-app/minuta", nombre: "Minuta" });
+
+const host = crearHost({
+  electron: electronDelHost,
+  // Minuta usa el código de ~/minuta si es un checkout de git (instalación de desarrollo); si no, el de adentro de la app.
+  recursos: recursos(),
+  ventana: { ancho: 1120, alto: 760, minAncho: 980, minAlto: 640, alCerrar: "esconder", icono: path.join(ICONOS, "minuta-256.png"),
+    fondo: { claro: "#111111", oscuro: "#111111" } },
+  appUserModelId: "app.minuta.escritorio",
+  sitio: "https://minuta-app.github.io/minuta/", codigo: "https://github.com/minuta-app/minuta", ayuda: false,
+  // Minuta guarda el idioma en perfil.json (no en config.json, que es el universo elegido).
+  idiomaElegido: () => Perfil.datos().idioma_ui || "",
+  estadoScript: null,
+  // Lo que corre solo (revisar actualizaciones al abrir y cada 6 h), recién con el idioma elegido.
+  tareas: () => { setTimeout(buscarActualizacion, 20000); setInterval(buscarActualizacion, 6 * 3600 * 1000); },
+  // La grabadora usa el micrófono (y en Windows el audio del sistema); la interfaz copia con formato y muestra avisos.
+  permisos: (permiso) => ["media", "display-capture", "clipboard-sanitized-write", "notifications"].includes(permiso),
+  alCrearVentana: (w) => prepararVisor(w),
+  alTocarAviso: (id) => { const fn = alTocar.get(id); alTocar.delete(id); if (fn) fn(); },
+  menu: ({ t: tr }) => [
+    { label: tr("Archivo"), submenu: [{ label: tr("Salir de Minuta"), accelerator: "CmdOrCtrl+Q", click: () => salir() }] },
+    { label: tr("Edición"), submenu: [{ label: tr("Deshacer"), role: "undo" }, { label: tr("Rehacer"), role: "redo" }, { type: "separator" },
+      { label: tr("Cortar"), role: "cut" }, { label: tr("Copiar"), role: "copy" }, { label: tr("Pegar"), role: "paste" }, { label: tr("Seleccionar todo"), role: "selectAll" }] },
+    { label: tr("Ver"), submenu: [{ role: "resetZoom" }, { role: "zoomIn" }, { role: "zoomOut" }, { type: "separator" }, { label: tr("Pantalla completa"), role: "togglefullscreen" }] },
+  ],
+});
+if (!host.iniciar()) process.exit(0);
+app.setPath("userData", USERDATA_DE_SIEMPRE);
+/** Los scripts de Minuta encuentran ahí whisper-cli, el separador de voces y la IA de la persona. */
+const entornoScripts = () => ({ MINUTA_HERRAMIENTAS: herramientas(), PATH: [herramientas(), IA.path()].join(path.delimiter) });
 
 // ───────────────────────── Estado (equivale a AppModel) ─────────────────────────
 const M = {
@@ -97,33 +153,33 @@ const t = (s) => Idioma.t(s);
 const f = (s, ...v) => Idioma.f(s, ...v);
 
 // ───────────────────────── Ventanas ─────────────────────────
-// sandbox: la interfaz no tiene acceso a Node; solo habla con el proceso principal por el puente (preload.js).
-const webPrefs = (extra = []) => ({ preload: path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: true, additionalArguments: extra, spellcheck: false });
+// El panel: sandbox y el preload de la pieza (la interfaz no tiene acceso a Node; solo habla con el proceso principal por el
+// puente, `window.minutaEscritorio.enviar`). Sabe que es el panel por #panel.
+const webPrefs = () => ({ preload: path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: true, nodeIntegration: false,
+  webviewTag: false, additionalArguments: [`--pieza-host=${host.id}`], spellcheck: false });
+
+/** La ventana del host (el visor) recién creada: lo que Minuta escucha de ella. El host ya se encarga de que no navegue fuera de
+ *  minuta://ui/, de que un enlace https vaya al navegador y de guardar su tamaño. */
+function prepararVisor(w) {
+  ventana = w;
+  w.removeAllListeners("ready-to-show");
+  w.once("ready-to-show", () => { if (mostrarAlAbrir && !w.isDestroyed()) w.show(); mostrarAlAbrir = true; });
+  // La interfaz no manda «listo»: Minuta le pasa todo (cargar) apenas carga, y el host queda listo para responder.
+  w.webContents.on("did-finish-load", () => { listo.add(w.webContents.id); host.despachar("listo", {}); enviarTodo(); });
+  w.on("focus", () => { llamarFuncion(w, "ventana", { activa: true }); enviarTodo(); });
+  w.on("blur", () => llamarFuncion(w, "ventana", { activa: false }));
+  w.on("enter-full-screen", () => llamarFuncion(w, "ventana", { pantalla: true }));
+  w.on("leave-full-screen", () => llamarFuncion(w, "ventana", { pantalla: false }));
+  w.on("closed", () => { if (ventana === w) ventana = null; });
+}
 
 function abrirVisor(ruta) {
   if (ruta) M.notaSeleccionada = ruta;
-  if (!ventana || ventana.isDestroyed()) {
-    const guardado = leerJSON(path.join(BASE, ".ventana.json"), {}) || {};
-    ventana = new BrowserWindow({
-      width: guardado.width || 1120, height: guardado.height || 760, x: guardado.x, y: guardado.y, minWidth: 980, minHeight: 640,
-      frame: false, show: false, backgroundColor: "#111111", title: "Minuta", icon: icono("minuta-256.png"), webPreferences: webPrefs(),
-    });
-    ventana.loadURL("minuta://ui/index.html");
-    ventana.webContents.on("did-finish-load", () => { listo.add(ventana.webContents.id); enviarTodo(); });
-    ventana.once("ready-to-show", () => ventana.show());
-    ventana.on("focus", () => { llamarFuncion(ventana, "ventana", { activa: true }); enviarTodo(); });
-    ventana.on("blur", () => llamarFuncion(ventana, "ventana", { activa: false }));
-    ventana.on("enter-full-screen", () => llamarFuncion(ventana, "ventana", { pantalla: true }));
-    ventana.on("leave-full-screen", () => llamarFuncion(ventana, "ventana", { pantalla: false }));
-    ventana.on("close", () => { try { fs.writeFileSync(path.join(BASE, ".ventana.json"), json(ventana.getNormalBounds())); } catch {} });
-    ventana.on("closed", () => { ventana = null; });
-    abrirEnlacesFuera(ventana);
-  } else {
-    if (ventana.isMinimized()) ventana.restore();
-    ventana.show(); ventana.focus();
-    if (ruta) llamar(ventana, { seleccion: ruta });
-  }
-  return ventana;
+  const yaEstaba = !!ventana && !ventana.isDestroyed();
+  mostrarAlAbrir = true;
+  const w = host.mostrar();
+  if (yaEstaba && ruta) llamar(w, { seleccion: ruta });
+  return w;
 }
 
 function abrirEnlacesFuera(w) {
@@ -147,7 +203,7 @@ let panelAlto = 560;
 function crearPanel() {
   panel = new BrowserWindow({
     width: PANEL_ANCHO, height: panelAlto, show: false, frame: false, resizable: false, skipTaskbar: true, alwaysOnTop: true, transparent: false,
-    backgroundColor: "#111111", fullscreenable: false, minimizable: false, maximizable: false, webPreferences: webPrefs(["--minuta-panel"]),
+    backgroundColor: "#111111", fullscreenable: false, minimizable: false, maximizable: false, webPreferences: webPrefs(),
   });
   panel.loadURL("minuta://ui/index.html#panel");
   panel.webContents.on("did-finish-load", () => { listo.add(panel.webContents.id); enviarTodoPanel(); enviarEstado(); });
@@ -235,7 +291,7 @@ function enviarEstado(abierto = false) {
 function cambio() { enviarEstado(); }
 
 function estadoAvisos() {
-  return { permiso: Notification.isSupported() ? "si" : "no", estilo: "banners", sonido: true, calendario: Calendario.estado() };
+  return { permiso: host.notificaciones.soportado ? "si" : "no", estilo: "banners", sonido: true, calendario: Calendario.estado() };
 }
 function enviarEstadoAvisos() { for (const w of [ventana, panel]) llamar(w, { avisos: estadoAvisos(), ajustes: M.ajustes }); }
 
@@ -300,11 +356,11 @@ ipcMain.on("alerta-alto", (e, px) => {
   alertaVentana.setBounds({ ...b, height: Math.max(80, Math.min(400, Math.round(px))) });
 });
 
+/** Un aviso del sistema (host.notificaciones: nada antes de elegir el idioma). Tocarlo abre Minuta (y corre `alClic`). */
 function notificar(titulo, cuerpo, alClic) {
-  if (!Notification.isSupported()) return;
-  const n = new Notification({ title: titulo, body: cuerpo, icon: path.join(ICONOS, "minuta-128.png"), silent: false });
-  if (alClic) n.on("click", alClic);
-  n.show();
+  const id = `aviso-${++avisosHechos}`;
+  if (alClic) alTocar.set(id, alClic);
+  if (!host.notificaciones.mostrar({ id, titulo, texto: cuerpo })) alTocar.delete(id);
 }
 
 // ───────────────────────── Detección de reuniones ─────────────────────────
@@ -436,6 +492,9 @@ function detener() {
 }
 
 // ───────────────────────── Procesamiento (Python) ─────────────────────────
+// Las notas, el resumen semanal y el creador de universos escriben su avance en un registro (procesar.log…) y pueden tardar
+// mucho más que cualquier límite: los corre `ejecutar` (aquí). Lo demás va por el procesador del host (límite de tiempo, sin
+// variables MINUTA_* de afuera, la entrada en un archivo 0600 dentro de una carpeta propia).
 function entornoPython() {
   return { ...process.env, MINUTA_HERRAMIENTAS: herramientas(), MINUTA_RECURSOS: recursos(), PYTHONDONTWRITEBYTECODE: "1", PYTHONUTF8: "1",
     PYTHONIOENCODING: "utf-8", PATH: [herramientas(), IA.path()].join(path.delimiter) };
@@ -451,22 +510,17 @@ function ejecutar(script, args, log) {
     p.on("close", (c) => { if (typeof salida === "number") try { fs.closeSync(salida); } catch {} fin(c === 0); });
   });
 }
-async function correrScriptJSON(script, args) {
-  const id = Math.random().toString(36).slice(2);
-  const salida = temporal(`minuta-${id}.json`), log = temporal(`minuta-${script}.log`);
-  await ejecutar(script, [...args, salida], log);
-  const datos = leerJSON(salida);
-  let error = "sin respuesta";
-  try { error = fs.readFileSync(log, "utf8").trim().split("\n").pop() || error; } catch {}
-  fs.rmSync(salida, { force: true });
-  return { datos, error };
+/** Un script de bin/ por el procesador del host: {datos, error}. `datos` es null si no respondió, se cortó por el límite o
+ *  respondió {ok: false} (entonces `error` es lo que dijo). */
+async function correrScriptJSON(script, args, { limite = 330 } = {}) {
+  const r = await host.procesador.correrJSON(script, args, { limite, entorno: entornoScripts() });
+  return r && r.ok !== false ? { datos: r, error: "" } : { datos: null, error: (r && r.error) || "" };
 }
 
-/** `script <accion> <entrada.json> <salida.json>`: lo que manda la interfaz va en un archivo privado, nunca como argumento. */
-async function conEntrada(script, accion, datos) {
-  const entrada = temporal(`minuta-entrada-${Math.random().toString(36).slice(2)}.json`);
-  fs.writeFileSync(entrada, JSON.stringify(datos || {}), { mode: 0o600 });
-  try { return (await correrScriptJSON(script, [accion, entrada])).datos; } finally { fs.rmSync(entrada, { force: true }); }
+/** `script <accion> <entrada.json> <salida.json>`: lo que manda la interfaz va en un archivo privado, nunca como argumento.
+ *  Devuelve la respuesta tal cual (la pieza «catálogo» lee su `frase`). */
+function conEntrada(script, accion, datos) {
+  return host.procesador.conEntrada(script, [accion], datos || {}, { limite: 120, entorno: entornoScripts() });
 }
 
 /** Pieza «catálogo» (repo y tipos de app.json). Se crea al usarla: net.fetch necesita la app lista. */
@@ -566,19 +620,11 @@ async function terminarDictado(enviar) {
   fs.rmSync(wav, { force: true });
   llamarFuncion(ventana, "dictado", { texto, final: true, escuchando: false });
 }
-function transcribirCorto(wav) {
-  return new Promise((fin) => {
-    const exe = path.join(herramientas(), ES_WIN ? "whisper-cli.exe" : "whisper-cli");
-    const elegido = Modelos.transcripcion.find((m) => m.id === Perfil.datos().modelo_whisper);
-    const modelo = [elegido, ...Modelos.transcripcion].filter(Boolean).map((m) => path.join(Modelos.carpeta, m.archivo)).find((r) => fs.existsSync(r));
-    if (!fs.existsSync(exe) || !modelo) return fin("");
-    const idioma = (Perfil.datos().idioma_audio || "auto").trim() || "auto";
-    let out = "";
-    const p = spawn(exe, ["-m", modelo, "-l", idioma, "-t", String(Math.max(2, Math.min(8, os.cpus().length))), "-f", wav, "-nt", "-np"], { windowsHide: true });
-    p.stdout.on("data", (x) => (out += x));
-    p.on("error", () => fin(""));
-    p.on("close", () => fin(out.replace(/\s+/g, " ").trim()));
-  });
+/** Lo dicho, en texto: bin/dictado.py con la pieza «transcribir» (el mismo whisper, modelo, idioma y vocabulario que las notas,
+ *  sin inventos sobre silencio). Antes llamaba a whisper-cli directo (pendiente #18 de Pieza). */
+async function transcribirCorto(wav) {
+  const r = await host.procesador.conEntrada("dictado.py", [], { wav }, { limite: 150, entorno: entornoScripts() });
+  return r && r.ok && typeof r.texto === "string" ? r.texto.replace(/\s+/g, " ").trim() : "";
 }
 
 /** Voz de la contraparte en el Gimnasio: la del sistema (Web Speech en la propia ventana). */
@@ -626,14 +672,16 @@ function cambiarInicioAutomatico(activo) {
   fs.writeFileSync(autostart, `[Desktop Entry]\nType=Application\nName=Minuta\nExec="${exe}" --oculta\nX-GNOME-Autostart-enabled=true\n`);
 }
 
-// ───────────────────────── Acciones de la interfaz (host.enviar) ─────────────────────────
+// ───────────────────────── Acciones propias de la interfaz (host.enviar) ─────────────────────────
+// Lo nativo de Minuta (o lo que necesita su estado `M`): se registra en el host (`host.acciones.registrar`, abajo). Lo que solo
+// corre un script está declarado en app.json → «acciones» (gimnasio, preguntar) o lo trae una pieza (probarIA, de «ia»), y
+// copiar/abrirEnlace los trae el host: ninguno va aquí.
 const ACCIONES = {
   tema: (d) => { if (d.id) { M.temaID = d.id; Temas.guardarId(d.id); llamar(panel, { temaId: d.id }); } },
   tipo: (d) => { if (M.categorias.some((c) => c.id === d.tipo)) { M.tipo = d.tipo; M.tipoManual = true; M.tipoAuto = false; cambio(); } },
   titulo: (d) => { M.titulo = String(d.texto || ""); },
   grabar: (d) => { if (typeof d.titulo === "string") M.titulo = d.titulo; grabar(); },
   detener: () => detener(),
-  copiar: (d) => clipboard.writeText(String(d.texto || "")),
   copiarFormato: (d) => clipboard.write({ text: String(d.texto || ""), html: typeof d.html === "string" ? d.html : undefined }),
   obsidian: async (d) => {
     if (!d.ruta) return;
@@ -685,18 +733,6 @@ const ACCIONES = {
       tokens: { github: !!Respaldo.token("github"), gitlab: !!Respaldo.token("gitlab") }, plataforma: PLATAFORMA });
     enviarEstadoAvisos();
   },
-  probarIA: async (d, w) => {
-    // Pieza «ia»: `ia.py probar <entrada.json> <salida.json>`, con las mismas protecciones que una nota (sin herramientas ni MCP,
-    // sin la memoria de la persona, en una carpeta temporal). La IA elegida va en el archivo de entrada, nunca como argumento.
-    const id = ["claude", "codex", "gemini"].includes(d.ia) ? d.ia : "claude";
-    const entrada = temporal(`minuta-ia-${Math.random().toString(36).slice(2)}.json`);
-    fs.writeFileSync(entrada, JSON.stringify({ ia: id }), { mode: 0o600 });
-    const { datos, error } = await correrScriptJSON("ia.py", ["probar", entrada]);
-    fs.rmSync(entrada, { force: true });
-    const ok = datos?.ok === true;
-    if (ok) Perfil.mezclar({ ia: id });
-    llamarFuncion(w, "iaProbada", { ia: id, ok, texto: ok ? "listo" : datos?.error || error, codigo: datos?.codigo || "" });
-  },
   descargarModelo: async (d, w) => {
     const id = d.id || Modelos.recomendado;
     let ultimo = -1;
@@ -743,15 +779,22 @@ const ACCIONES = {
     actualizarBandeja();
     notasCambiaron();
   },
-  // ── Actualizaciones ──
+  // ── Actualizaciones (pieza «actualizaciones»; la instalación de desarrollo, con git, sigue aquí) ──
   buscarActualizacion: () => buscarActualizacion(),
   actualizar: async (_d, w) => {
     // Desde el panel: se abre la ventana y el avance se muestra ahí.
     if (panel && w === panel) { panel.hide(); return enVisor("window.Minuta && window.Minuta.iniciarActualizacion && window.Minuta.iniciarActualizacion()"); }
-    if (M.fase !== "inactiva" || M.enCola.length) return llamarFuncion(w, "actualizacionProgreso", { paso: "error", texto: t("Termina la grabación y espera a que se generen las notas antes de actualizar.") });
+    const avance = (d) => llamarFuncion(w, "actualizacionProgreso", d);
+    if (M.fase !== "inactiva" || M.enCola.length) return avance({ paso: "error", codigo: "ocupada", texto: "Termina la grabación y espera a que se generen las notas antes de actualizar.", valores: {}, total: 3 });
+    // La interfaz guarda todo justo antes de pedirlo: se espera (nunca en medio de un guardado o de un script).
+    if (!(await host.esperarLibre(5000))) return avance({ paso: "error", codigo: "ocupada", texto: "Espera a que termine lo que está haciendo y vuelve a intentarlo.", valores: {}, total: 3 });
     // El aviso de actualización pasa a mostrar el avance (descargar → instalar), sin alertas.
-    try { await Actualizaciones.instalar((d) => llamarFuncion(w, "actualizacionProgreso", d)); }
-    catch (e) { llamarFuncion(w, "actualizacionProgreso", { paso: "error", texto: String(e.message || e) }); }
+    if (Actualizaciones.esDesarrollo) {
+      try { await Actualizaciones.instalar(avance); }
+      catch (e) { avance({ paso: "error", codigo: "errorBajar", texto: String(e.message || e), valores: {}, total: 3 }); }
+      return;
+    }
+    await actualizaciones.instalar(avance);
   },
   catalogo: async (d, w) => {
     // Pieza «catálogo»: el índice con huellas, validado por bin/catalogo.py con el validador de Minuta.
@@ -771,11 +814,15 @@ const ACCIONES = {
     const r = await catalogo().descargar("idiomas", String(d.codigo || ""));
     llamarFuncion(w, "descargado", { tipo: "idioma", id: d.codigo, ok: !!r.ok, error: r.ok ? "" : t(r.frase || "Eso no es válido."), instalados: Idioma.instalados() });
   },
-  perfil: (d) => { Perfil.mezclar(d.cambios || {}); Idioma.olvidar(); actualizarBandeja(); notasCambiaron(); },
+  perfil: (d) => {
+    Perfil.mezclar(d.cambios || {}); Idioma.olvidar(); actualizarBandeja(); notasCambiaron();
+    // El idioma recién elegido: el menú en ese idioma y, recién ahora, lo que corre solo (actualizaciones).
+    if (typeof d.cambios?.idioma_ui === "string") { host.armarMenu(); host.iniciarTareas(); }
+  },
   corregirIA: async (d, w) => {
     // La IA corrige la nota según lo que la persona dijo en palabras (bin/corregir.py).
     const archivo = temporal(`minuta-corregir-${Date.now()}.txt`);
-    fs.writeFileSync(archivo, String(d.instruccion || ""));
+    fs.writeFileSync(archivo, String(d.instruccion || ""), { mode: 0o600 });
     const r = await correrScriptJSON("corregir.py", [String(d.ruta || ""), archivo]);
     fs.rmSync(archivo, { force: true });
     notasCambiaron();
@@ -796,21 +843,13 @@ const ACCIONES = {
     u.searchParams.set("title", String(d.titulo || "")); u.searchParams.set("body", String(d.cuerpo || "")); u.searchParams.set("labels", String(d.etiqueta || "comentario"));
     shell.openExternal(u.toString());
   },
-  gimnasio: async (d, w) => {
-    if (!d.modo || d.entrada == null) return;
-    const archivo = temporal(`minuta-gym-${Date.now()}.json`);
-    fs.writeFileSync(archivo, json(d.entrada));
-    const r = await correrScriptJSON("gimnasio.py", [d.modo, archivo]);
-    fs.rmSync(archivo, { force: true });
-    llamarFuncion(w, "gym", { modo: d.modo, ok: !!r.datos, ...(r.datos ? { datos: r.datos } : { error: r.error }) });
-  },
   redactar: async (d, w) => {
     if (!d.ruta) return;
     const g = !d.forzar && Extras.mensajeGuardado(d.ruta);
     if (g) return llamarFuncion(w, "redactado", { ok: true, texto: g.texto || "", asunto: g.asunto || "", guardado: true, editado: !!g.editado });
     llamarFuncion(w, "redactando", {});
     const archivo = temporal(`minuta-indic-${Date.now()}.json`);
-    fs.writeFileSync(archivo, json({ indicaciones: String(d.indicaciones || ""), forzar: !!d.forzar }));
+    fs.writeFileSync(archivo, json({ indicaciones: String(d.indicaciones || ""), forzar: !!d.forzar }), { mode: 0o600 });
     const r = await correrScriptJSON("redactar.py", [d.ruta, archivo]);
     fs.rmSync(archivo, { force: true });
     llamarFuncion(w, "redactado", { ok: !!r.datos, texto: r.datos?.texto || "", asunto: r.datos?.asunto || "", error: r.error });
@@ -824,11 +863,6 @@ const ACCIONES = {
   escuchar: (d) => empezarDictado(typeof d.silencio === "number" ? d.silencio : 1.6),
   dejarDeEscuchar: (d) => terminarDictado(!!d.enviar),
   callar: (d) => { callarVoz(); if (d.mic !== false) terminarDictado(false); },
-  preguntar: async (d, w) => {
-    if (!d.id || !d.pregunta) return;
-    const r = await correrScriptJSON("preguntar.py", [String(d.pregunta)]);
-    llamarFuncion(w, "respuesta", { id: d.id, ok: !!r.datos, ...(r.datos ? { respuesta: r.datos.respuesta || "", fuentes: r.datos.fuentes || [] } : { error: r.error }) });
-  },
   categorias: (d) => { const l = Categorias.desdeJS(d.lista); if (l) { M.categorias = l; Categorias.guardar(l); if (!l.some((c) => c.id === M.tipo)) { M.tipo = l[0].id; M.tipoManual = false; } notasCambiaron(); } },
   borrar: async (d) => {
     if (await Extras.borrarNota(String(d.ruta || ""), d.delRespaldo !== false)) {
@@ -868,48 +902,52 @@ const ACCIONES = {
   },
 };
 
-ipcMain.on("minuta", async (e, msg) => {
-  // Solo la ventana y el panel (marco principal, minuta://) hablan con el puente, y solo con acciones conocidas.
-  if (!dePropia(e, ventana, panel)) return;
-  const w = BrowserWindow.fromWebContents(e.sender);
-  // El mensaje es {accion, datos} (pieza «host-ui», igual en todas las apps de la familia).
-  const fn = msg && typeof msg.accion === "string" && Object.hasOwn(ACCIONES, msg.accion) && ACCIONES[msg.accion];
-  if (!fn) return;
+// El visor habla con el puente del host (registradas → las del host → las declaradas en acciones.json). El panel de la bandeja
+// es una ventana de Minuta: su puente es este, con las mismas guardas (solo su marco principal, con su página minuta://ui/).
+for (const [nombre, fn] of Object.entries(ACCIONES)) host.acciones.registrar(nombre, (d) => fn(d, ventana));
+ipcMain.on(host.id, async (e, msg) => {
+  if (!panel || panel.isDestroyed() || e.sender !== panel.webContents) return;
+  if (!e.senderFrame || e.senderFrame !== e.sender.mainFrame || !String(e.senderFrame.url || "").startsWith(host.ORIGEN)) return;
+  if (!msg || typeof msg.accion !== "string" || !/^[a-z][A-Za-z0-9]{0,40}$/.test(msg.accion)) return;
   const datos = msg.datos && typeof msg.datos === "object" && !Array.isArray(msg.datos) ? msg.datos : {};
-  try { await fn(datos, w); } catch (err) { console.error("Minuta:", msg.accion, err); }
+  try {
+    if (Object.hasOwn(ACCIONES, msg.accion)) await ACCIONES[msg.accion](datos, panel);
+    else await host.despachar(msg.accion, datos);  // copiar, abrirEnlace… (lo que trae el host)
+  } catch (err) { console.error("Minuta:", msg.accion, err); }
 });
 
 async function buscarActualizacion() {
-  const r = await Actualizaciones.revisar();
-  M.actualizacion = { ...r, version: app.getVersion() };
-  llamarFuncion(ventana, "actualizacion", M.actualizacion);
+  const r = Actualizaciones.esDesarrollo ? await Actualizaciones.revisar() : await actualizaciones.revisar().catch(() => ({ hay: false, sinConexion: true }));
+  M.actualizacion = r;
+  llamarFuncion(ventana, "actualizacionRevisada", r);
   enviarEstado();
 }
 
+/** Salir: si está grabando, primero se detiene (y se guarda la reunión); después el host espera lo que corre y lo corta. */
+let saliendo = false;
 function salir() {
-  if (M.fase === "grabando") detener();
-  setTimeout(() => { app.exit(0); }, M.fase === "grabando" ? 900 : 50);
+  if (saliendo) return;
+  saliendo = true;
+  const grabando = M.fase === "grabando";
+  if (grabando) detener();
+  setTimeout(() => host.salir(), grabando ? 900 : 50);
 }
+// Que el sistema cierre la app (apagar, cerrar sesión, app.quit) pasa por lo mismo: con la ventana que se esconde al cerrarla
+// (ventana.alCerrar: "esconder"), sin esto el cierre quedaría frenado.
+app.on("before-quit", (e) => { e.preventDefault(); salir(); });
 
 // ───────────────────────── Arranque ─────────────────────────
-app.on("second-instance", () => abrirVisor());
-app.on("window-all-closed", () => {}); // sigue viva en la bandeja
+// El host trae minuta://ui/… (la interfaz); minuta://app/… son las páginas propias de esta app (la grabadora oculta y la alerta).
+const PAGINAS_PROPIAS = new Set(["grabadora.html", "grabadora.js", "pcm.js", "alerta.html", "alerta.js"]);
+host.medios.registrar("app", (ruta) => (PAGINAS_PROPIAS.has(ruta) ? path.join(__dirname, ruta) : null));
+Respaldo.usarSecretos(host.secretos("tokens", { archivo: ".tokens" }));
 
 app.whenReady().then(async () => {
   asegurarCarpetas();
-  // minuta://ui/… → interfaz (recursos/ui); minuta://app/… → páginas propias de esta app (grabadora, alerta).
-  protocol.handle("minuta", (req) => {
-    const u = new URL(req.url);
-    const raiz = u.host === "ui" ? path.join(recursos(), "ui") : u.host === "app" ? __dirname : null;
-    const ruta = raiz && path.normalize(path.join(raiz, decodeURIComponent(u.pathname)));
-    if (!ruta || !ruta.startsWith(raiz + path.sep)) return new Response("no", { status: 404 });
-    return net.fetch(require("url").pathToFileURL(ruta).toString());
-  });
   // Audio del sistema en Windows: getDisplayMedia recibe la pantalla principal + "loopback" (todo lo que suena).
   session.defaultSession.setDisplayMediaRequestHandler((_req, responder) => {
     desktopCapturer.getSources({ types: ["screen"] }).then((s) => responder({ video: s[0], audio: "loopback" })).catch(() => responder({}));
   });
-  session.defaultSession.setPermissionRequestHandler((_wc, permiso, ok) => ok(["media", "clipboard-sanitized-write", "notifications"].includes(permiso)));
 
   M.categorias = Categorias.cargar();
   M.tipo = M.categorias[0]?.id || "Otra";
@@ -935,9 +973,6 @@ app.whenReady().then(async () => {
 
   crearBandeja();
   crearPanel();
-  if (Perfil.falta || !process.argv.includes("--oculta")) setTimeout(() => abrirVisor(), 300);
-  setTimeout(buscarActualizacion, 20000);
-  setInterval(buscarActualizacion, 6 * 3600 * 1000);
   if (process.argv.includes("--prueba-deteccion")) setTimeout(() => reunionDetectada("Microsoft Teams"), 2000);
 });
 

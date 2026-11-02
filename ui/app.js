@@ -3043,6 +3043,22 @@
 
   // ───────────────────────── Actualizaciones ─────────────────────────
   E.act = { hay: false };
+  /** La forma que pinta la interfaz ({hay, detalle, error}) desde la de la pieza «actualizaciones» ({hay, version, notas,
+   *  sinConexion, desarrollo}); una que ya trae `detalle` pasa tal cual. Las notas del Release van tal cual (con esc() al pintar). */
+  function deActualizacion(r) {
+    if (!r || typeof r !== "object") return { hay: false };
+    if (typeof r.detalle === "string") return r;
+    const notas = String(r.notas || "").split("\n").map((l) => l.trim()).filter(Boolean);
+    const detalle = r.desarrollo ? notas.slice(0, 3).map((l) => (l.startsWith("•") ? l : `• ${l}`)).join("\n")
+      : [r.version ? `Versión ${r.version}` : "", ...notas.slice(0, 4)].filter(Boolean).join("\n");
+    return { hay: !!r.hay, detalle, error: !!r.sinConexion, desarrollo: !!r.desarrollo };
+  }
+  /** «Instalando: {app} se cerrará…» + {app: "Minuta"} → la frase armada (en español; traducirDOM la traduce por su patrón). */
+  function llenar(texto, valores) {
+    const t = String(texto || "");
+    if (!valores || typeof valores !== "object") return t;
+    return t.replace(/\{(\w+)\}/g, (m, k) => (Object.prototype.hasOwnProperty.call(valores, k) ? String(valores[k]) : m));
+  }
   /** Vista previa en el navegador: recorre los pasos para ver cómo se ve. */
   function simularActualizacion() {
     const pasos = [["1", "Descargando la versión nueva…"], ["2", "Preparando la versión nueva…", 10], ["2", "Preparando la versión nueva…", 55], ["2", "Preparando la versión nueva…", 92], ["3", "Instalando: Minuta se cerrará y volverá a abrirse sola"]];
@@ -3277,7 +3293,7 @@
     cargar(datos) {
       if (datos.perfil) E.perfil = datos.perfil;
       if (datos.idioma) E.idioma = { ...E.idioma, ...datos.idioma };
-      if (datos.actualizacion) E.act = { ...E.act, ...datos.actualizacion };
+      if (datos.actualizacion) E.act = { ...E.act, ...deActualizacion(datos.actualizacion) };
       if (datos.version) E.version = datos.version;
       if ("primeraVez" in datos) E._primeraVez = !!datos.primeraVez;
       // Primera vez: la bienvenida (que parte por el idioma) se abre en este mismo pintado, sin mostrar antes la app.
@@ -3341,7 +3357,14 @@
       b.perfil = { ...(d.perfil || {}), ...b.perfil };
       render({ mantenerScroll: true });
     },
-    iaProbada(r) { const b = E.bv; if (!b) return; b.probando = null; if (r.ok) { b.iaOk = r.ia; b.iaTexto = ""; b.perfil.ia = r.ia; } else b.iaTexto = r.codigo === "no_instalada" ? "No está instalada" : r.texto || "No respondió."; render({ mantenerScroll: true }); },
+    /** Respuesta de `probarIA` (acción declarada de la pieza «ia»: {ia, ok, codigo, error}). La que respondió queda en el perfil. */
+    iaProbada(r) {
+      const b = E.bv; if (!b) return;
+      b.probando = null;
+      if (r.ok) { b.iaOk = r.ia; b.iaTexto = ""; b.perfil.ia = r.ia; host.enviar("perfil", { cambios: { ia: r.ia } }); }
+      else b.iaTexto = r.codigo === "no_instalada" ? "No está instalada" : r.texto || r.error || "No respondió.";
+      render({ mantenerScroll: true });
+    },
     modeloProgreso(r) { const b = E.bv; if (!b) return; b.pct = r.pct; const bar = document.querySelector(".bv-barra i"); if (bar) { bar.style.width = r.pct + "%"; const t = bar.parentElement.nextElementSibling; if (t) t.textContent = tr(`Descargando… ${r.pct}% · puedes seguir con los demás pasos.`); } },
     modeloListo(r) { const b = E.bv; if (!b) { toast(r.ok ? "Modelo descargado ✓" : `No se pudo descargar: ${r.error}`); return; } b.descargando = null; if (r.modelos) b.modelos = r.modelos; if (r.ok) { b.perfil.modelo_whisper = r.id; b.modeloElegido = r.id; } else b.error = r.error || "No se pudo descargar."; render({ mantenerScroll: true }); },
     carpetaNotas(r) { const b = E.bv; if (!b) return; b.carpeta = r.ruta; b.notas = r.notas; b.perfil.carpeta_notas = r.ruta; render({ mantenerScroll: true }); },
@@ -3360,9 +3383,13 @@
       E.act.progreso = { paso: "1", texto: "Descargando la versión nueva…", total: 3 }; E.act.oculto = false; render({ mantenerScroll: true });
       host.enviar("actualizar");
     },
-    /** Avance de la actualización: { paso: "1"|"2"|"3"|"error", texto, total, pct } */
-    actualizacionProgreso(d) { E.act.progreso = d; render({ mantenerScroll: true }); },
+    /** Avance de la actualización (pieza «actualizaciones»): { paso: "1"|"2"|"3"|"error", codigo, texto, valores, total, pct }.
+     *  `texto` es la frase en español con marcadores ({app}): se llenan aquí y traducirDOM la traduce entera. */
+    actualizacionProgreso(d = {}) { E.act.progreso = { ...d, texto: llenar(d.texto, d.valores) }; render({ mantenerScroll: true }); },
+    /** Lo que revisó la pieza «actualizaciones» ({hay, version, notas, sinConexion, desarrollo}). */
+    actualizacionRevisada(r) { window.Minuta.actualizacion(deActualizacion(r)); },
     actualizacion(r) {
+      r = deActualizacion(r);
       const antes = E.act.hay, manual = E.act.buscando;
       E.act = { ...E.act, ...r, buscando: false, alDia: !r.hay && !r.error };
       if (manual) toast(r.error ? "No pude revisar si hay versiones nuevas. Revisa tu conexión." : r.hay ? "Hay una versión nueva de Minuta ✨" : `Estás en la última versión${E.version ? ` (${E.version})` : ""} ✓`);
@@ -3533,7 +3560,7 @@
       ? { modo: d.modo, ok: true, datos: { nombre: "Carlos, dueño del club", texto: d.entrada.historial.length ? "Ya, pero ¿cuánto me va a costar al mes? Hoy con la planilla no pago nada." : "Hola, cuéntame rápido, que tengo una clase en 20 minutos." } }
       : { modo: d.modo, ok: true, datos: { veredicto: "Buen diagnóstico, pero cerraste sin fecha concreta.", puntajes: { claridad: 7, escucha: 8, preguntas: 6, cierre: 5 }, costo: [{ cita: "lo vemos y te aviso", texto: "Sin fecha ni responsable.", prueba: "¿Te parece el jueves a las 10 para mostrarte la configuración?" }], bien: [{ cita: "¿cuántas horas valle tienes vacías?", texto: "Pregunta con números." }], habito: "Cerrar siempre con fecha y hora" } })),
     redactar: (d, c) => c.luego(d.forzar ? 900 : 50, () => c.responder("redactado", { ok: true, texto: textoResumen(E.notas.find((x) => x.ruta === d.ruta)), asunto: E.env?.asunto, guardado: !d.forzar })),
-    buscarActualizacion: (d, c) => c.luego(900, () => c.responder("actualizacion", { hay: false })),
+    buscarActualizacion: (d, c) => c.luego(900, () => c.responder("actualizacionRevisada", { hay: false, version: "", notas: "", sinConexion: false })),
     actualizar: () => simularActualizacion(),
     recordatorios: (d) => toast(`${(d.lista || []).length} a Recordatorios (solo en la app de Mac)`),
     comentarios: (d) => {
