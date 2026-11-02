@@ -5,6 +5,8 @@ Lo que cambia para quien usa Minuta, en palabras simples. Las versiones anterior
 *What changes for people using Minuta, in plain words. Earlier versions are listed in Releases.*
 
 ## Sin publicar · Unreleased
+- Buscar y cambiar de reunión responde más rápido cuando tienes muchas reuniones: los logros ya no se recalculan en cada tecla.
+  *Searching and switching meetings is snappier when you have many meetings: achievements are no longer recalculated on every keystroke.*
 - **Lo que le preguntas a tus reuniones (⌘K) ya no queda a la vista de otros programas:** antes la pregunta iba como argumento
   del proceso; ahora va en un archivo privado. · *What you ask your meetings (⌘K) is no longer visible to other programs: the question
   used to travel as a process argument; now it goes in a private file.*
