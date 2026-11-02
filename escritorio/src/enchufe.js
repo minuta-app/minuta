@@ -73,9 +73,16 @@ function carpetaDatos(a, { plataforma = process.platform, casa = os.homedir(), e
   return path.join(env.XDG_CONFIG_HOME || path.join(casa, ".config"), a.id);
 }
 
-/** Crea la carpeta solo para la persona (0700). Una carpeta propia de app.json ({"carpeta": …}) se usa tal cual. */
-function prepararCarpeta(ruta, { propia = false } = {}) {
+/** Crea la carpeta solo para la persona (0700). Una carpeta propia de app.json ({"carpeta": …}) se usa tal cual. Con
+ *  `visible` (app.json → "datos": "visible"), ~/<Nombre> recién creada también queda 0700, como en nucleo.carpeta_datos() (una que
+ *  ya existía no se toca). */
+function prepararCarpeta(ruta, { propia = false, visible = false } = {}) {
   if (propia) return ruta;
+  const arriba = path.dirname(ruta);
+  if (visible && !fs.existsSync(arriba)) {
+    fs.mkdirSync(arriba, { recursive: true, mode: 0o700 });
+    if (process.platform !== "win32") { try { fs.chmodSync(arriba, 0o700); } catch {} }
+  }
   fs.mkdirSync(ruta, { recursive: true });
   if (process.platform !== "win32") { try { fs.chmodSync(ruta, 0o700); } catch {} }
   return ruta;

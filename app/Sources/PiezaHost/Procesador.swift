@@ -7,7 +7,7 @@ import Foundation
 /// Contrato (nucleo.script): `script.py <args…> [entrada.json] <salida.json>`.
 ///  · Lo que manda la interfaz va en el archivo de entrada, nunca como argumento (cualquier programa ve los argumentos).
 ///  · Un secreto (la llave de un conector) va por la entrada estándar: nunca en un archivo, un argumento ni el entorno.
-///  · Ninguna variable <ID>_* de afuera llega al script: solo las que pone el host.
+///  · Ninguna variable <ID>_* de afuera llega al script: solo las que pone el host y las de la app (`entornoApp`, `entorno:`).
 ///  · Todo tiene límite de tiempo: al cumplirse se corta el script y todo lo que lanzó (sus descendientes). Un trabajo largo
 ///    (`latido: true`, «limite»: "trabajo") no tiene tope, pero tiene que latir (pieza «trabajos»: <ID>_LATIDO): si deja de
 ///    latir, se corta igual.
@@ -38,6 +38,14 @@ public enum Procesador {
     /// Pieza «trabajos» (LectorProgreso), si la app la tiene: `Procesador.lectorProgreso = { aviso in let l = LectorProgreso(
     /// prefijo: Host.id, aviso: aviso); return (l.url.path, l.empezar, l.terminar) }`.
     public static var lectorProgreso: (@MainActor (@escaping @MainActor ([[String: Any]]) -> Void) -> Lector)?
+    /// Variables que la app pone para TODOS sus scripts, también los declarados (p. ej. `<ID>_PROGRAMAS`: dónde están ffmpeg
+    /// y el transcriptor que vienen dentro de la app, o `<ID>_HERRAMIENTAS`). Las de cada llamada (`entorno:`)
+    /// ganan; las de afuera con el prefijo nunca llegan; y ninguna pisa las que pone el host (`<ID>_RECURSOS`, `_DATOS`,
+    /// `_PROGRESO`, `_LATIDO`).
+    ///     Procesador.entornoApp[Host.prefijo + "PROGRAMAS"] = Bundle.main.executableURL!.deletingLastPathComponent().path
+    public static var entornoApp: [String: String] = [:]
+    /// Los nombres que solo pone el host.
+    static var reservadas: Set<String> { Set(["RECURSOS", "DATOS", "PROGRESO", "LATIDO"].map { Host.prefijo + $0 }) }
 
     /// Detiene todo lo que sigue corriendo (y lo que lanzó). Lo llama el host al salir.
     public static func cortarTodo() {
@@ -77,7 +85,9 @@ public enum Procesador {
         p.arguments = [ruta.path] + argumentos + [salida.path]
         let prefijo = Host.prefijo
         var env = ProcessInfo.processInfo.environment.filter { !$0.key.uppercased().hasPrefix(prefijo) }
-        for (k, v) in entorno where Texto.calza(k, "[A-Z][A-Z0-9_]{0,60}") { env[k] = v }
+        let reservadas = Procesador.reservadas
+        for (k, v) in entornoApp.merging(entorno, uniquingKeysWith: { _, deLaLlamada in deLaLlamada })
+            where Texto.calza(k, "[A-Z][A-Z0-9_]{0,60}") && !reservadas.contains(k) { env[k] = v }
         env[prefijo + "RECURSOS"] = Host.recursos.path
         env[prefijo + "DATOS"] = Host.datos.path
         env["PYTHONIOENCODING"] = "utf-8"

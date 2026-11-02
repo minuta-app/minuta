@@ -12,7 +12,8 @@ import WebKit
 /// → lo declarado en acciones.json (validar, inyectar, fila, script con límite, eco, responder, después). Lo demás se ignora.
 ///
 /// Seguridad: solo el marco principal con un archivo de ui/ habla con el puente; la ventana nunca navega fuera de ui/ (un
-/// enlace https se abre en el navegador); `<id>://` sirve solo lo que aprueba el resolvedor de medios de la app.
+/// enlace https se abre en el navegador, pasando por el `abrirEnlace` que registró la app si hay uno); `<id>://` sirve solo lo
+/// que aprueba el resolvedor de medios de la app.
 @MainActor
 public final class Puente: NSObject, NSWindowDelegate, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
     public typealias Datos = [String: Any]
@@ -116,6 +117,16 @@ public final class Puente: NSObject, NSWindowDelegate, WKScriptMessageHandler, W
     public var antesDeSalir: (@MainActor () -> Void)?
     /// Para la app: configurar el WKWebView antes de crearlo (otro manejador de mensajes, otra preferencia).
     public var alConfigurarWeb: (@MainActor (WKWebViewConfiguration) -> Void)?
+    /// Recién creada la ventana (y su WKWebView), antes de mostrarla: lo propio de la app (otra sombra, otra vista encima…).
+    public var alCrearVentana: (@MainActor (NSWindow, WKWebView) -> Void)?
+    /// Ítems del menú de la app, debajo de «Ajustes…» (p. ej. «Abrir la carpeta de {app}»).
+    public var menuApp: (@MainActor (Menus) -> [NSMenuItem])?
+    /// Soltar archivos en la ventana: el host guarda sus rutas (la página recibe su `drop` como siempre, pero solo ve los
+    /// nombres). La interfaz manda el nombre y la app pide la ruta con `soltado(nombre)`: nunca se arma una ruta con lo que
+    /// manda la web. Con esto, `alSoltar` se llama con las rutas (sin enlaces) de lo que se soltó.
+    public var alSoltar: (@MainActor ([URL]) -> Void)?
+    /// Lo último que se soltó en la ventana (rutas reales).
+    public private(set) var soltados: [URL] = []
 
     private override init() {
         super.init()
@@ -167,6 +178,16 @@ public final class Puente: NSObject, NSWindowDelegate, WKScriptMessageHandler, W
         return true
     }
 
+    /// Uno de los archivos que se soltaron en la ventana, por su nombre (el que vio la página). nil si no se soltó ninguno así.
+    public func soltado(_ nombre: String) -> URL? { soltados.first { $0.lastPathComponent == nombre } }
+
+    func recibirSoltados(_ urls: [URL]) {
+        // Siempre lo último que se soltó (también vacío): `soltado(nombre)` nunca devuelve lo de una vez anterior.
+        let u = urls.filter(\.isFileURL).map { $0.standardizedFileURL.resolvingSymlinksInPath() }
+        soltados = u
+        if !u.isEmpty { alSoltar?(u) }
+    }
+
     /// Corre una acción como si la hubiera pedido la interfaz (para `despues` y para la app).
     public func despachar(_ accion: String, _ datos: Datos) {
         guard Texto.calza(accion, Enchufe.nombre) else { return }
@@ -206,6 +227,8 @@ public final class Puente: NSObject, NSWindowDelegate, WKScriptMessageHandler, W
     // MARK: Ventana
 
     public func mostrar() {
+        // App de barra de menú: con la ventana abierta, Dock y menús (se vuelve a .accessory al cerrarla).
+        if Host.opciones.barraDeMenu { NSApp.setActivationPolicy(.regular) }
         if ventana == nil { crear() }
         ventana?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -219,14 +242,18 @@ public final class Puente: NSObject, NSWindowDelegate, WKScriptMessageHandler, W
         let control = WKUserContentController()
         control.add(self, name: Host.id)
         control.addUserScript(WKUserScript(source: "window.\(Host.prefijo)HOST = 'mac';", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        let o = Host.opciones
+        if o.barraTransparente {
+            control.addUserScript(WKUserScript(source: "window.\(Host.prefijo)BARRA = 'transparente';" + (o.vidrio ? " window.\(Host.prefijo)VIDRIO = true;" : ""),
+                                               injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        }
         let conf = WKWebViewConfiguration()
         conf.userContentController = control
         // La interfaz lee sus traducciones (ui/idiomas/*.json) con fetch desde sus propios archivos.
         conf.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
         if let medios { conf.setURLSchemeHandler(medios, forURLScheme: Host.id) }
         alConfigurarWeb?(conf)
-        let o = Host.opciones
-        let w = WKWebView(frame: NSRect(x: 0, y: 0, width: o.ancho, height: o.alto), configuration: conf)
+        let w = WebPieza(frame: NSRect(x: 0, y: 0, width: o.ancho, height: o.alto), configuration: conf)
         w.navigationDelegate = self
         w.uiDelegate = self
         w.autoresizingMask = [.width, .height]
@@ -234,19 +261,54 @@ public final class Puente: NSObject, NSWindowDelegate, WKScriptMessageHandler, W
                          styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         v.title = Host.nombre
         v.minSize = NSSize(width: o.minAncho, height: o.minAlto)
-        v.contentView = w
+        if o.barraTransparente {
+            // La interfaz llega hasta arriba; una franja invisible encima de ella mueve la ventana.
+            v.styleMask.insert(.fullSizeContentView)
+            v.titlebarAppearsTransparent = true
+            v.titleVisibility = .hidden
+            let fondo: NSView
+            if o.vidrio {
+                let e = NSVisualEffectView(frame: w.frame)
+                e.material = .hudWindow
+                e.blendingMode = .behindWindow
+                e.state = .active
+                v.isOpaque = false
+                v.backgroundColor = .clear
+                w.setValue(false, forKey: "drawsBackground")
+                fondo = e
+            } else {
+                fondo = NSView(frame: w.frame)
+            }
+            fondo.autoresizingMask = [.width, .height]
+            w.frame = fondo.bounds
+            fondo.addSubview(w)
+            if o.altoFranja > 0 {
+                let franja = FranjaVentana(frame: NSRect(x: 0, y: fondo.bounds.height - o.altoFranja, width: fondo.bounds.width, height: o.altoFranja))
+                franja.autoresizingMask = [.width, .minYMargin]
+                fondo.addSubview(franja)
+            }
+            v.contentView = fondo
+        } else {
+            v.contentView = w
+        }
         v.delegate = self
         v.isReleasedWhenClosed = false
-        v.setFrameAutosaveName(Host.nombre)
-        if !v.setFrameUsingName(Host.nombre) { v.center() }
+        let recordar = o.nombreVentana ?? Host.nombre
+        v.setFrameAutosaveName(recordar)
+        if !v.setFrameUsingName(recordar) { v.center() }
         ventana = v
         web = w
         aplicarApariencia()
+        alCrearVentana?(v, w)
         w.loadFileURL(carpetaUI.appendingPathComponent("index.html"), allowingReadAccessTo: carpetaUI)
     }
 
     /// Cerrar la ventana guarda lo pendiente (y, si la app lo pidió, la cierra: applicationShouldTerminateAfterLastWindowClosed).
-    public func windowWillClose(_ notification: Notification) { guardarTodo() }
+    /// Una app de barra de menú vuelve a quedar sin Dock.
+    public func windowWillClose(_ notification: Notification) {
+        guardarTodo()
+        if Host.opciones.barraDeMenu { NSApp.setActivationPolicy(.accessory) }
+    }
 
     /// La ventana y los menús siguen la apariencia elegida (pieza «tema»: config.tema = sistema | claro | oscuro).
     public func aplicarApariencia() {
@@ -265,8 +327,10 @@ public final class Puente: NSObject, NSWindowDelegate, WKScriptMessageHandler, W
     public func webView(_ webView: WKWebView, decidePolicyFor accion: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let u = accion.request.url else { return .cancel }
         if u.isFileURL, u.resolvingSymlinksInPath().path.hasPrefix(prefijoUI) { return .allow }
-        // Medios propios (un <video src="<id>://…">) se cargan como subrecursos; una navegación a ellos, nunca.
-        if u.scheme == "https", accion.navigationType == .linkActivated { abrirEnlace(u.absoluteString) }
+        // Medios propios (un <video src="<id>://…">) se cargan como subrecursos; una navegación a ellos, nunca. Un enlace https
+        // tocado va por `abrirEnlace` como si lo pidiera la interfaz: si la app registró el suyo (una app para niños: solo su
+        // sitio), decide ella.
+        if u.scheme == "https", accion.navigationType == .linkActivated { despachar("abrirEnlace", ["url": u.absoluteString]) }
         return .cancel
     }
 
@@ -360,9 +424,14 @@ public final class Puente: NSObject, NSWindowDelegate, WKScriptMessageHandler, W
             if let act = self.actualizaciones { b["actualizacion"] = act.disponible() }
             if let extra = self.estado { extra(b) { self.llamar("estado", $0) } } else { self.llamar("estado", b) }
         }
-        if let s = Host.opciones.estadoScript, Texto.calza(s, "\\w+\\.py"),
+        let o = Host.opciones
+        if let s = o.estadoScript, Texto.calza(s, "\\w+\\.py"),
            FileManager.default.fileExists(atPath: Host.recursos.appendingPathComponent("bin").appendingPathComponent(s).path) {
-            Procesador.correrJSON(s, [], limite: 60) { terminar($0) }
+            if o.estadoEnFila {
+                Fila.agregar { listo in Procesador.correrJSON(s, [], limite: o.limiteEstado) { terminar($0); listo() } }
+            } else {
+                Procesador.correrJSON(s, [], limite: o.limiteEstado) { terminar($0) }
+            }
         } else {
             terminar([:])
         }
@@ -415,31 +484,68 @@ public final class Puente: NSObject, NSWindowDelegate, WKScriptMessageHandler, W
         presentar(panel) { ok in fin(ok ? panel.url?.standardizedFileURL.resolvingSymlinksInPath() : nil) }
     }
 
-    /// Archivos (sin enlaces) o [] si la persona cancela. `extensiones`: ["md", "txt"].
-    public func elegirArchivos(extensiones: [String] = [], varios: Bool = false, boton: String? = nil, _ fin: @escaping @MainActor ([URL]) -> Void) {
+    /// Archivos (sin enlaces) o [] si la persona cancela. `extensiones`: ["md", "txt"]. `mensaje`: qué elegir («Elige la cartola…»).
+    public func elegirArchivos(extensiones: [String] = [], varios: Bool = false, mensaje: String? = nil, boton: String? = nil,
+                               desde: URL? = nil, _ fin: @escaping @MainActor ([URL]) -> Void) {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = varios
         if let boton { panel.prompt = boton }
+        if let mensaje { panel.message = mensaje }
+        if let desde { panel.directoryURL = desde }
         let tipos = extensiones.compactMap { UTType(filenameExtension: $0) }
         if !tipos.isEmpty { panel.allowedContentTypes = tipos }
         presentar(panel) { ok in fin(ok ? panel.urls.map { $0.standardizedFileURL.resolvingSymlinksInPath() } : []) }
     }
 
-    /// «Guardar como»: escribe `datos` de una vez donde la persona elija. nil si cancela o no se pudo.
+    /// «Guardar como»: escribe `datos` de una vez donde la persona elija. nil si cancela o no se pudo (para saber cuál de las
+    /// dos, `guardarArchivo`). `privado`: el archivo queda solo para la persona (0600); nil: lo que diga app.json → "privado".
     public func guardarComo(nombre: String, extension ext: String, datos: Data, desde: URL? = nil, maximo: Int = 50 * 1024 * 1024,
-                            _ fin: @escaping @MainActor (URL?) -> Void) {
-        guard !datos.isEmpty, datos.count <= maximo, Texto.calza(ext, "\\w{1,10}") else { return fin(nil) }
+                            mensaje: String? = nil, privado: Bool? = nil, _ fin: @escaping @MainActor (URL?) -> Void) {
+        guardarArchivo(nombre: nombre, extension: ext, datos: datos, desde: desde, maximo: maximo, mensaje: mensaje, privado: privado) { r in
+            if case .guardado(let u) = r { fin(u) } else { fin(nil) }
+        }
+    }
+
+    /// Cómo terminó un «Guardar como»: guardado, la persona canceló, o un error con su código («vacio», «tamano»,
+    /// «extension», «escribir»: no se pudo escribir ahí). Así la interfaz no dice «No pude guardar» cuando la persona canceló.
+    public enum Guardado {
+        case guardado(URL)
+        case cancelado
+        case error(String)
+    }
+
+    /// Lo mismo que `guardarComo`, diciendo cómo terminó.
+    public func guardarArchivo(nombre: String, extension ext: String, datos: Data, desde: URL? = nil, maximo: Int = 50 * 1024 * 1024,
+                               mensaje: String? = nil, privado: Bool? = nil, _ fin: @escaping @MainActor (Guardado) -> Void) {
+        guard Texto.calza(ext, "\\w{1,10}") else { return fin(.error("extension")) }
+        guard !datos.isEmpty else { return fin(.error("vacio")) }
+        guard datos.count <= maximo else { return fin(.error("tamano")) }
+        let soloPersona = privado ?? (Host.app["privado"] as? Bool == true)
         let panel = NSSavePanel()
         panel.allowedContentTypes = [UTType(filenameExtension: ext) ?? .data]
         panel.canCreateDirectories = true
         panel.isExtensionHidden = false
         panel.nameFieldStringValue = Puente.nombreArchivo(nombre, ext)
+        if let mensaje { panel.message = mensaje }
         if let desde { panel.directoryURL = desde }
         presentar(panel) { ok in
-            guard ok, let u = panel.url, (try? datos.write(to: u, options: .atomic)) != nil else { return fin(nil) }
-            fin(u)
+            guard ok, let u = panel.url else { return fin(.cancelado) }
+            if soloPersona {
+                // Privado desde el primer byte: un temporal 0600 en la misma carpeta y después se renombra (nunca queda 0644).
+                let tmp = u.deletingLastPathComponent().appendingPathComponent(".\(u.lastPathComponent).\(UUID().uuidString).tmp")
+                guard FileManager.default.createFile(atPath: tmp.path, contents: datos, attributes: [.posixPermissions: 0o600]) else {
+                    return fin(.error("escribir"))
+                }
+                guard rename(tmp.path, u.path) == 0 else {
+                    try? FileManager.default.removeItem(at: tmp)
+                    return fin(.error("escribir"))
+                }
+            } else {
+                guard (try? datos.write(to: u, options: .atomic)) != nil else { return fin(.error("escribir")) }
+            }
+            fin(.guardado(u))
         }
     }
 
@@ -467,16 +573,24 @@ public final class Puente: NSObject, NSWindowDelegate, WKScriptMessageHandler, W
         let menuApp = NSMenu()
         menuApp.addItem(withTitle: Idioma.f("Acerca de {app}", ["app": Host.nombre]), action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         menuApp.addItem(.separator())
-        menuApp.addItem(m.item("Ajustes…", "ajustes", ","))
-        menuApp.addItem(.separator())
+        let propios = self.menuApp?(m) ?? []
+        if let titulo = Host.opciones.tituloAjustes { menuApp.addItem(m.item(titulo, "ajustes", ",")) }
+        for x in propios { menuApp.addItem(x) }
+        if Host.opciones.tituloAjustes != nil || !propios.isEmpty { menuApp.addItem(.separator()) }
         menuApp.addItem(withTitle: Idioma.f("Ocultar {app}", ["app": Host.nombre]), action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         menuApp.addItem(withTitle: Idioma.f("Salir de {app}", ["app": Host.nombre]), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         app.submenu = menuApp
         principal.addItem(app)
-        for x in menus?(m) ?? [m.archivo([]), m.edicion(), m.ver([])] { principal.addItem(x) }
+        let medio = menus?(m) ?? [m.archivo([]), m.edicion(), m.ver([])]
+        for x in medio { principal.addItem(x) }
         let ventanaMenu = NSMenu(title: Idioma.t("Ventana"))
         ventanaMenu.addItem(withTitle: Idioma.t("Minimizar"), action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
         ventanaMenu.addItem(withTitle: Idioma.t("Zoom"), action: #selector(NSWindow.performZoom(_:)), keyEquivalent: "")
+        // Sin menú Archivo (o sin su «Cerrar ventana»), ⌘W igual cierra la ventana: va aquí.
+        if !Menus.tieneCerrar(medio) {
+            ventanaMenu.addItem(.separator())
+            ventanaMenu.addItem(withTitle: Idioma.t("Cerrar ventana"), action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        }
         principal.addItem(m.submenu(ventanaMenu))
         var ayuda: [NSMenuItem] = []
         if Host.opciones.menuAyuda, let s = Host.opciones.sitio { ayuda.append(m.nativo(Idioma.f("Sitio de {app}", ["app": Host.nombre]), traducir: false) { Puente.shared.abrirEnlace(s) }) }
@@ -501,6 +615,15 @@ public final class Puente: NSObject, NSWindowDelegate, WKScriptMessageHandler, W
 /// Para armar menús en el idioma elegido: un ítem que atiende la interfaz (`item`), uno nativo (`nativo`) y los de siempre.
 @MainActor
 public final class Menus {
+    /// Para armar un ítem fuera de `p.menus` (los ítems llaman a `Puente.shared`).
+    public init() {}
+
+    /// ¿Algún ítem (o submenú) ya cierra la ventana con ⌘W?
+    static func tieneCerrar(_ items: [NSMenuItem]) -> Bool {
+        items.contains { i in
+            (i.action == #selector(NSWindow.performClose(_:)) && i.keyEquivalent == "w") || (i.submenu.map { tieneCerrar($0.items) } ?? false)
+        }
+    }
     /// Un ítem que la interfaz atiende con window.<App>.menu({accion}).
     public func item(_ titulo: String, _ accion: String, _ tecla: String = "", _ mods: NSEvent.ModifierFlags = .command) -> NSMenuItem {
         let i = NSMenuItem(title: Idioma.t(titulo), action: #selector(Puente.menuElegido(_:)), keyEquivalent: tecla)
@@ -557,6 +680,24 @@ public final class Menus {
         let completa = NSMenuItem(title: Idioma.t("Pantalla completa"), action: #selector(NSWindow.toggleFullScreen(_:)), keyEquivalent: "f")
         completa.keyEquivalentModifierMask = [.command, .control]
         return menu("Ver", items + (items.isEmpty ? [] : [NSMenuItem.separator()]) + [completa])
+    }
+}
+
+/// El WKWebView de la ventana: guarda las rutas de lo que se suelta en ella (la página recibe su `drop` como siempre).
+final class WebPieza: WKWebView {
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
+        MainActor.assumeIsolated { Puente.shared.recibirSoltados(urls) }
+        return super.performDragOperation(sender)
+    }
+}
+
+/// Franja invisible arriba de la ventana (con `barraTransparente`): arrastrar la mueve y el doble clic la agranda, como una
+/// barra de título normal.
+final class FranjaVentana: NSView {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+    override func mouseDown(with e: NSEvent) {
+        if e.clickCount == 2 { window?.performZoom(nil) } else { window?.performDrag(with: e) }
     }
 }
 

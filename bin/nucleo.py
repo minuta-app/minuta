@@ -21,7 +21,7 @@ import re
 import sys
 import tempfile
 
-VERSION = "0.7.0"
+VERSION = "0.7.1"
 MAXIMO_ENTRADA = 5 * 1024 * 1024
 _app = None
 _privadas = set()
@@ -156,8 +156,12 @@ def escribir_json(ruta, valor, indent=1):
 
 
 def ruta_en(base, relativa):
-    """La ruta absoluta de `relativa` dentro de `base`, o None si se sale (.., absolutas, enlaces hacia afuera)."""
+    """La ruta absoluta de `relativa` dentro de `base`, o None si se sale (.., absolutas, enlaces hacia afuera). `base` tiene que
+    ser una carpeta absoluta que existe: una vacía o relativa (p. ej. el "" de `carpetaActual` sin carpeta) daría la carpeta de
+    trabajo del script, así que también es None."""
     if not isinstance(relativa, str) or not relativa or "\0" in relativa or os.path.isabs(relativa):
+        return None
+    if not isinstance(base, str) or not base or "\0" in base or not os.path.isabs(base) or not os.path.isdir(base):
         return None
     base = os.path.realpath(base)
     ruta = os.path.realpath(os.path.join(base, relativa))

@@ -61,7 +61,10 @@ ID = r"[a-z0-9]+(?:-[a-z0-9]+)*"
 ID_MAYUSCULAS = r"[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*"
 CARPETA = r"[a-z][a-z0-9-]{0,30}"
 NOMBRE_PY = r"[A-Za-z_][A-Za-z0-9_]{0,40}"
-EXTRA = ("ruta", "sha256", "tamano", "archivo", "bytes", "origen")
+EXTRA = ("ruta", "sha256", "tamano", "origen")
+#: Los nombres viejos de «ruta» y «tamano» en un índice: solo se quitan cuando están EN VEZ de ellos (una plantilla puede
+#: tener su propio campo «archivo», que es contenido).
+ALIAS = (("archivo", "ruta"), ("bytes", "tamano"))
 #: Frases en español (claves de traducción). La interfaz hace Tp(r.frase) con lo que llega (no «plantilla»: un tipo con
 #: singular «plantilla» devuelve ahí el objeto descargado).
 ERRORES = {
@@ -183,12 +186,12 @@ def _clave(t, ident):
     return ident.lower() if t["id_re"] == ID_MAYUSCULAS else ident
 
 
-def _valido(t, m, obj):
+def _valido(t, m, obj, alias=()):
     """El objeto (recortado a sus campos) si el validador de la app acepta el objeto ENTERO y tiene id (y categoría con forma de
     carpeta, si el tipo la usa); si no, None. Lo que agrega el índice (ruta, huella, tamaño) o la app (origen) no es contenido."""
     if not isinstance(obj, dict):
         return None
-    obj = {k: v for k, v in obj.items() if k not in EXTRA}
+    obj = {k: v for k, v in obj.items() if k not in EXTRA and k not in alias}
     if not isinstance(obj.get("id"), str) or not re.fullmatch(t["id_re"], obj["id"]) or len(obj["id"]) > 60:
         return None
     if t["categoria"]:
@@ -222,7 +225,7 @@ def validar_indice(t, d):
     for x in lista if isinstance(lista, list) else []:
         if not isinstance(x, dict):
             continue
-        obj = _valido(t, m, x)
+        obj = _valido(t, m, x, tuple(viejo for viejo, nuevo in ALIAS if nuevo not in x))
         ruta = x.get("ruta", x.get("archivo"))
         tamano = x.get("tamano", x.get("bytes"))
         g = _ruta(t, ruta)
