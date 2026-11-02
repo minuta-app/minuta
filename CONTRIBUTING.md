@@ -20,7 +20,7 @@ Minuta es gratis y abierta, y la hacemos entre todos. Hay lugar para cualquiera,
 3. Corre `bash pruebas/correr.sh` (lo mismo que revisa GitHub en cada cambio). Si tocas `escritorio/`, también
    `HOME=$(mktemp -d) xvfb-run -a node pruebas/arranque.mjs` y `… pruebas/puente.mjs` desde `escritorio/` (Linux, con Playwright).
 4. Si tu cambio se nota (una función nueva, otra forma de hacer algo, otra pantalla), deja al día lo que lo cuenta: el
-   README, la página (`docs/`), las capturas y [`CHANGELOG.md`](CHANGELOG.md). Si no sabes bien qué tocar, dilo en el pull
+   README, la página (`docs/`), las capturas (`node herramientas/capturas.mjs`) y [`CHANGELOG.md`](CHANGELOG.md). Si no sabes bien qué tocar, dilo en el pull
    request y lo completamos nosotros.
 5. Abre un pull request contando qué cambia para quien usa Minuta y cómo lo probaste.
 
@@ -66,7 +66,7 @@ Al participar aceptas el [código de conducta](CODE_OF_CONDUCT.md).
 - **Code (with or without AI):** read [`AGENTS.md`](AGENTS.md) (works for humans and any coding AI), fork, branch, run
   `bash pruebas/correr.sh` and open a pull request. The code and its comments are in Spanish; UI text needs its English entry in
   `ui/idiomas/en.json`; never commit personal data.
-  If your change is visible, also update the README, the page (`docs/`), screenshots and `CHANGELOG.md`, or say so in the
+  If your change is visible, also update the README, the page (`docs/`), screenshots (`node herramientas/capturas.mjs`) and `CHANGELOG.md`, or say so in the
   pull request and we'll do it.
 - **Piece files:** `bin/nucleo.py`, `bin/ia.py`, `bin/transcribir.py`, `bin/catalogo.py`, `ui/host.js`, `ui/i18n.js`, `ui/tema.*`, `ui/componentes.*`,
   `app/Sources/PiezaHost/`, `app/Sources/PiezaActualizaciones/`, `app/Sources/PiezaCatalogo/` and, in `escritorio/src/`, `host.js`, `enchufe.js`,
