@@ -79,7 +79,7 @@ Al participar aceptas el [código de conducta](CODE_OF_CONDUCT.md).
 
 ## Aportar con los flujos de Pieza
 
-Aportamos con los flujos de Pieza: en Claude Code se instalan solos al abrir el repo; con otra IA, sigue `AGENTS.md`.
+Aportamos con los flujos de Pieza: en Claude Code, al abrir el repo te ofrece su marketplace (o instálalos como dice abajo); con otra IA, sigue `AGENTS.md`.
 
 Esta app es parte de la familia de [Pieza](https://github.com/pieza-app/pieza). Instala sus flujos (crear, revisar aportes y las
 reglas de seguridad) en tu IA:
