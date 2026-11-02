@@ -567,7 +567,17 @@
   const icoApartado = (t, a) => t.iconos_apartados?.[a.clave] || a.emoji;
   const icoRango = (t, i) => t.iconos_rangos?.[i] || t.emoji;
 
+  // Los logros se recorren nota por nota y la barra lateral los pide en cada pintada (cada tecla al buscar): se guardan hasta
+  // que cambian las notas (marcarCambioNotas). Quien los usa solo los lee, nunca los modifica.
+  let _cacheLogros = { v: -1, m: new Map() };
   function calcularLogros(notas, hasta) {
+    if (notas !== E.notas) return _calcularLogros(notas, hasta);
+    if (_cacheLogros.v !== _verNotas) _cacheLogros = { v: _verNotas, m: new Map() };
+    const k = hasta ? +hasta : 0;
+    if (!_cacheLogros.m.has(k)) _cacheLogros.m.set(k, _calcularLogros(notas, hasta));
+    return _cacheLogros.m.get(k);
+  }
+  function _calcularLogros(notas, hasta) {
     const est = LOGROS.map((def) => ({ def, progreso: 0, fecha: null, nota: null }));
     const orden = notas.filter((n) => !hasta || n.fecha <= hasta).sort((a, b) => a.fecha - b.fecha);
     const v = {}, racha = {}, mejor = (k, ok) => { racha[k] = ok ? (racha[k] || 0) + 1 : 0; v[k] = Math.max(v[k] || 0, racha[k]); };
@@ -1224,8 +1234,10 @@
   function tic() {
     clearInterval(_relojPanel);
     if (E.pan.fase !== "grabando") return;
-    _relojPanel = setInterval(() => { const r = $(".pn-reloj"); if (r) r.textContent = reloj(Date.now() - E.pan.desde); }, 1000);
+    _relojPanel = setInterval(ponerReloj, 1000);
   }
+  // El panel pasa casi todo el tiempo cerrado (oculto, pero vivo): ahí no se toca la pantalla y, al volver, se pone al día.
+  function ponerReloj() { if (document.hidden || E.pan.fase !== "grabando") return; const r = $(".pn-reloj"); if (r) r.textContent = reloj(Date.now() - E.pan.desde); }
   function reportarAlto() {
     if (!PANEL) return;
     requestAnimationFrame(() => {
@@ -3574,8 +3586,20 @@
     if (Object.hasOwn(SIMULAR, accion)) return SIMULAR[accion](datos, ctx);
   }
 
-  // Reloj: refresca "en 12 min" y vencimientos sin molestar
-  setInterval(() => { if (E.cargado && (PANEL || E.seccion === "agenda") && !document.activeElement?.matches?.("input,textarea")) render({ mantenerScroll: true }); }, 60000);
+  // Reloj: refresca "en 12 min" y vencimientos sin molestar. Oculto no pinta: al volver a la vista, una pintada lo pone al día.
+  let _refrescoPerdido = false;
+  function refrescarMinuto() {
+    if (!E.cargado || !(PANEL || E.seccion === "agenda") || document.activeElement?.matches?.("input,textarea")) return;
+    if (document.hidden) { _refrescoPerdido = true; return; }
+    _refrescoPerdido = false;
+    render({ mantenerScroll: true });
+  }
+  setInterval(refrescarMinuto, 60000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) return;
+    ponerReloj();
+    if (_refrescoPerdido) refrescarMinuto();
+  });
 
   // Navegador sin contenedor: datos de ejemplo
   setTimeout(() => {
