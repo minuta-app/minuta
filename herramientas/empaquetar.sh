@@ -30,6 +30,9 @@ tar -xzf "$PY_TGZ" -C "$APP/Contents/Resources"   # → Resources/python/bin/pyt
 for d in bin ui universos; do ditto "$RAIZ/$d" "$APP/Contents/Resources/minuta/$d"; done
 # app.json: la descripción de la app que leen las piezas de Pieza (bin/nucleo.py la busca junto a bin/).
 cp "$RAIZ/app.json" "$APP/Contents/Resources/minuta/app.json"
+# acciones.json: las acciones declaradas (probarIA, gimnasio, preguntar) que corre la app con las reglas de la pieza «host-mac»
+# (lo arma pieza.py; va junto a app.json).
+cp "$RAIZ/acciones.json" "$APP/Contents/Resources/minuta/acciones.json"
 find "$APP/Contents/Resources/minuta" -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true
 rm -f "$APP/Contents/Resources/minuta/bin/minuta-diarizar"* 2>/dev/null || true
 chmod +x "$APP/Contents/Resources/minuta/bin/"*.py

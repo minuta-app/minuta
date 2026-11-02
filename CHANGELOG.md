@@ -9,6 +9,18 @@ Lo que cambia para quien usa Minuta, en palabras simples. Las versiones anterior
   menos trabajo de fondo en reuniones largas. Al abrirlo, todo aparece al día. · *With the menu bar panel closed, Minuta no longer
   redraws the clock every second or the panel every minute while recording: less background work in long meetings. When you open
   it, everything is up to date.*
+- **Lo que le preguntas a tus reuniones (⌘K) ya no queda a la vista de otros programas:** antes la pregunta iba como argumento
+  del proceso; ahora va en un archivo privado. · *What you ask your meetings (⌘K) is no longer visible to other programs: the question
+  used to travel as a process argument; now it goes in a private file.*
+- **Nada se queda colgado:** preguntar, el Gimnasio, probar tu IA y el catálogo tienen un tiempo máximo y, al cerrar Minuta, se
+  detiene lo que siga corriendo. · *Nothing hangs: asking, the Gym, testing your AI and the catalog have a time limit, and closing
+  Minuta stops whatever is still running.*
+- **En Windows y Linux, el dictado del Gimnasio entiende igual que tus notas:** usa el mismo modelo, idioma y vocabulario, y ya no
+  escribe frases que whisper inventa en los silencios. · *On Windows and Linux, Gym dictation understands you like your notes do: it
+  uses the same model, language and vocabulary, and no longer writes phrases whisper makes up in silences.*
+- Actualizar sigue igual de simple y ahora usa el mismo actualizador probado de las apps de la familia Pieza; tus notas, cuentas
+  conectadas, permisos e idioma no cambian. · *Updating is just as simple and now uses the same proven updater as the Pieza family
+  of apps; your notes, connected accounts, permissions and language stay the same.*
 - **Ya no se pierde un «Gracias» de verdad:** antes, la transcripción borraba siempre «Gracias», «Thank you» y frases parecidas
   (whisper las inventa en los silencios), aunque alguien las hubiera dicho. Ahora solo se quitan si caen en silencio.
   · *A real «Thank you» is no longer lost: transcription used to always drop «Gracias», «Thank you» and similar phrases (whisper

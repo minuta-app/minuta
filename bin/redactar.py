@@ -69,7 +69,7 @@ NOTAS PRIVADAS DE {NOMBRE.upper()}:
         d = {"texto": s, "asunto": ""}
     r = {"texto": str(d.get("texto", "")).strip(), "asunto": str(d.get("asunto", "")).strip()}
     if not r["texto"]:
-        raise SystemExit("Claude devolvió un mensaje vacío")
+        raise SystemExit(f"{NOMBRE_IA} devolvió un mensaje vacío")
     r["fecha"] = time.strftime("%Y-%m-%dT%H:%M:%S")
     os.makedirs(MENSAJES, exist_ok=True)
     tmp = guardado(nota) + ".tmp"
@@ -103,7 +103,11 @@ def main():
     # Si se está redactando en segundo plano (reunión recién terminada), espera ese en vez de pedir otro.
     while not forzar and os.path.exists(marca) and time.time() - os.path.getmtime(marca) < 360 and not os.path.exists(guardado(nota)):
         time.sleep(1.5)
-    r = json.load(open(guardado(nota), encoding="utf-8")) if not forzar and os.path.exists(guardado(nota)) else redactar(nota, extra)
+    try:
+        r = json.load(open(guardado(nota), encoding="utf-8")) if not forzar and os.path.exists(guardado(nota)) else redactar(nota, extra)
+    except SystemExit as e:
+        # El procesador del host no muestra stderr: el error va en la salida, como en preguntar.py y gimnasio.py.
+        r = {"ok": False, "error": str(e.code or "No pude redactar el mensaje.")}
     json.dump(r, open(salida, "w", encoding="utf-8"), ensure_ascii=False)
 
 

@@ -56,6 +56,10 @@
         "to": "minuta/app.json"
       },
       {
+        "from": "../acciones.json",
+        "to": "minuta/acciones.json"
+      },
+      {
         "from": "../universos",
         "to": "minuta/universos",
         "filter": [

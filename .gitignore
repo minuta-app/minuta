@@ -38,3 +38,6 @@ dist/
 escritorio/node_modules/
 escritorio/vendor/
 capturas/
+
+# Pieza: archivos de la raíz que usa la app
+!/acciones.json
