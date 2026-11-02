@@ -17,7 +17,8 @@ Minuta es gratis y abierta, y la hacemos entre todos. Hay lugar para cualquiera,
 1. Lee [`AGENTS.md`](AGENTS.md): arquitectura, reglas y cómo se conectan las piezas. Sirve igual para personas y para tu IA
    (Claude Code, Codex, Gemini/Antigravity: `CLAUDE.md` y `GEMINI.md` solo apuntan a ese archivo).
 2. Haz un fork, una rama y tu cambio. La sección "Desarrollo" del [README](README.md#desarrollo) explica cómo correr la app.
-3. Corre `bash pruebas/correr.sh` (lo mismo que revisa GitHub en cada cambio).
+3. Corre `bash pruebas/correr.sh` (lo mismo que revisa GitHub en cada cambio). Si tocas `escritorio/`, también
+   `HOME=$(mktemp -d) xvfb-run -a node pruebas/arranque.mjs` y `… pruebas/puente.mjs` desde `escritorio/` (Linux, con Playwright).
 4. Si tu cambio se nota (una función nueva, otra forma de hacer algo, otra pantalla), deja al día lo que lo cuenta: el
    README, la página (`docs/`), las capturas y [`CHANGELOG.md`](CHANGELOG.md). Si no sabes bien qué tocar, dilo en el pull
    request y lo completamos nosotros.
@@ -27,7 +28,9 @@ Reglas que importan: código, comentarios y textos en español (todo texto nuevo
 **nada personal** en el repo (nombres, empresas, correos, notas reales: usa datos ficticios); y no romper el formato de las notas,
 porque hay gente con scripts que dependen de él.
 
-**Archivos de piezas:** `bin/nucleo.py`, `bin/ia.py`, `ui/host.js`, `ui/i18n.js`, `ui/tema.js`, `ui/tema.css`, `ui/componentes.js` y `ui/componentes.css` vienen de [Pieza](https://github.com/pieza-app/pieza) (están en `piezas.json`,
+**Archivos de piezas:** `bin/nucleo.py`, `bin/ia.py`, `bin/transcribir.py`, `bin/catalogo.py`, `ui/host.js`, `ui/i18n.js`, `ui/tema.*`, `ui/componentes.*`,
+`app/Sources/PiezaHost/`, `app/Sources/PiezaActualizaciones/`, `app/Sources/PiezaCatalogo/` y, en `escritorio/src/`, `host.js`, `enchufe.js`,
+`procesador.js`, `preload.js`, `vigilante.js`, `actualizaciones.js` y `catalogo.js` vienen de [Pieza](https://github.com/pieza-app/pieza) (están en `piezas.json`,
 con el aviso de la MPL-2.0). No los cambies aquí: propón el cambio en Pieza y llega a Minuta con «Pieza al día».
 
 ## Cómo revisamos
@@ -65,7 +68,9 @@ Al participar aceptas el [código de conducta](CODE_OF_CONDUCT.md).
   `ui/idiomas/en.json`; never commit personal data.
   If your change is visible, also update the README, the page (`docs/`), screenshots and `CHANGELOG.md`, or say so in the
   pull request and we'll do it.
-- **Piece files:** `bin/nucleo.py`, `bin/ia.py`, `ui/host.js`, `ui/i18n.js`, `ui/tema.js`, `ui/tema.css`, `ui/componentes.js` and `ui/componentes.css` come from [Pieza](https://github.com/pieza-app/pieza) (listed in `piezas.json`,
+- **Piece files:** `bin/nucleo.py`, `bin/ia.py`, `bin/transcribir.py`, `bin/catalogo.py`, `ui/host.js`, `ui/i18n.js`, `ui/tema.*`, `ui/componentes.*`,
+  `app/Sources/PiezaHost/`, `app/Sources/PiezaActualizaciones/`, `app/Sources/PiezaCatalogo/` and, in `escritorio/src/`, `host.js`, `enchufe.js`,
+  `procesador.js`, `preload.js`, `vigilante.js`, `actualizaciones.js` and `catalogo.js` come from [Pieza](https://github.com/pieza-app/pieza) (listed in `piezas.json`,
   MPL-2.0 notice included). Don't change them here: propose the change in Pieza and it arrives through «Pieza al día».
 - **Review:** everything goes through a pull request and a maintainer merges it. We check tests, privacy and the note format;
   We also check that the README, the page and the docs still describe the app as it is.
@@ -73,6 +78,8 @@ Al participar aceptas el [código de conducta](CODE_OF_CONDUCT.md).
 - **Security issues:** never in a public issue; report them privately as described in [SECURITY.md](SECURITY.md).
 
 ## Aportar con los flujos de Pieza
+
+Aportamos con los flujos de Pieza: en Claude Code se instalan solos al abrir el repo; con otra IA, sigue `AGENTS.md`.
 
 Esta app es parte de la familia de [Pieza](https://github.com/pieza-app/pieza). Instala sus flujos (crear, revisar aportes y las
 reglas de seguridad) en tu IA:
