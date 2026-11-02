@@ -19,10 +19,11 @@ Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromis
 
 | Ruta | Qué es |
 |---|---|
-| `app/Sources/Minuta/` | App Swift (SwiftPM, macOS 15). Barra de menú (`BarraMenu.swift`), ventana web (`VisorWeb.swift`), captura de audio y detección de reuniones (`Audio.swift`), modelo y flujo (`MinutaApp.swift`), alertas flotantes (`Alerta.swift`), coach en vivo (`Vivo.swift`), dictado del Gimnasio (`Dictado.swift`), perfil (`Perfil.swift`), catálogo e idiomas (`Catalogo.swift`), universos y juego (`Juego.swift`). `Visor.swift` es el visor SwiftUI antiguo (casi sin uso). |
+| `app/Sources/Minuta/` | App Swift (SwiftPM, macOS 15). Barra de menú (`BarraMenu.swift`), ventana web (`VisorWeb.swift`), captura de audio y detección de reuniones (`Audio.swift`), modelo y flujo (`MinutaApp.swift`), alertas flotantes (`Alerta.swift`), coach en vivo (`Vivo.swift`), dictado del Gimnasio (`Dictado.swift`), perfil (`Perfil.swift`), idiomas y lo propio del catálogo (`Idioma.swift`: `Idioma`, `CatalogoPublico`), universos y juego (`Juego.swift`), lo que usa de la pieza «host-mac» (`Pieza.swift`: `PiezaMinuta` y `Declaradas`). `app/Sources/PiezaHost/` (pieza «host-mac»), `app/Sources/PiezaActualizaciones/` (pieza «actualizaciones») y `app/Sources/PiezaCatalogo/` (pieza «catálogo») son piezas de Pieza, cada una en su target. `Visor.swift` es el visor SwiftUI antiguo (casi sin uso). |
 | `app/Sources/Diarizar/` | Binario `minuta-diarizar` (FluidAudio) que separa voces de la pista "Ellos". |
 | `app/Sources/Transcribir/` | Binario `minuta-transcribir`: whisper.cpp (xcframework oficial v1.8.3, Metal) con las **mismas opciones que `whisper-cli`**, para que el pipeline sea igual en Mac, Windows y Linux. |
-| `bin/` | Python: `procesar.py` (pipeline principal y prompt de notas), `perfil.py` (perfil compartido, `limpiar_nombre`, `hechos`), `corregir.py` (corrige una nota con la IA según una instrucción en palabras; guarda copia en `~/minuta/respaldos/` y lo aprendido en `personas_conocidas.json`, que `procesar.py` usa en las próximas notas), `limpiar_notas.py` (ordena nombres de participantes en notas viejas), `redactar.py` (mensaje para participantes), `gimnasio.py`, `preguntar.py` (⌘K), `semana.py`, `universo.py` (creador de universos), `logros.py`, `recalcular_interrupciones.py`. |
+| `bin/` | Python: `procesar.py` (pipeline principal y prompt de notas, sobre la pieza «transcribir»), `perfil.py` (perfil compartido, `limpiar_nombre`, `hechos`, `NOMBRE_IA` y `ejecutar_ia` sobre la pieza «ia»), `nucleo.py`, `ia.py`, `transcribir.py` y `catalogo.py` (piezas de Pieza: ver «Piezas»), `universo_formato.py` e `idioma_formato.py` (los validadores de Minuta para la pieza «catálogo»; los mismos archivos que `minuta-catalogo/herramientas/`), `corregir.py` (corrige una nota con la IA según una instrucción en palabras; guarda copia en `~/minuta/respaldos/` y lo aprendido en `personas_conocidas.json`, que `procesar.py` usa en las próximas notas), `limpiar_notas.py` (ordena nombres de participantes en notas viejas), `redactar.py` (mensaje para participantes), `gimnasio.py` y `preguntar.py` (⌘K; los dos son acciones declaradas), `dictado.py` (dictado del Gimnasio en Windows/Linux, con la pieza «transcribir»), `semana.py`, `universo.py` (creador de universos), `logros.py`, `recalcular_interrupciones.py`. |
+| `app.json`, `piezas.json`, `acciones.json` | **Pieza** (ver «Piezas»): `app.json` describe la app para las piezas (id, nombre, plataformas, las acciones que solo corren un script en `acciones` y las de las piezas que no usa en `sin_acciones`); `piezas.json` lo escribe `pieza.py` (versión y huella de cada archivo copiado); `acciones.json` también (las acciones declaradas que corren los hosts: va dentro de las apps junto a `app.json`). |
 | `ui/` | Interfaz web única (`app.js` + CSS) que usan la ventana y el panel de la barra de menú. `demo.json` = datos ficticios para la vista previa en navegador. `idiomas/en.json` = inglés incluido. |
 | `universos/` | Los 4 universos incluidos (cine, starwars, harrypotter, marvel). El resto está en el catálogo. |
 | `herramientas/` | `revisar_privacidad.sh` (auditoría antes de commitear) y `empaquetar.sh` (arma `dist/Minuta.app` + `dist/Minuta-macOS.zip` y su `.sha256`). |
@@ -36,18 +37,23 @@ Tiene gamificación con "universos" (Star Wars, Marvel…), agenda con compromis
 | `instalar.ps1` | Instalador de un comando para Windows (`irm … \| iex`). `instalar.sh` sirve para Mac y Linux. |
 | `.claude/agents/` | Agentes especializados (ver abajo). |
 
-Repos relacionados: catálogo público `minuta-app/minuta-catalogo` (universos/, idiomas/, herramientas/).
+Repos relacionados: catálogo público `minuta-app/minuta-catalogo` (`temas/<categoria>/<id>.json`, `idiomas/comunidad/<codigo>.json`, sus índices con huella y `herramientas/`; `universos/` e `idiomas/<codigo>.json` son el formato de antes, generado para Minuta ≤ 0.3.1).
 
 ## Qué lleva la app adentro (sin Homebrew)
 
 `herramientas/empaquetar.sh` (lo usan `build.sh` y la Release) arma `Minuta.app` con: la app, `minuta-transcribir` + `whisper.framework`, `minuta-diarizar` y un Python portátil
-(python-build-standalone 3.13, verificado por SHA-256) en `Contents/Resources/python`, y una copia de `bin/`, `ui/` y `universos/`
+(python-build-standalone 3.13, verificado por SHA-256) en `Contents/Resources/python`, y una copia de `bin/`, `ui/`, `universos/` y `app.json`
 en `Contents/Resources/minuta`. **Código vs. datos:** `Temas.base` (`~/minuta`) son los datos; `Temas.recursos` es el código: `~/minuta` si es
-un checkout git con `ui/` (desarrollo), si no `Contents/Resources/minuta`. Los scripts lo reciben en `MINUTA_RECURSOS` (`perfil.RECURSOS`).
+un checkout git con `ui/` (desarrollo), si no `Contents/Resources/minuta`. Los scripts lo reciben en `MINUTA_RECURSOS`; `perfil.RECURSOS` es `nucleo.recursos()`: la carpeta del `app.json` junto a `bin/` (y `MINUTA_RECURSOS` solo si el script vive fuera de ella).
 Firma ad hoc con requisito por identificador (`app.minuta.mac`), así los permisos sobreviven a cada actualización. La app lanza los scripts con ese Python y
-les pasa `MINUTA_HERRAMIENTAS` (= `Contents/MacOS`); `procesar.herramienta()` busca ahí, luego en `bin/`, luego en el sistema.
+les pasa `MINUTA_HERRAMIENTAS` (= `Contents/MacOS`); `transcribir.herramienta()` (pieza) busca ahí, luego en `bin/`, luego en el sistema.
 La conversión de audio usa `afconvert` (viene con macOS); ffmpeg solo se usa en Windows/Linux. Los scripts solo usan la biblioteca
-estándar de Python: no agregues dependencias de pip. `build.sh` se niega a instalar si hay una grabación o un procesamiento en curso.
+estándar de Python: no agregues dependencias de pip.
+**Lo que escribe la persona nunca va como argumento** de un proceso (se ve en la lista de procesos). El vocabulario
+(`vocabulario.txt`) llega al transcriptor en un archivo temporal 0600 que se borra al terminar (pieza «transcribir», `transcribir.comando`):
+`minuta-transcribir --prompt-archivo <ruta>` en Mac y, con `whisper-cli`, su archivo de argumentos oficial (`whisper-cli @<ruta>`,
+una opción por línea; las rutas en la página de códigos del sistema en Windows y el prompt en UTF-8). La prueba
+`VocabularioPrivado` lo revisa. `build.sh` se niega a instalar si hay una grabación o un procesamiento en curso.
 
 ## Primera vez, respaldo y actualizaciones (`Bienvenida.swift`)
 
@@ -62,19 +68,31 @@ estándar de Python: no agregues dependencias de pip. `build.sh` se niega a inst
   SHA-256 desde Hugging Face) → notas (carpeta nueva, carpeta existente o `git clone` de su repo) → respaldo opcional → permisos → universo.
 - **Respaldo:** `Respaldo.crearRepo` crea un repo **privado en la cuenta del usuario** (GitHub o GitLab) con su token; el token va al
   Llavero y git lo recibe como encabezado en memoria (`-c http.extraHeader`), nunca en disco. Tras cada nota: `Respaldo.sincronizar()`.
-- **Actualizaciones:** `Actualizaciones.revisar` al abrir y cada 6 h. Instalación de desarrollo (`~/minuta/.git` existe): `git fetch` y,
-  al aceptar, `git pull` + `build.sh` + reabrir. Instalación normal: GitHub Releases (`Minuta-macOS.zip` + `.sha256`); un script espera a que la app
-  cierre, reemplaza `Minuta.app` (deja `.anterior` si falla) y la reabre. **Publicar versión:** ver "Publicar una versión" abajo. Los datos del usuario viven fuera de `Minuta.app`, por eso actualizar no borra nada.
+- **Actualizaciones:** pieza «actualizaciones» (`Actualizaciones.configurar` en `AppModel.init`; `actualizaciones.js` en Electron), al abrir y
+  cada 6 h; la interfaz recibe `actualizacionRevisada` y `actualizacionProgreso` (`texto` en español con `valores`; `deActualizacion` y
+  `llenar` en `app.js`). Instalación de desarrollo en Mac: `build.sh` deja la ruta del checkout en `~/minuta/desarrollo` y la pieza hace
+  `git fetch`/`git pull` + `herramientas/empaquetar.sh` + reemplaza `~/Applications/Minuta.app` y la abre; en Windows/Linux (`~/minuta/.git`)
+  sigue el `git pull` + reabrir de `bienvenida.js`. Instalación normal: GitHub Releases (`Minuta-macOS.zip`, `Minuta-Windows.exe`,
+  `Minuta-Linux.AppImage`, `Minuta-Linux.tar.gz`, cada uno con su `.sha256`); un script espera a que la app cierre, la reemplaza (deja
+  `.anterior` si falla) y la reabre. Nunca con una grabación, unas notas o un script en curso. **Publicar versión:** ver "Publicar una versión" abajo. Los datos del usuario viven fuera de `Minuta.app`, por eso actualizar no borra nada.
 
 ## Windows y Linux (`escritorio/`)
 
-- Electron 44 con la misma interfaz y el mismo Python. `src/main.js` = AppModel + BarraMenu + VisorWeb + Alerta de Mac: estado `M` y `ACCIONES`
-  (un caso por cada `host.enviar`). **Una acción nueva en Swift también va en `ACCIONES`** (y al revés). La UI detecta `window.MINUTA_HOST`
-  = `"windows"`/`"linux"` (constante `ESCRITORIO` en app.js: ventana rectangular, sin la forma recortada; textos sin "Mac").
+- Electron 44 con la misma interfaz y el mismo Python, sobre la pieza «host-escritorio» (`src/host.js`, `enchufe.js`, `procesador.js`,
+  `preload.js`, `vigilante.js`): el host trae la ventana del visor (sin marco: `VentanaSinMarco`), el protocolo `minuta://`, el puente con
+  guardas, los permisos, el menú, el procesador con límite de tiempo, `host.secretos` y `host.notificaciones`, y corre las acciones
+  declaradas. `src/main.js` = AppModel + BarraMenu + Alerta de Mac: estado `M`, el panel de la bandeja (con su propio puente, las mismas
+  guardas) y `ACCIONES` (lo propio; se registran con `host.acciones.registrar` y reciben `msg.datos`). **Una acción propia nueva en Swift
+  también va en `ACCIONES`** (y al revés); una que solo corre un script va en `app.json` → `acciones`. El preload de la pieza expone
+  `window.minutaEscritorio` y `window.MINUTA_HOST` = `"windows"`/`"linux"`, que host-ui lee (`host.esEscritorio` → constante `ESCRITORIO`
+  en app.js: ventana rectangular, sin la forma recortada; textos sin "Mac").
+- Para no perder nada al actualizar: lo que guarda Chromium sigue en la carpeta de siempre (`userData`; en Windows ahí está la llave de
+  safeStorage), los tokens en `~/minuta/.tokens` con las mismas cuentas, el tamaño de la ventana pasa de `.ventana.json` a `ventana.json`.
 - Grabación: ventana oculta `grabadora.html` (AudioWorklet a 16 kHz) → `yo.grabacion.wav`; sistema: Windows `getDisplayMedia` + loopback,
   Linux `parec` (`@DEFAULT_MONITOR@`). `procesar.py` acepta `.caf` (Mac) o `.grabacion.wav`. Separación de voces: sherpa-onnx (`voces-*.onnx`).
 - Detección de reuniones: registro de uso del micrófono (Windows) / `pactl list source-outputs` (Linux). Calendario: dirección iCal secreta
-  (Google/Outlook) en Preferencias, cifrada con safeStorage. Recordatorios: abre un `.ics`. Dictado del Gimnasio: whisper local.
+  (Google/Outlook) en Preferencias, cifrada con safeStorage. Recordatorios: abre un `.ics`. Dictado del Gimnasio: `bin/dictado.py` con la
+  pieza «transcribir» (el mismo whisper, modelo, idioma y vocabulario que las notas).
 - `escritorio/herramientas/preparar.sh linux|windows` arma `vendor/` (Python portátil, whisper-cli compilado con zig —estático, sin DLLs de
   Visual C++, glibc 2.27+—, sherpa-onnx). Todo con huella SHA-256 fija.
 - Empaquetar (desde Linux, sin Wine): `npx electron-builder --linux AppImage tar.gz`; `npx electron-builder --win dir && bash herramientas/instalador-windows.sh`
@@ -106,18 +124,76 @@ aparece solo: se abre únicamente cuando la persona lo pide (⋯ → Enviar come
 `~/minuta` es a la vez el checkout del repo **y** la carpeta de datos. El `.gitignore` es una lista blanca: solo se versiona lo listado.
 - `perfil.json` (nombre, rol, idiomas, carpeta de notas) · `config.json` (universo elegido) · `ajustes.json` (avisos) · `categorias.json` · `personas_conocidas.json` (correcciones sobre personas) · `respaldos/` (copias antes de corregir)
 - `correcciones.json`, `vocabulario.txt`, `votos.json`, `historial.jsonl`, `practicas.jsonl`, `mensajes/` (borradores redactados por nota)
-- `temas/` (universos descargados o creados; ganan sobre los incluidos con el mismo id) · `idiomas/` (idiomas descargados) · `catalogo/` (caché de índices)
-- `grabaciones/<fecha>/` (audio .caf, JSON de whisper, `hablantes.json`, `meta.json`, `procesar.log`) · `models/` (whisper)
+- `temas/` (universos descargados o creados; ganan sobre los incluidos con el mismo id) · `idiomas/` (idiomas descargados) · `catalogo/` (el último índice validado de cada tipo: id, ruta, tamaño y huella; lo escribe la pieza «catálogo»)
+- `grabaciones/<fecha>/` (audio .caf, `yo.segmentos.json`/`ellos.segmentos.json` con `{desde, hasta, texto}` en segundos —en grabaciones de antes, el JSON de whisper `yo.json`/`ellos.json`—, `hablantes.json` con `{hablante, ini, fin}` del separador de voces, `meta.json`, `procesar.log`) · `models/` (whisper y el detector de voz; la pieza «transcribir» los busca aquí por `app.json` → `"transcribir": {"modelos": "~/minuta/models"}`)
+- `ia-herramientas.json` (lo que aprendió la pieza «ia» de tu versión de Claude)
 - Notas: carpeta `carpeta_notas` del perfil (`.md` con frontmatter: fecha, hora, tipo, plataforma, correos, métricas, `participantes` como lista JSON de nombres limpios).
 
 ## Cómo se conectan las piezas
 
-- **JS ↔ Swift:** la UI llama `host.enviar(accion, datos)` → `webkit.messageHandlers.minuta` → `switch` en `VisorWeb.swift` (ventana) o `BarraMenu.swift` (panel). Swift responde con `window.Minuta.<funcion>(json)` (`llamarFuncion` / `llamar`). Al agregar una acción: caso en Swift + manejador en `window.Minuta` + modo `E.plataforma === "web"` simulado para la vista previa.
-- **IA del usuario:** los scripts nunca llaman a `claude` directo: usan `perfil.ejecutar_ia(prompt, timeout, cwd)`, que arma el comando según `perfil.ia` (`claude -p`, `codex exec … -o archivo -`; para Gemini, `agy -p` de Antigravity CLI —prompt como argumento o en un archivo si es largo— o el `gemini -p` antiguo) y amplía el PATH (Homebrew, npm, nvm, `~/.local/bin`). Mensajes al usuario con `NOMBRE_IA`, no "Claude". Guía pública para instalarlas: `docs/ia.html`.
-- **Swift → Python:** `AppModel.ejecutar` / `correrScriptJSON(script, args)`; el último argumento siempre es la ruta del JSON de salida. Los scripts leen el perfil con `from perfil import …`.
+- **JS ↔ apps (el enchufe de Pieza):** la UI llama `host.enviar(accion, datos)` (pieza «host-ui») → mensaje `{accion, datos}`. Cada acción es de uno de tres tipos:
+  **declarada** (solo corre un script: `app.json` → `acciones` o la `pieza.json` de una pieza; `pieza.py acciones .` arma `acciones.json`),
+  **del host** (en Electron: `listo`, `config`, `abrirEnlace`, `copiar`) o **propia** (lo nativo de Minuta). En Mac llega a
+  `webkit.messageHandlers.minuta` → `switch` en `VisorWeb.swift` (ventana) o `BarraMenu.swift` (panel), que leen `cuerpo["datos"]`; lo que
+  no es un caso propio va a `Declaradas.correr` (`Pieza.swift`: valida los datos con `Enchufe`, corre el script con `Procesador` y su
+  límite, responde con el eco al mismo WKWebView). En Windows/Linux va a `window.minutaEscritorio` → el puente del host (visor) o el del
+  panel → `ACCIONES` (registradas) → lo del host → lo declarado. Respuestas: `window.Minuta.<funcion>(json)` (`llamarFuncion` / `llamar`).
+  Al agregar una acción que solo corre un script: declárala en `app.json` (con `entrada: "archivo"`: lo que escribe la persona nunca va como
+  argumento), corre `pieza.py acciones .` y listo en los dos sistemas. Una propia: caso en Swift + `ACCIONES`. Siempre: manejador en
+  `host.responder({…})` de `app.js` + su respuesta de vista previa en `SIMULAR` (al final de `app.js`). `pruebas/contrato.py` lo revisa.
+- **IA del usuario:** los scripts nunca llaman a `claude` directo: usan `perfil.ejecutar_ia(prompt, timeout, cwd)`, que llama a `ia.ejecutar` de la pieza «ia» con la IA de `perfil.json` → `ia` (siempre explícita: Minuta no usa la config de la pieza). La pieza arma el comando (`claude -p --strict-mcp-config --disallowedTools "*"` y `--tools ""` si lo conoce, `codex exec -s read-only … -o archivo -`; para Gemini, `agy -p` de Antigravity CLI —el prompt siempre en un archivo, nunca como argumento— o el `gemini -p` antiguo) y amplía el PATH (Homebrew, npm, nvm, `~/.local/bin`). Corre en una carpeta temporal vacía, sin las variables `MINUTA_*` y, con Claude, sin su memoria (y con `--safe-mode`/`--setting-sources user` si los conoce). `MINUTA_MODELO` elige el modelo de Claude. Antes pregunta al CLI qué opciones conoce (`ia._soporta`, `--help` una vez por versión, sin las variables `MINUTA_*`): si no conoce `--strict-mcp-config` o `--disallowedTools`, **nunca** se corre sin ellas (`ia.VersionVieja`; `perfil.ejecutar_ia` devuelve el código 3 de siempre con «Actualiza … para usarla con Minuta»). Probar la IA (bienvenida) es la acción declarada `probarIA` de la pieza «ia» (`bin/ia.py probar <entrada.json {ia}> <salida.json>`, límite 150 s): las mismas protecciones que una nota; si responde, la interfaz guarda la IA con `perfil`. Mensajes al usuario con `NOMBRE_IA`, no "Claude". Guía pública para instalarlas: `docs/ia.html`.
+- **Swift → Python:** `correrScriptJSON(script, args)` y `conEntrada` (AppModel) van por el `Procesador` de la pieza (límite de tiempo, sin
+  variables `MINUTA_*` de afuera salvo `MINUTA_HERRAMIENTAS`, `MINUTA_RECURSOS` y `MINUTA_DATOS`); el último argumento siempre es la ruta del
+  JSON de salida. Las notas, el resumen semanal y el creador de universos escriben un registro y tardan lo que tardan: siguen con
+  `AppModel.ejecutar` (Electron: `ejecutar`). Los scripts leen el perfil con `from perfil import …`.
 - **Formato de nota:** el prompt de `procesar.py` define secciones y marcadores (`### Próximos pasos`, `## Personas`, `## Feedback para …`, `**Veredicto:**`, `**Puntajes:**`, `**Hábito para la próxima:**`, `**Decisión:**`, `**Pendiente:**`, `🔧`, `✅`, `→ Prueba:`). **Los marcadores van siempre en español** aunque la nota esté en otro idioma: `app.js`, `redactar.py`, `semana.py` y `preguntar.py` los usan para leer.
-- **Universos:** JSON de solo datos (rangos ×10, apartados claridad/escucha/preguntas/cierre ×10, logros, íconos, `estilo`). `Temas.paraJS()` une incluidos + `~/minuta/temas`. Se descargan con `Catalogo.descargarUniverso` (valida antes de guardar).
-- **Idiomas:** el español es el idioma del código. `traducirDOM()` en `app.js` traduce el DOM ya pintado con `textos` (claves = texto en español, `{n}` números, `{x}` texto libre) y `palabras` (fechas). En Swift: `Idioma.t("…")` e `Idioma.f("… {x} …", valor)`.
+- **Universos:** JSON de solo datos (rangos ×10, apartados claridad/escucha/preguntas/cierre ×10, logros, íconos, `estilo`; formato en `bin/universo_formato.py`). `Temas.paraJS()` une incluidos + `~/minuta/temas`. Se descargan con la pieza «catálogo» (tipo `temas`): `Catalogo.listar`/`descargar` (Swift) y `catalogo().listar`/`descargar` (Electron) bajan solo de `raw.githubusercontent.com/minuta-app/minuta-catalogo/main/`, sin redirecciones, y comparan tamaño y SHA-256 con el último índice validado; `bin/catalogo.py` lo vuelve a validar con `universo_formato.validar` y lo guarda. La interfaz sigue pidiendo `catalogo {tipo: universos|idiomas}`, `descargarUniverso` y `descargarIdioma`; la lista llega con cada universo entero y `paraGaleria()` arma la vista previa.
+- **Transcribir:** pieza «transcribir». `procesar.transcribir_pista` → `transcribir.transcribir(wav, idioma, modelo, vocabulario)` da `{desde, hasta, texto}` (segundos) sin marcas, inventos ni bucles; lo propio de Minuta (`corregir`, `partir_por_silencios`, `quien`, eco, turnos, métricas) trabaja sobre esos segmentos con `desde`/`hasta`, y `transcribir.limpiar(segs, energía)` quita lo que cae en silencio después de partir. El formato de las notas no cambia.
+- **Idiomas:** el español es el idioma del código. `traducirDOM()` en `app.js` traduce el DOM ya pintado con la pieza «i18n» (`textos`: claves = texto en español, `{n}` números, `{x}` texto libre; `palabras`: fechas). El paquete que manda la app en `cargar` (o el que carga la vista previa) pasa por `i18n.usar`, que lo valida. Los atributos (`title`, `aria-label`, `placeholder`) dentro de una zona de `NO_TRADUCIR` y el `placeholder` de un `textarea` sí se traducen (`noTraducirAtributos` de la pieza); solo `.notas`, `.turnos` y lo marcado `[data-sin-traducir]` (la pieza lo cuenta sola) quedan sin tocar. En Swift: `Idioma.t("…")` e `Idioma.f("… {x} …", valor)`.
+
+## Piezas (de [Pieza](https://github.com/pieza-app/pieza))
+Minuta usa piezas de Pieza, la base de la familia de apps: código probado que se copia a la app (modelo «copiar y adueñarse»).
+
+| Pieza | Versión | Archivos | Qué usa Minuta |
+|---|---|---|---|
+| `nucleo` | 0.7.0 | `bin/nucleo.py` | `app.json` y `recursos()` (dónde está el código: `perfil.RECURSOS`). La pieza `ia` lo necesita para el prefijo `MINUTA_` y los temporales. |
+| `host-ui` | 0.2.0 | `ui/host.js` | El puente: `host = PiezaHost.crearHost({nombre: "minuta", global: "Minuta", simular})`, mensaje `{accion, datos}`, `host.responder({…})` deja las respuestas en `window.Minuta`, `host.plataforma`/`esWeb`/`esEscritorio` (en vez de leer `window.MINUTA_HOST`). La vista previa del navegador es `simular()`/`SIMULAR`. |
+| `i18n` | 0.3.1 | `ui/i18n.js` | `tr` y `traducirDOM` (ver «Idiomas»), con `crear({noTraducir: NO_TRADUCIR, noTraducirAtributos: ".notas, .turnos"})` (`[data-sin-traducir]` ya cuenta solo). |
+| `tema` | 0.2.1 | `ui/tema.css`, `ui/tema.js` | Los tokens (`--fondo`, `--panel`, `--texto`, `--texto-suave`, `--linea`, `--acento`, `--sobre-acento`, `--radio-chico`…) y `data-pz-modo="claro\|oscuro"` en `<html>`. Minuta no ofrece «Apariencia»: cada universo escribe sus colores **directo en los tokens** y su modo con `apariencia.aplicar(e.modo)` (`aplicarTema`). Lo propio (`--fondo2`, `--acento2`, `--acento-t`, `--patron`…) sigue en `app.css`. El universo que se elige en la galería es `data-universo` . Sin «Apariencia», `tema` no va en `app.json` → `config` (`piezas.json` → `tema` → `"sin_config": ["tema"]`). |
+| `componentes` | 0.3.0 | `ui/componentes.js`, `ui/componentes.css` | Los avisos (`toast()` → `ui.aviso`, que traduce la frase ya armada con `tr`; en cola, sobre `#toast` con el color del universo) y el foco de las ventanas: cada `.galeria-caja` lleva `role="dialog" aria-modal="true"`; la pieza deja el foco adentro (Tab), al abrir lo pone en el título (nunca en «Borrar»: un Enter apurado no borra), lo devuelve al cerrar y Esc llama `cerrarArriba()` (el orden de qué se cierra primero). Con `crear({mantenerCampos: true})`, si una pintada se lleva el campo donde se escribe (buscador, ⌘K, Gimnasio, título del panel…), el foco y el cursor vuelven donde estaban (sin lista propia de campos en `render`). Las filas de IA, actualizaciones, Acerca de y comentarios de la pieza no se usan todavía (ver abajo). |
+| `transcribir` | 0.2.0 | `bin/transcribir.py` | `transcribir` (whisper con el vocabulario por archivo privado), `energia`/`rms`, `limpiar`, `segmentos_de`, `modelo_elegido`, `herramienta` (también para el separador de voces), `ErrorTranscribir`. Los modelos siguen en `~/minuta/models` (no en `<datos>/modelos`): `app.json` → `"transcribir": {"modelos": "~/minuta/models"}`. `limpiar` con la energía de la pista quita lo inventado solo si cae en silencio (un «Gracias.» dicho de verdad queda); `<pista>.segmentos.json` es lo que dio whisper, antes de limpiar. El binario `minuta-transcribir` y la descarga de modelos (Swift/Electron) siguen en la app. |
+| `catalogo` | 0.2.0 | `bin/catalogo.py`, `app/Sources/PiezaCatalogo/Catalogo.swift`, `escritorio/src/catalogo.js` | Universos (tipo `temas`) e idiomas del catálogo (`app.json` → `catalogo`), con huella obligatoria. Validadores de Minuta: `universo_formato.py`, `idioma_formato.py`. Swift: `Catalogo.configurar` en `AppModel.init` con `AppModel.conEntrada`; Electron: `catalogo()` en `main.js` con `conEntrada`. El error viene en `r.frase` (se traduce con `Idioma.t`/`t`). Sin conexión, la galería muestra la última lista validada (`sin_conexion: true`, «sin conexión · la lista de la última vez»); descargar pide conexión. Los idiomas siguen en `idiomas/comunidad/` (no `"categoria": false`): `idiomas/<codigo>.json` del catálogo es el formato de antes, que aún usan las versiones ≤ 0.3.1. |
+| `ia` | 0.6.3 | `bin/ia.py` | La IA de la persona: `ejecutar` (detrás de `perfil.ejecutar_ia`), `IAS`, `nombre`, `comando`, `VersionVieja` y `probar` (`ia.py probar <entrada {ia}> <salida>`, desde los hosts). Lo propio de Minuta (prompts, `NOMBRE_IA`, `MINUTA_MODELO`, el código 3 «Actualiza…» que esperan los scripts) sigue en `perfil.py`. En la bienvenida, `probarIA` es su acción declarada (límite 150 s) e `iaProbada` trae `codigo` (`no_instalada` muestra «No está instalada»). `listaIA` no se usa (`sin_acciones`). |
+| `host-escritorio` | 0.2.0 | `escritorio/src/host.js`, `enchufe.js`, `procesador.js`, `preload.js`, `vigilante.js` | La app de Windows y Linux: ventana del visor, protocolo `minuta://` (más `host.medios.registrar("app")` para la grabadora y la alerta), puente con guardas, permisos (`media`, `display-capture`, `clipboard-sanitized-write`, `notifications`, solo para páginas propias), menú, `procesador` (límite de tiempo, entorno limpio; Minuta le suma `MINUTA_HERRAMIENTAS` y el PATH de la IA), acciones declaradas, `host.secretos("tokens", {archivo: ".tokens"})`, `host.notificaciones` y salir sin dejar nada corriendo. Lo que no calza y se resolvió en `main.js`: la ventana sin marco (`VentanaSinMarco` por el `electron` que recibe el host), `userData` de siempre (se vuelve a poner después de `host.iniciar()`), la ventana que se esconde al cerrarla y `before-quit`, el panel con su propio puente. |
+| `host-mac` | 0.2.0 | `app/Sources/PiezaHost/` | Lo que calza con una app de barra de menú con ventana propia, en `Pieza.swift`: `Host.configurar` (app.json, `~/minuta`, el código de `Temas.recursos`, el Python de la app), `Idioma.fuente` (= `idioma_ui` de `perfil.json`), `Procesador` (scripts con límite; se cortan al salir), `Enchufe` (acciones declaradas, en `Declaradas`) y `Secretos` (el token del respaldo, servicio «Minuta · respaldo de notas»). **No** usa `Host.arrancar` ni `Puente` (ventana, menús, puente): ver «No adoptado todavía». |
+| `actualizaciones` | 0.3.0 | `app/Sources/PiezaActualizaciones/`, `escritorio/src/actualizaciones.js` | Releases con su `.sha256` (los nombres de siempre) y, en Mac, la instalación de desarrollo (`~/minuta/desarrollo`, que escribe `build.sh`). Minuta atiende `buscarActualizacion`/`actualizar` (el panel abre la ventana; nunca con algo grabando, procesando o corriendo); en Windows/Linux, la de desarrollo (git) sigue en `bienvenida.js`. |
+
+- **Los datos no se mueven:** siguen en `~/minuta` (`perfil.BASE`, `perfil.json`, `config.json`…). `app.json` → `datos` es
+  `{"carpeta": "~/minuta"}`: lo que guardan las piezas (`temas/`, `idiomas/`, `catalogo/` del catálogo) queda ahí, donde siempre.
+  Minuta **no** usa `nucleo.config()` ni `guardar_config()` (`~/minuta/config.json` es el universo elegido: nunca lo escribas con
+  la pieza); la IA elegida se le pasa siempre a la pieza (`ia=`). `pruebas/test_python.py` (`Piezas`) revisa que no se cree
+  ninguna otra carpeta de datos.
+- **No edites a mano los archivos de una pieza.** Se actualizan con «Pieza al día» (`.github/workflows/pieza-al-dia.yml`, una vez por
+  semana abre un PR o un issue) o con `python3 <pieza>/herramientas/pieza.py actualizar .`. Si hay que cambiar algo, el cambio va
+  primero a Pieza (`pieza.py diferencias . <pieza>` lo muestra) y vuelve desde allá; `pieza.py estado .` dice si algo quedó distinto.
+- `app.json` va dentro de las apps (`herramientas/empaquetar.sh` y `extraResources` de `escritorio/package.json`): `bin/nucleo.py`
+  lo busca junto a `bin/`; sin él ningún script arranca. `acciones.json` va al lado (los dos hosts lo leen de adentro de la app, nunca de
+  afuera). `.gitignore` es una lista blanca: `app.json`, `piezas.json` y `acciones.json` están en ella.
+- No adoptado todavía:
+  - `bienvenida`: la de Minuta ocupa la ventana entera con el arte de cada universo (la pieza va en una caja, `ui.envolver`), sus pasos
+    tienen pantallas internas (carpeta nueva / existente / `git clone`, crear el repo del respaldo, la descarga del modelo con avance,
+    permisos distintos en Mac y en Windows/Linux) y el primer uso se decide con `perfil.json` (`Perfil.falta`), no con
+    `config.bienvenida`. El idioma va primero igual que en la pieza (`pantallaIdioma()`), y la IA se prueba con `probarIA` de la pieza.
+  - La ventana y el puente de `host-mac` (`Host.arrancar`, `Puente`): Minuta es una app de barra de menú (`LSUIElement`, sin Dock ni
+    menú) con una ventana sin borde que dibuja la forma de cada universo (`VentanaForma`, `WebVentana` con zonas de arrastre) y que se
+    abre cuando hace falta, más el panel con su propio WKWebView: el host abre su ventana con barra de título al arrancar, se pone en el
+    Dock y responde solo a su WKWebView. Pendiente en Pieza (ver el PR de esta migración).
+  - `comentarios` (Minuta publica también con la cuenta de GitHub del respaldo; su formulario sigue propio hasta que exista esa pieza)
+    y `ui.filaActualizacion` (el aviso de actualización de Minuta es su propio banner).
+  - Avisos del sistema en Mac (`Notificaciones` de la pieza): los de Minuta llevan botones («Grabar ahora», «Detener y generar notas»)
+    y su propio delegado; siguen en `MinutaApp.swift`. En Electron sí van por `host.notificaciones`.
+- Lo de las piezas que Minuta **no** adoptó en la interfaz: la clase `.pz-boton` (en Minuta `.boton` es un botón de ícono de 34 px) y
+  `ui.dialogo` (sus ventanas `.galeria`/`.galeria-caja` tienen el diseño de cada universo).
 
 ## Reglas al cambiar cosas
 
@@ -128,13 +204,14 @@ aparece solo: se abre únicamente cuando la persona lo pide (⋯ → Enviar come
 - Universos y paquetes de idioma son datos: nunca agregues campos que se ejecuten o se inyecten como HTML sin `esc()`.
 - **Seguridad** (ver `SECURITY.md`): los universos entran a la interfaz por `limpiarUniverso()` (textos sin HTML, estilo solo con
   valores CSS esperados) y `ui/index.html` tiene una CSP sin código en línea: no agregues `onclick=`, `<script>` en línea ni
-  recursos de otros dominios. La IA corre solo con texto (`perfil.CLAUDE_SOLO_TEXTO`: sin herramientas ni MCP), porque las
+  recursos de otros dominios. La IA corre solo con texto (pieza «ia»: sin herramientas ni MCP), porque las
   transcripciones traen lo que dijeron otras personas. Las acciones del puente que abren cosas (`abrir`, `obsidian`, `finder`)
-  solo aceptan esquemas conocidos o notas de la carpeta de reuniones. En los workflows: actions fijadas por SHA (Dependabot
+  solo aceptan esquemas conocidos o notas de la carpeta de reuniones. Los puentes (`VisorWeb`, `BarraMenu`, `ipcMain` de Electron) ignoran mensajes que no vengan del marco principal y del origen de la app. El actualizador solo baja de `https://github.com/minuta-app/minuta/releases/download/` (`esDescargaNuestra`) y todo lo variable de sus guiones de bash va con `comillas()`. En los workflows: actions fijadas por SHA (Dependabot
   las sube), permisos mínimos, `persist-credentials: false`, nunca `pull_request_target` ni `${{ … }}` dentro de `run:`.
 - Interfaz: usa `render({ mantenerScroll: true })` para no saltar; el contenedor de página usa `data-pagina` (no `data-vista`, que dispara navegación).
 - Antes de terminar un cambio de UI: `node --check ui/app.js` y prueba en navegador (`cd ui && python3 -m http.server 8765` → `http://localhost:8765/index.html`; `#panel` para el panel, `?idioma=en` para inglés, `window.Minuta._probar({...})` para saltar a cualquier vista).
 - Python: `python3 -m py_compile bin/*.py`. Swift: solo compila en el Mac (`build.sh`).
+- Archivos de piezas (`bin/nucleo.py`, `bin/ia.py`, `bin/transcribir.py`, `bin/catalogo.py`, `app/Sources/PiezaCatalogo/`, `app/Sources/PiezaHost/`, `app/Sources/PiezaActualizaciones/`, `escritorio/src/catalogo.js`, `escritorio/src/host.js`, `enchufe.js`, `procesador.js`, `preload.js`, `vigilante.js`, `actualizaciones.js`, `ui/host.js`, `ui/i18n.js`, `ui/tema.*`, `ui/componentes.*`): no se editan aquí; ver «Piezas».
 
 ## Lo que rodea a un cambio
 Un cambio está listo cuando la app **y lo que la cuenta** dicen lo mismo. Antes de empezar, anota qué tipo de cambio es; al terminar,
@@ -148,6 +225,7 @@ revisa cada fila ("no aplica" se decide, no se supone):
 | quita algo | bórralo de la página, el README y las guías: nada que prometa lo que ya no hace |
 | cambia el formato de datos o el puente | la documentación del formato, `ejemplos/` si existe y esta guía |
 | cambia carpetas, reglas o pruebas | esta guía (`AGENTS.md`) y `CONTRIBUTING.md` |
+| actualiza o agrega una pieza | `piezas.json` (lo escribe `pieza.py`), la tabla «Piezas» de esta guía y `app.json` si pide algo |
 | resuelve un issue | ciérralo con «Resuelto en …» dando crédito y abre issues para lo que quedó pendiente |
 | lo nota quien usa Minuta | `CHANGELOG.md`: una línea en «Sin publicar», en lenguaje de persona («Ahora puedes…»), en español e inglés |
 
@@ -158,9 +236,15 @@ Los issues que abrimos para una tarea traen una sección «Qué actualizar alred
 ## Pruebas (GitHub las corre en cada cambio: `.github/workflows/revisar.yml`)
 
 - `bash pruebas/correr.sh`: todo lo de abajo menos compilar Swift. Córrelo antes de cada commit (la interfaz necesita Playwright: `PLAYWRIGHT=/ruta/playwright`).
-- `pruebas/contrato.py`: cada `host.enviar("x")`/`data-pn`/`data-av` de la interfaz existe en Swift (VisorWeb/BarraMenu) **y** en `ACCIONES`
-  de Electron, y cada `window.Minuta.x` que llaman las apps existe. Excepciones a propósito en `EXCEPCIONES` con su motivo.
-- `pruebas/test_python.py`: limpiar nombres, `corregir.py` (con IA simulada), `limpiar_notas.py`, universos incluidos. HOME temporal: nunca toca datos reales.
+- `pruebas/contrato.py`: los puentes usan el mensaje `{accion, datos}` de host-ui y solo atienden el marco principal con una página de `ui/`;
+  cada `host.enviar("x")`/`data-pn`/`data-av` de la interfaz la atiende Mac (un caso de VisorWeb/BarraMenu o una declarada) **y** Electron
+  (`ACCIONES`, lo del host o una declarada); `acciones.json` está al día con `app.json`, sus scripts existen y nada que escribe la persona
+  va como argumento; cada `window.Minuta.x` que llaman las apps (o que responde una declarada) existe. Excepciones en `EXCEPCIONES`.
+- `pruebas/test_python.py`: una reunión de punta a punta con un transcriptor falso (`Segmentos`: `desde`/`hasta` y la nota de siempre), el vocabulario fuera de los argumentos y en un archivo 0600 (`VocabularioPrivado`), el catálogo con huella (`CatalogoSeguro`: una huella mala se rechaza), limpiar nombres, `corregir.py` (con IA simulada), `limpiar_notas.py`, universos incluidos, la IA sin herramientas y en carpeta temporal, `ia.py probar` con archivo de entrada, las acciones declaradas (`AccionesDeclaradas`: `preguntar` y `gimnasio` por archivo, `dictado.py` con
+  la pieza «transcribir») y que las piezas no muevan los datos de `~/minuta`. HOME temporal: nunca toca datos reales.
+- `escritorio/pruebas/arranque.mjs` y `puente.mjs` (Linux, Xvfb + Playwright, con Electron instalado en `escritorio/`): la app arranca sin
+  errores, la ventana sin marco, las acciones declaradas responden con su eco, el panel tiene su puente, la grabadora carga su AudioWorklet
+  y `userData` sigue en `~/.config/Minuta`. No corren en GitHub (Electron pesa): córrelas si tocas `escritorio/`.
 - `pruebas/interfaz.mjs`: todas las vistas sin errores en español e inglés, **ningún texto sin traducir** (los datos de demo no cuentan),
   los mismos casos de nombres que Python (`casos_nombres.json`) y contraste del botón principal en cada universo. `CAPTURAS=carpeta` guarda capturas
   (en GitHub quedan como artefacto "capturas" de cada revisión).

@@ -106,8 +106,8 @@ for (const [idioma, consulta] of [["español", ""], ["inglés", "?idioma=en"]]) 
 // Bienvenida: lo primero es el idioma (antes de cualquier otro texto), y elegir English deja el resto en inglés.
 {
   const p = await pagina("?bienvenida");
-  // Anota lo que la interfaz le manda a la app (como el puente de Electron), para ver que se guardó idioma_ui.
-  await p.evaluate(() => { window._enviados = []; window.minutaHost = { enviar: (m) => window._enviados.push(m) }; });
+  await p.waitForSelector(".bienvenida.bv-idioma", { timeout: 4000 }).catch(() => {});  // la vista previa la abre al cargar demo.json
+  // Lo que la interfaz le mandó a la app queda anotado en la vista previa (simular), para ver que se guardó idioma_ui.
   const inicio = await p.evaluate(() => ({
     pantalla: !!document.querySelector(".bienvenida.bv-idioma"),
     titulo: document.querySelector("#bv-idioma-titulo")?.textContent.replace(/\s+/g, " ").trim(),
@@ -130,7 +130,7 @@ for (const [idioma, consulta] of [["español", ""], ["inglés", "?idioma=en"]]) 
   await p.waitForTimeout(250);
   const despues = await p.evaluate(() => ({
     titulo: document.querySelector(".bv-cuerpo h2")?.textContent, boton: document.querySelector('.bv-acc [data-bv-paso="1"]')?.textContent,
-    guardado: window._enviados.some((m) => m.accion === "perfil" && m.cambios?.idioma_ui === "en"),
+    guardado: window.Minuta._pruebas.simulados().some((m) => m.accion === "perfil" && m.datos.cambios?.idioma_ui === "en"),
     idiomaUi: window.Minuta.estado().perfil?.idioma_ui, bvIdioma: window.Minuta.estado().bv?.perfil?.idioma_ui, codigo: window.Minuta.estado().idioma.codigo, lang: document.documentElement.lang,
   }));
   if (despues.titulo !== "Welcome to Minuta" || !/^Next/.test(despues.boton || "")) falla(`después de elegir English el paso siguiente no está en inglés: ${JSON.stringify(despues)}`);

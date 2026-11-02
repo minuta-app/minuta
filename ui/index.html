@@ -8,6 +8,9 @@
        file: es para la app de Mac (carga la interfaz desde el disco); minuta: es el protocolo de Windows/Linux. -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' file: minuta:; script-src 'self' file: minuta:; style-src 'self' 'unsafe-inline' file: minuta:; img-src 'self' data: blob: file: minuta:; media-src 'self' data: blob: file: minuta:; font-src 'self' data: file: minuta:; connect-src 'self' file: minuta: https://raw.githubusercontent.com https://api.github.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
   <title>Minuta</title>
+  <!-- Piezas de Pieza (tema y componentes) primero; después lo propio de Minuta. -->
+  <link rel="stylesheet" href="tema.css">
+  <link rel="stylesheet" href="componentes.css">
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="universos.css">
   <link rel="stylesheet" href="ventana.css">
@@ -37,6 +40,10 @@
     <div id="adornos" aria-hidden="true"><i class="esq e1"></i><i class="esq e2"></i><i class="esq e3"></i><i class="esq e4"></i></div>
     <div id="bordes" aria-hidden="true"><i data-lado="n"></i><i data-lado="s"></i><i data-lado="e"></i><i data-lado="w"></i><i data-lado="nw"></i><i data-lado="ne"></i><i data-lado="sw"></i><i data-lado="se"></i></div>
   </div>
+  <script src="i18n.js"></script>
+  <script src="host.js"></script>
+  <script src="tema.js"></script>
+  <script src="componentes.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

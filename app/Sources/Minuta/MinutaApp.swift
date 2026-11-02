@@ -1,5 +1,7 @@
 import AVFoundation
 import EventKit
+import PiezaActualizaciones
+import PiezaCatalogo
 import ServiceManagement
 import SwiftUI
 import UserNotifications
@@ -23,7 +25,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var plataforma = ""
     @Published var estado = ""
     @Published var detectada: String?
-    /// Versión nueva disponible: ["hay": Bool, "detalle": String].
+    /// Versión nueva disponible (pieza «actualizaciones»): ["hay", "version", "notas", "sinConexion", "desarrollo"].
     @Published var actualizacion: [String: Any] = ["hay": false]
     /// Reuniones que se están transcribiendo en segundo plano (de a una, para no ahogar el Mac).
     @Published private(set) var enCola: [(dir: URL, titulo: String)] = []
@@ -66,10 +68,23 @@ final class AppModel: ObservableObject {
         for d in ["", "temas", "models", "grabaciones", "idiomas"] {
             try? FileManager.default.createDirectory(at: Temas.base.appendingPathComponent(d), withIntermediateDirectories: true)
         }
+        // Pieza «host-mac» (Pieza.swift): app.json, el Python de la app y el Procesador con límite de tiempo para los scripts.
+        PiezaMinuta.configurar(recursos: Temas.recursos, python: Self.python)
+        // Pieza «actualizaciones»: solo los Releases de minuta-app/minuta (Minuta-macOS.zip + .sha256, los nombres de siempre).
+        // Instalación de desarrollo: build.sh deja la ruta del checkout en ~/minuta/desarrollo (git pull + empaquetar.sh,
+        // que escribe su avance donde diga MINUTA_PROGRESO).
+        Actualizaciones.configurar(.init(repo: "minuta-app/minuta", nombre: "Minuta",
+                                         archivoDesarrollo: Temas.base.appendingPathComponent("desarrollo"), variableProgreso: "MINUTA_PROGRESO"))
         // La primera vez, lo primero es elegir el idioma: el permiso de avisos se pide después, en la bienvenida (paso Permisos).
         if !Perfil.falta { UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in } }
         UNUserNotificationCenter.current().delegate = delegadoNotificaciones
         registrarAccionesAvisos()
+        // Pieza «catálogo»: repo y tipos salen de app.json; los scripts corren con el Python de la app (entrada en un archivo).
+        Catalogo.configurar(appJSON: Temas.recursos.appendingPathComponent("app.json"), agente: "Minuta/\(Actualizaciones.version)") {
+            [weak self] script, accion, datos, fin in
+            guard let self else { return fin([:]) }
+            self.conEntrada(script, accion, datos) { r in fin(r ?? [:]) }
+        }
         delegadoNotificaciones.alResponder = { [weak self] categoria, accion, info in
             Task { @MainActor in self?.responderNotificacion(categoria: categoria, accion: accion, info: info) }
         }
@@ -658,12 +673,11 @@ final class AppModel: ObservableObject {
     }
 
     func buscarActualizacion() {
-        Actualizaciones.revisar { [weak self] hay, detalle in
+        Actualizaciones.revisar { [weak self] r in
             guard let self else { return }
-            let error = detalle == Actualizaciones.sinConexion
-            self.actualizacion = ["hay": hay, "detalle": error ? "" : detalle, "version": Actualizaciones.version, "error": error]
-            if let json = try? JSONSerialization.data(withJSONObject: self.actualizacion), let t = String(data: json, encoding: .utf8) {
-                VentanaVisor.shared.web?.evaluateJavaScript("window.Minuta && window.Minuta.actualizacion && window.Minuta.actualizacion(\(t))")
+            self.actualizacion = r
+            if let json = try? JSONSerialization.data(withJSONObject: r), let t = String(data: json, encoding: .utf8) {
+                VentanaVisor.shared.web?.evaluateJavaScript("window.Minuta && window.Minuta.actualizacionRevisada && window.Minuta.actualizacionRevisada(\(t))")
             }
         }
     }
@@ -717,16 +731,18 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Corre un script de ~/minuta/bin que escribe su resultado JSON en un archivo temporal.
-    func correrScriptJSON(_ script: String, _ args: [String], alTerminar: @escaping @MainActor ([String: Any]?, String) -> Void) {
-        let salida = FileManager.default.temporaryDirectory.appendingPathComponent("minuta-\(UUID().uuidString).json")
-        let log = FileManager.default.temporaryDirectory.appendingPathComponent("minuta-\(script).log")
-        ejecutar(script: script, argumentos: args + [salida.path], log: log) { _ in
-            let datos = (try? Data(contentsOf: salida)).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
-            let error = (try? String(contentsOf: log, encoding: .utf8))?.split(separator: "\n").last.map(String.init) ?? "sin respuesta"
-            try? FileManager.default.removeItem(at: salida)
-            alTerminar(datos, error)
+    /// Corre un script de bin/ que escribe su resultado JSON (pieza «host-mac»: límite de tiempo, sin variables MINUTA_* de afuera).
+    /// `alTerminar(datos, error)`: datos es nil si no respondió, se cortó por el límite o respondió {ok: false} (error = lo que dijo).
+    func correrScriptJSON(_ script: String, _ args: [String], limite: Int = 330, alTerminar: @escaping @MainActor ([String: Any]?, String) -> Void) {
+        PiezaMinuta.correr(script, args, limite: limite) { r in
+            if r["ok"] as? Bool == false { alTerminar(nil, r["error"] as? String ?? "") } else { alTerminar(r, "") }
         }
+    }
+
+    /// Corre `script <accion> <entrada.json> <salida.json>`: lo que manda la interfaz va en un archivo privado, nunca como argumento.
+    /// Devuelve la respuesta tal cual (la pieza «catálogo» lee su `frase`).
+    func conEntrada(_ script: String, _ accion: String, _ datos: [String: Any], alTerminar: @escaping @MainActor ([String: Any]?) -> Void) {
+        PiezaMinuta.correr(script, [accion], entrada: datos, limite: 120) { r in alTerminar(r) }
     }
 
     /// Crea un universo con Claude (bin/universo.py). Devuelve (ok, id, nombre o error).
@@ -795,6 +811,11 @@ final class DelegadoApp: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aviso: Notification) {
         BarraMenu.shared.instalar(model: model)
+    }
+
+    /// Al salir, lo que siga corriendo por el Procesador (la IA respondiendo, el catálogo) se corta: nada queda huérfano.
+    func applicationWillTerminate(_ aviso: Notification) {
+        PiezaMinuta.cortarTodo()
     }
 }
 

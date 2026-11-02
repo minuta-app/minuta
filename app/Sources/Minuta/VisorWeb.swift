@@ -1,5 +1,7 @@
 import AVFoundation
 import AppKit
+import PiezaActualizaciones
+import PiezaCatalogo
 import SwiftUI
 import WebKit
 
@@ -237,7 +239,12 @@ private struct WebHost: NSViewRepresentable {
 
         // JS → Mac
         func userContentController(_ c: WKUserContentController, didReceive mensaje: WKScriptMessage) {
-            guard let datos = mensaje.body as? [String: Any], let accion = datos["accion"] as? String else { return }
+            // Solo la interfaz local (marco principal, archivo de ui/) le pide cosas a la app; un iframe o una página de afuera, nunca.
+            guard mensaje.frameInfo.isMainFrame, mensaje.frameInfo.securityOrigin.protocol == "file",
+                  Temas.esDeLaInterfaz(mensaje.frameInfo.request.url) else { return }
+            // El mensaje es {accion, datos} (pieza «host-ui», igual en todas las apps de la familia).
+            guard let cuerpo = mensaje.body as? [String: Any], let accion = cuerpo["accion"] as? String else { return }
+            let datos = cuerpo["datos"] as? [String: Any] ?? [:]
             switch accion {
             case "tema":
                 if let id = datos["id"] as? String { ultimoTema = id; model.temaID = id }
@@ -308,12 +315,6 @@ private struct WebHost: NSViewRepresentable {
             // ── Asistente de bienvenida ──
             case "bienvenidaEstado":
                 enviarBienvenida()
-            case "probarIA":
-                let id = datos["id"] as? String ?? "claude"
-                IA.probar(id) { [weak self] ok, texto in
-                    if ok { var p = Perfil.datos(); p["ia"] = id; Perfil.guardar(p) }
-                    self?.llamarFuncion("iaProbada", ["id": id, "ok": ok, "texto": texto])
-                }
             case "descargarModelo":
                 let id = datos["id"] as? String ?? Modelos.recomendado
                 var ultimo = -1
@@ -371,33 +372,45 @@ private struct WebHost: NSViewRepresentable {
             case "buscarActualizacion":
                 model.buscarActualizacion()
             case "actualizar":
-                guard model.fase == .inactiva, model.enCola.isEmpty else {
-                    llamarFuncion("actualizacionProgreso", ["paso": "error", "texto": Idioma.t("Termina la grabación y espera a que se generen las notas antes de actualizar.")]); break
+                // Nunca en medio de una grabación, de unas notas o de un script (la IA respondiendo): cerrar la app los cortaría.
+                guard model.fase == .inactiva, model.enCola.isEmpty, PiezaMinuta.enCurso == 0 else {
+                    llamarFuncion("actualizacionProgreso", ["paso": "error", "codigo": "ocupada", "total": 3, "valores": [String: String](),
+                                                            "texto": "Termina la grabación y espera a que se generen las notas antes de actualizar."]); break
                 }
-                // El aviso de actualización pasa a mostrar el avance (descargar → preparar → instalar), sin alertas.
-                Actualizaciones.instalar { [weak self] ok, error in
-                    if ok { Actualizaciones.seguir { d in self?.llamarFuncion("actualizacionProgreso", d) } }
-                    else { self?.llamarFuncion("actualizacionProgreso", ["paso": "error", "texto": error]) }
+                // Pieza «actualizaciones»: el aviso pasa a mostrar el avance (descargar → preparar → instalar), sin alertas.
+                Actualizaciones.seguir { [weak self] d in self?.llamarFuncion("actualizacionProgreso", d) }
+                Actualizaciones.instalar { [weak self] ok, codigo in
+                    if !ok { self?.llamarFuncion("actualizacionProgreso", Actualizaciones.aviso("error", codigo)) }
                 }
             case "catalogo":
-                let tipo = (datos["tipo"] as? String) == "idiomas" ? "idiomas" : "universos"
-                Catalogo.indice(tipo) { [weak self] lista, error in
-                    var d: [String: Any] = ["tipo": tipo, "lista": lista]
-                    if let error { d["error"] = error }
+                // Pieza «catálogo»: el índice con huellas, validado por bin/catalogo.py con el validador de Minuta.
+                let pedido = (datos["tipo"] as? String) == "idiomas" ? "idiomas" : "universos"
+                let tipo = CatalogoPublico.tipo(pedido)
+                Catalogo.listar(tipo) { [weak self] r in
+                    var d: [String: Any] = ["tipo": pedido, "lista": r[tipo] as? [[String: Any]] ?? []]
+                    // Sin conexión, la pieza trae la última lista validada (sin_conexion: true): se ve, pero no se descarga.
+                    if r["sin_conexion"] as? Bool == true { d["sin_conexion"] = true }
+                    if r["ok"] as? Bool != true { d["error"] = Idioma.t(r["frase"] as? String ?? "No pude leer el catálogo.") }
                     self?.llamarFuncion("catalogo", d)
                 }
             case "descargarUniverso":
                 guard let id = datos["id"] as? String else { break }
-                Catalogo.descargarUniverso(id) { [weak self] ok, error in
+                // Solo lo del último índice validado, con su tamaño y su huella; Python lo vuelve a validar y lo deja en ~/minuta/temas.
+                Catalogo.descargar("temas", id) { [weak self] r in
                     guard let self else { return }
+                    let ok = r["ok"] as? Bool == true
                     if ok { self.model.temas = Temas.todos(); if datos["usar"] as? Bool == true { self.model.temaID = id } }
                     self.enviarTodo()
-                    self.llamarFuncion("descargado", ["tipo": "universo", "id": id, "ok": ok, "error": error ?? ""])
+                    self.llamarFuncion("descargado", ["tipo": "universo", "id": id, "ok": ok,
+                                                      "error": ok ? "" : Idioma.t(r["frase"] as? String ?? "Eso no es válido.")])
                 }
             case "descargarIdioma":
                 guard let c = datos["codigo"] as? String else { break }
-                Catalogo.descargarIdioma(c) { [weak self] ok, error in
-                    self?.llamarFuncion("descargado", ["tipo": "idioma", "id": c, "ok": ok, "error": error ?? "", "instalados": Idioma.instalados()])
+                Catalogo.descargar("idiomas", c) { [weak self] r in
+                    let ok = r["ok"] as? Bool == true
+                    self?.llamarFuncion("descargado", ["tipo": "idioma", "id": c, "ok": ok,
+                                                       "error": ok ? "" : Idioma.t(r["frase"] as? String ?? "Eso no es válido."),
+                                                       "instalados": Idioma.instalados()])
                 }
             case "perfil":
                 // Cambios del perfil desde Preferencias (idioma, nombre…): se mezclan con lo que ya hay.
@@ -431,16 +444,6 @@ private struct WebHost: NSViewRepresentable {
                                 URLQueryItem(name: "body", value: datos["cuerpo"] as? String ?? ""),
                                 URLQueryItem(name: "labels", value: datos["etiqueta"] as? String ?? "comentario")]
                 if let u = c.url { NSWorkspace.shared.open(u) }
-            case "gimnasio":
-                guard let modo = datos["modo"] as? String, let entrada = datos["entrada"] else { break }
-                let archivo = FileManager.default.temporaryDirectory.appendingPathComponent("minuta-gym-\(UUID().uuidString).json")
-                guard let d = try? JSONSerialization.data(withJSONObject: entrada), (try? d.write(to: archivo)) != nil else { break }
-                model.correrScriptJSON("gimnasio.py", [modo, archivo.path]) { [weak self] r, error in
-                    try? FileManager.default.removeItem(at: archivo)
-                    var res: [String: Any] = ["modo": modo, "ok": r != nil]
-                    if let r { res["datos"] = r } else { res["error"] = error }
-                    self?.llamarFuncion("gym", res)
-                }
             case "copiarFormato":
                 let pb = NSPasteboard.general
                 pb.clearContents()
@@ -485,13 +488,6 @@ private struct WebHost: NSViewRepresentable {
             case "callar":
                 Voz.shared.callar()
                 if datos["mic"] as? Bool ?? true { Dictado.shared.cerrar(final: false) }
-            case "preguntar":
-                guard let id = datos["id"] as? String, let q = datos["pregunta"] as? String else { break }
-                model.correrScriptJSON("preguntar.py", [q]) { [weak self] r, error in
-                    var res: [String: Any] = ["id": id, "ok": r != nil]
-                    if let r { res["respuesta"] = r["respuesta"] ?? ""; res["fuentes"] = r["fuentes"] ?? [] } else { res["error"] = error }
-                    self?.llamarFuncion("respuesta", res)
-                }
             case "categorias":
                 if let lista = Categorias.desdeJS(datos["lista"]) {
                     model.guardarCategorias(lista)
@@ -519,7 +515,9 @@ private struct WebHost: NSViewRepresentable {
                 }
                 web?.regiones = r
                 VentanaVisor.shared.refrescarSombra()
-            default: break
+            default:
+                // Lo que solo corre un script está declarado en acciones.json (probarIA, gimnasio, preguntar): Pieza.swift.
+                Declaradas.correr(accion, datos) { [weak self] f, r in self?.llamarFuncion(f, r) }
             }
         }
 

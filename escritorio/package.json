@@ -4,7 +4,7 @@
   "version": "0.3.1",
   "description": "Notas de reuniones y coach de comunicación que vive en tu computador.",
   "homepage": "https://minuta-app.github.io/minuta/",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "author": {
     "name": "Minuta",
     "email": "soydavidcornejo@users.noreply.github.com"
@@ -19,13 +19,13 @@
     "empaquetar:windows": "bash herramientas/preparar.sh windows && electron-builder --win dir && bash herramientas/instalador-windows.sh"
   },
   "devDependencies": {
-    "electron": "44.9.1",
-    "electron-builder": "26.15.3"
+    "electron": "44.9.2",
+    "electron-builder": "26.18.0"
   },
   "build": {
     "appId": "app.minuta.escritorio",
     "productName": "Minuta",
-    "copyright": "MIT · Minuta",
+    "copyright": "AGPL-3.0 · Minuta",
     "directories": {
       "output": "dist",
       "buildResources": "iconos"
@@ -50,6 +50,14 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "../app.json",
+        "to": "minuta/app.json"
+      },
+      {
+        "from": "../acciones.json",
+        "to": "minuta/acciones.json"
       },
       {
         "from": "../universos",

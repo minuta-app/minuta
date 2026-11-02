@@ -20,7 +20,7 @@ jobs:
       version: ${{ steps.v.outputs.version }}
       publicar: ${{ steps.v.outputs.publicar }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }
       - name: Pruebas rápidas (no se publica una versión rota)
         run: python3 pruebas/contrato.py && python3 pruebas/test_python.py
@@ -40,14 +40,14 @@ jobs:
     if: needs.version.outputs.publicar == 'true'
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }
       - name: Versión en Info.plist
         env: { VERSION: "${{ needs.version.outputs.version }}" }
         run: /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" app/Info.plist
       - name: Empaquetar
         run: bash herramientas/empaquetar.sh
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with: { name: macos, path: "dist/Minuta-macOS.zip*" }
 
   windows-linux:
@@ -57,9 +57,9 @@ jobs:
     runs-on: ubuntu-24.04
     defaults: { run: { working-directory: escritorio } }
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: 22 }
       - name: Herramientas
         run: sudo apt-get update && sudo apt-get install -y nsis cmake && python3 -m pip install --user --break-system-packages "ziglang==0.17.0"  # igual que ZIG_VER en herramientas/preparar.sh
@@ -78,7 +78,7 @@ jobs:
           bash herramientas/preparar.sh windows
           npx electron-builder --win dir
           bash herramientas/instalador-windows.sh
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with: { name: escritorio, path: "escritorio/dist/Minuta-*" }
 
   release:
@@ -87,7 +87,7 @@ jobs:
       contents: write
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with: { path: descargas, merge-multiple: true }
       - name: Crear el Release
         env: { GH_TOKEN: "${{ github.token }}", VERSION: "${{ needs.version.outputs.version }}" }
