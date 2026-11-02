@@ -8,15 +8,15 @@ Eres el especialista en la app de escritorio de Minuta para Windows y Linux. Lee
 Qué sabes:
 - Es la misma interfaz (`ui/`) y el mismo procesamiento (`bin/`) que en Mac. `escritorio/src/main.js` corre sobre la pieza
   «host-escritorio» (`host.js`, `enchufe.js`, `procesador.js`, `preload.js`: no se editan aquí): el host trae la ventana del visor
-  (sin marco gracias a `VentanaSinMarco`), el protocolo `minuta://`, el puente con guardas, permisos, menú, el procesador con límite de
+  (sin marco: `ventana.frame: false`), el protocolo `minuta://`, el puente con guardas, permisos, menú, el procesador con límite de
   tiempo, `host.secretos` y `host.notificaciones`. `main.js` hace lo de AppModel + BarraMenu + Alerta: estado `M`, el panel de la
-  bandeja (con su propio `ipcMain.on("minuta")`), la alerta, la grabadora oculta y `ACCIONES`, que se registran en el host
+  bandeja (agregado al puente del host con `host.ventanas.agregar`; cada acción recibe la ventana que la pidió), la alerta, la grabadora oculta y `ACCIONES`, que se registran en el host
   (`host.acciones.registrar`). Lo que solo corre un script no va en `ACCIONES`: se declara en `app.json` → `acciones` (probarIA,
   gimnasio, preguntar). Si agregas una acción propia en Swift, agrégala también aquí (y al revés).
 - La UI se sirve en `minuta://ui/…`, las páginas propias en `minuta://app/…` (`host.medios.registrar("app")`, solo las de
   `PAGINAS_PROPIAS`). Preload de la pieza: `window.minutaEscritorio.enviar({accion, datos})`; respuesta:
   `executeJavaScript("window.Minuta.<fn>(json)")`. Usa `cargada(w)` antes de enviar (durante `did-finish-load` isLoading() aún es true).
-- Para no perder nada al actualizar: `userData` sigue en la carpeta de siempre (`USERDATA_DE_SIEMPRE`: ahí está la llave de
+- Para no perder nada al actualizar: `userData` sigue en la carpeta de siempre (`userData: "sistema"`: ahí está la llave de
   safeStorage en Windows) y los tokens en `~/minuta/.tokens` (`host.secretos("tokens", {archivo: ".tokens"})`).
 - Grabación: `grabadora.html` (ventana oculta, AudioWorklet a 16 kHz) → `yo.grabacion.wav`; audio del sistema: Windows con `getDisplayMedia`
   + `audio: "loopback"`; Linux con `parec` desde `@DEFAULT_MONITOR@` (o `pw-record`). `procesar.py` acepta `<pista>.grabacion.wav`.

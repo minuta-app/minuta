@@ -5,7 +5,8 @@
 // Equivale a Procesador.swift de «host-mac». Contrato (nucleo.script): `script.py <args…> [entrada.json] <salida.json>`.
 //   · Lo que manda la interfaz va en el archivo de entrada, nunca como argumento (cualquier programa ve los argumentos).
 //   · Un secreto (la llave de un conector) va por la entrada estándar: nunca en un archivo, un argumento ni el entorno.
-//   · Ninguna variable <ID>_* de afuera llega al script: solo las que pone el host (<ID>_RECURSOS, <ID>_DATOS…).
+//   · Ninguna variable <ID>_* de afuera llega al script: solo las que pone el host (<ID>_RECURSOS, <ID>_DATOS…) y las de la app
+//     (`entornoApp` para todos sus scripts, también los declarados; `entorno` por llamada), que nunca pisan las del host.
 //   · Todo tiene límite de tiempo: al cumplirse se corta el script y lo que haya lanzado (su grupo de procesos). Un trabajo largo
 //     ({latido: true}, «limite»: "trabajo") no tiene tope, pero tiene que latir (pieza «trabajos»: <ID>_LATIDO): si deja de latir,
 //     se corta igual.
@@ -37,13 +38,17 @@ const VARIABLE = /^[A-Z][A-Z0-9_]{0,60}$/;
  * @param {function} [o.lectorProgreso]  pieza «trabajos» (progreso.js): lectorProgreso(aviso, {prefijo})
  * @param {number} [o.gracia]  segundos entre pedir que termine y cortarlo (3)
  * @param {object} [o.latido]  {muerto: 45, primero: 120, revisar: 5} segundos: un trabajo sin latido por más de `muerto` se corta
+ * @param {object|function} [o.entornoApp]  variables para TODOS los scripts (p. ej. <ID>_PROGRAMAS); una función se lee en cada uno
  */
-function crearProcesador({ python, recursos, id, datos, t = (x) => x, lectorProgreso = null, gracia = 3, registro = console.error, latido: tiempos = {} }) {
+function crearProcesador({ python, recursos, id, datos, t = (x) => x, lectorProgreso = null, gracia = 3, registro = console.error, latido: tiempos = {}, entornoApp = {} }) {
   const P = id.toUpperCase() + "_";
+  const RESERVADAS = new Set(["RECURSOS", "DATOS", "PROGRESO", "LATIDO"].map((x) => P + x));
   const L = { muerto: 45, primero: 120, revisar: 5, ...tiempos };
   const vivos = new Set();
   const yo = {
     enCurso: 0,
+    /** Variables de la app para todos sus scripts (se puede cambiar después: `host.procesador.entornoApp.X_PROGRAMAS = …`). */
+    entornoApp,
     /** Detiene todo lo que sigue corriendo (y lo que lanzó). Lo llama el host al salir. */
     cortarTodo() { for (const p of vivos) matar(p, "SIGTERM"); },
     /** Lo de bajo nivel: devuelve {respuesta, salidaEstandar, porLimite}. `latido: true`: sin tope mientras el script lata. */
@@ -65,7 +70,11 @@ function crearProcesador({ python, recursos, id, datos, t = (x) => x, lectorProg
           argsFinal.push(archivo);
         }
         const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.toUpperCase().startsWith(P)));
-        for (const [k, v] of Object.entries(entorno || {})) if (VARIABLE.test(k) && typeof v === "string") env[k] = v;
+        let deLaApp = {};
+        try { deLaApp = typeof yo.entornoApp === "function" ? yo.entornoApp() || {} : yo.entornoApp || {}; } catch (e) { registro(`${id}: entorno`, e); }
+        for (const [k, v] of Object.entries({ ...deLaApp, ...(entorno || {}) })) {
+          if (VARIABLE.test(k) && !RESERVADAS.has(k) && typeof v === "string") env[k] = v;
+        }
         Object.assign(env, { [P + "RECURSOS"]: recursos, [P + "DATOS"]: datos, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1", PYTHONDONTWRITEBYTECODE: "1" });
         const lector = progreso && lectorProgreso ? lectorProgreso(progreso, { prefijo: id }) : null;
         if (lector) env[P + "PROGRESO"] = lector.ruta;

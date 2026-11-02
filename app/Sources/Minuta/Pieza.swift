@@ -7,8 +7,9 @@ import PiezaHost
 /// Pieza). Lo que sí calza, y vive aquí para que el resto de la app no importe `PiezaHost` (sus `Idioma` y `Puente` se llaman
 /// igual que los de Minuta):
 /// - `Host.configurar`: app.json, la carpeta de datos (~/minuta) y dónde está el código (el checkout de desarrollo o la app).
-/// - `Procesador`: los scripts de bin/ con límite de tiempo (corta también lo que lanzaron), sin variables MINUTA_* de afuera,
-///   la entrada en un archivo 0600 dentro de una carpeta propia 0700 y nada huérfano al salir.
+/// - `Procesador`: los scripts de bin/ con límite de tiempo (corta también lo que lanzaron), sin variables MINUTA_* de afuera
+///   salvo las de la app (`entornoApp`: MINUTA_HERRAMIENTAS), la entrada en un archivo 0600 dentro de una carpeta propia 0700 y
+///   nada huérfano al salir.
 /// - `Enchufe`: las acciones declaradas en acciones.json (probarIA de la pieza «ia»; gimnasio y preguntar de app.json), con
 ///   sus datos validados por las mismas reglas que pieza.py y Electron.
 /// - `Secretos`: el Llavero (el token del respaldo, con el mismo servicio y la misma cuenta de siempre).
@@ -21,18 +22,16 @@ enum PiezaMinuta {
         }
         // El idioma elegido está en perfil.json (no en config.json, que en Minuta es el universo elegido).
         PiezaHost.Idioma.fuente = { Perfil.guardado()["idioma_ui"] ?? "" }
-    }
-
-    /// Lo que necesitan los scripts de Minuta además de lo que pone el host: dónde están minuta-transcribir y minuta-diarizar.
-    static var entorno: [String: String] {
-        ["MINUTA_HERRAMIENTAS": Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS").path]
+        // Lo que necesitan todos los scripts de Minuta (también los declarados) además de lo que pone el host: dónde están
+        // minuta-transcribir y minuta-diarizar.
+        Procesador.entornoApp["MINUTA_HERRAMIENTAS"] = Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS").path
     }
 
     /// `script <args…> [entrada.json] <salida.json>` con límite de tiempo. `fin(respuesta)`: el JSON del script o
     /// {ok: false, codigo: "limite" | "fallo", texto, error} del host.
     static func correr(_ script: String, _ args: [String], entrada: [String: Any]? = nil, limite: Int,
                        fin: @escaping @MainActor ([String: Any]) -> Void) {
-        Procesador.correr(script, args, entrada: entrada, limite: limite, entorno: entorno) { r in fin(r.respuesta) }
+        Procesador.correr(script, args, entrada: entrada, limite: limite) { r in fin(r.respuesta) }
     }
 
     /// Al salir: lo que siga corriendo se corta (y lo que lanzó), nada queda huérfano.
@@ -97,8 +96,7 @@ enum Declaradas {
         }
         let args = Enchufe.armarArgs(a, entrada)
         let limite = a.limite(para: entrada)
-        Procesador.correr(a.script, args, entrada: a.porArchivo ? entrada : nil, limite: limite ?? 3600, latido: limite == nil,
-                          entorno: PiezaMinuta.entorno) { r in
+        Procesador.correr(a.script, args, entrada: a.porArchivo ? entrada : nil, limite: limite ?? 3600, latido: limite == nil) { r in
             responde(r.respuesta, entrada)
         }
         return true

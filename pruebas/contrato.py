@@ -112,12 +112,22 @@ def main():
             errores.append(f"{ruta}: el puente solo atiende el marco principal con una página de ui/ (Temas.esDeLaInterfaz)")
         if not re.search(r"default:\s*\n(\s*//.*\n)*\s*Declaradas\.correr\(accion, datos\)", t):
             errores.append(f"{ruta}: lo que no es un caso propio va a las acciones declaradas (default: Declaradas.correr)")
-    if "host.acciones.registrar(nombre, (d) => fn(d, ventana))" not in main_js or "msg.datos" not in main_js:
-        errores.append("escritorio/src/main.js: las acciones propias se registran en el host (reciben los datos de {accion, datos})")
-    if "e.senderFrame !== e.sender.mainFrame" not in main_js or "startsWith(host.ORIGEN)" not in main_js:
-        errores.append("escritorio/src/main.js: el puente del panel solo atiende su marco principal con la página minuta://ui/")
-    if "exposeInMainWorld(`${id}Escritorio`" not in leer("escritorio/src/preload.js") or "--pieza-host=" not in main_js:
+    if "host.acciones.registrar(nombre, (d, _host, ctx = {}) => fn(d, ctx.ventana || ventana))" not in main_js:
+        errores.append("escritorio/src/main.js: las acciones propias se registran en el host y reciben la ventana que las pidió")
+    # El panel de la bandeja va agregado al host (mismas guardas: marco principal, minuta://ui/; la respuesta a quien pidió).
+    if "host.ventanas.agregar(panel)" not in main_js or "webPreferences: host.ventanas.preferencias()" not in main_js:
+        errores.append("escritorio/src/main.js: el panel se agrega al puente del host (host.ventanas.agregar, con sus preferencias)")
+    if re.search(r"ipcMain\.on\(host\.id", main_js):
+        errores.append("escritorio/src/main.js: el panel no lleva un puente propio (lo atiende el host)")
+    if "exposeInMainWorld(`${id}Escritorio`" not in leer("escritorio/src/preload.js") or "--pieza-host=" not in host_js:
         errores.append("escritorio/src/preload.js (pieza «host-escritorio»): el canal es window.minutaEscritorio (lo busca host-ui)")
+    for patron, que in [
+        ('userData: "sistema"', "lo que guarda Chromium (y la llave de safeStorage) sigue en la carpeta de siempre"),
+        ("frame: false", "el visor va sin marco (ventana.frame)"),
+        ('abrirAlArrancar: () => Perfil.falta || !process.argv.includes("--oculta")', "con --oculta, Minuta abre en la bandeja"),
+    ]:
+        if patron not in main_js:
+            errores.append(f"escritorio/src/main.js: {que}")
     ia = (acciones_json.get("probarIA") or {}).get("datos", {}).get("ia", {})
     if ia.get("tipo") != "enum" or 'host.enviar("probarIA", { ia:' not in ui:
         errores.append("probarIA va con {ia} (pieza «host-ui»): declarada por la pieza «ia» con ia enum")

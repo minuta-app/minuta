@@ -12,8 +12,10 @@
 //   host.iniciar();
 //
 // Seguridad (igual o mejor que la mejor app de la familia):
-//   · la ventana: sandbox, contextIsolation, sin nodeIntegration ni webview; solo navega dentro de <id>://ui/ (https → navegador);
-//   · el puente solo atiende el marco principal de la ventana propia con origen <id>://ui/;
+//   · la ventana: sandbox, contextIsolation, sin nodeIntegration ni webview; solo navega dentro de <id>://ui/ (https → navegador,
+//     por el `abrirEnlace` que registró la app si hay uno);
+//   · el puente solo atiende el marco principal de las ventanas propias (la principal y las que la app agrega con
+//     `host.ventanas.agregar`) con origen <id>://ui/, y responde a la que pidió;
 //   · las acciones declaradas (acciones.json) validan los datos por sus reglas, lo de la persona va por archivo de entrada y todo
 //     tiene límite de tiempo; los scripts no heredan variables <ID>_*;
 //   · todo permiso del navegador se niega (la app puede permitir alguno con `permisos`);
@@ -58,12 +60,13 @@ function crearHost(op = {}) {
   if (!/^[A-Z][A-Za-z0-9]{0,40}$/.test(GLOBAL)) throw new Error("«global» es el nombre del objeto window.<App> (ej. «Ana»).");
   const propia = E.esObjeto(a.datos);
   const DATOS = op.datos || E.carpetaDatos(a);
-  const preparar = () => E.prepararCarpeta(DATOS, { propia });
+  const preparar = () => E.prepararCarpeta(DATOS, { propia, visible: a.datos === "visible" && !op.datos });
   const config = E.crearConfig({ ruta: path.join(DATOS, "config.json"), reglas: a.config, preparar });
   const idioma = E.crearIdioma({ config, recursos: RECURSOS, elegidoDe: op.idiomaElegido || null });
   const t = (x) => idioma.t(x);
+  // op.entorno: variables de la app para TODOS sus scripts, también los declarados ({ANA_PROGRAMAS: …} o una función).
   const procesador = crearProcesador({ python: op.python || pythonDe(RECURSOS, app.isPackaged), recursos: RECURSOS, id, datos: DATOS, t,
-    lectorProgreso: op.lectorProgreso || null, latido: op.latido || {} });
+    lectorProgreso: op.lectorProgreso || null, latido: op.latido || {}, entornoApp: op.entorno || {} });
   const fila = crearFila();
   const { acciones: declaradas, errores } = E.cargarAcciones(RECURSOS);
   for (const e of errores) console.error(`${nombre}: ${e}`);
@@ -78,25 +81,38 @@ function crearHost(op = {}) {
   Object.assign(inyectores, op.inyectar || {});
   const ventanaOp = { ancho: 1280, alto: 800, minAncho: 720, minAlto: 520, alCerrar: "salir", fondo: { claro: "#f7f7f5", oscuro: "#1c1c1e" }, ...(op.ventana || {}) };
   let ventana = null, lista = false, saliendo = false, tareas = false, ocupadas = 0;
+  // Otras ventanas con la misma interfaz (el panel de la bandeja, una barra flotante): hablan con el puente y reciben su respuesta.
+  const otras = new Set();
 
   // Antes de que Electron esté listo: el protocolo propio <id>://.
   protocol.registerSchemesAsPrivileged([{ scheme: id, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } }]);
 
   // ───────────── Hacia la interfaz ─────────────
-  function llamar(funcion, d = {}) {
-    if (!E.FUNCION.test(String(funcion)) || !ventana || ventana.isDestroyed() || !lista) return false;
+  /** window.<App>.<funcion>(d) en la ventana principal (si ya mandó «listo») o, con `destino`, en el webContents de otra ventana
+   *  agregada (`host.ventanas.agregar`): así cada una recibe la respuesta a lo que pidió. */
+  function llamar(funcion, d = {}, destino = null) {
+    if (!E.FUNCION.test(String(funcion))) return false;
+    let wc;
+    if (destino && (!ventana || ventana.isDestroyed() || destino !== ventana.webContents)) {
+      const w = [...otras].find((x) => !x.isDestroyed() && x.webContents === destino);
+      if (!w) return false;
+      wc = destino;
+    } else {
+      if (!ventana || ventana.isDestroyed() || !lista) return false;
+      wc = ventana.webContents;
+    }
     let json;
     try { json = JSON.stringify(d === undefined ? null : d); } catch { return false; }
-    ventana.webContents.executeJavaScript(`window.${GLOBAL} && typeof window.${GLOBAL}.${funcion} === "function" && window.${GLOBAL}.${funcion}(${json})`).catch(() => {});
+    wc.executeJavaScript(`window.${GLOBAL} && typeof window.${GLOBAL}.${funcion} === "function" && window.${GLOBAL}.${funcion}(${json})`).catch(() => {});
     return true;
   }
 
   // ───────────── Acciones ─────────────
   /** Una acción declarada: validar → inyectar → (fila) → script con límite → eco → responder → después. */
-  async function correrDeclarada(nombreAccion, def, datos) {
+  async function correrDeclarada(nombreAccion, def, datos, ctx = {}) {
     const v = E.validarDatos(def, datos);
     const eco = (entrada) => Object.fromEntries((def.eco || []).filter((k) => entrada && Object.hasOwn(entrada, k)).map((k) => [k, entrada[k]]));
-    const responder = (r, entrada) => { if (def.responde) llamar(def.responde, { ...r, ...eco(entrada) }); return r; };
+    const responder = (r, entrada) => { if (def.responde) llamar(def.responde, { ...r, ...eco(entrada) }, ctx.responderA || null); return r; };
     // Aunque los datos no pasen, vuelve el eco que sí es válido (la interfaz sabe a qué orden responde el error).
     if (!v.ok) return responder({ ok: false, codigo: "datos", campo: v.campo, texto: TEXTOS.datos, valores: {}, error: t(TEXTOS.datos) }, E.ecoValido(def, datos));
     const entrada = v.entrada;
@@ -122,28 +138,35 @@ function crearHost(op = {}) {
       if (ruta !== null && def.vigilar === "lee" && r.ok && typeof r.texto === "string") vigilante.conocer(ruta, r.texto);
       if (ruta !== null && def.vigilar === "escribe" && !r.ok) vigilante.conocer(ruta, antes);
       responder(r, entrada);
-      for (const x of def.despues || []) if (x !== nombreAccion) await despachar(x, {});
+      for (const x of def.despues || []) if (x !== nombreAccion) await despachar(x, {}, ctx);
       return r;
     };
     return def.cola === "escritura" ? fila.agregar(tarea) : tarea();
   }
 
-  /** Primero lo que registró la app (así puede reemplazar una acción de a poco), después lo que trae el host y al final lo declarado. */
-  async function despachar(accion, datos) {
+  /** Primero lo que registró la app (así puede reemplazar una acción de a poco), después lo que trae el host y al final lo declarado.
+   *  `{responderA}`: el webContents de otra ventana agregada que pidió esto (la respuesta va a ella; sin esto, a la principal).
+   *  Las registradas reciben `(datos, host, {responderA, ventana})`. */
+  async function despachar(accion, datos, { responderA = null } = {}) {
     if (!E.ACCION.test(String(accion))) return undefined;
     const d = E.esObjeto(datos) ? datos : {};
-    if (registradas.has(accion)) return registradas.get(accion)(d, host);
-    if (internas.has(accion)) return internas.get(accion)(d);
-    if (Object.hasOwn(declaradas, accion)) return correrDeclarada(accion, declaradas[accion], d);
+    const ctx = { responderA, ventana: responderA ? [...otras].find((w) => !w.isDestroyed() && w.webContents === responderA) || null : ventana };
+    if (registradas.has(accion)) return registradas.get(accion)(d, host, ctx);
+    if (internas.has(accion)) return internas.get(accion)(d, ctx);
+    if (Object.hasOwn(declaradas, accion)) return correrDeclarada(accion, declaradas[accion], d, ctx);
     return undefined;
   }
 
-  /** El puente: solo la ventana propia, su marco principal y la interfaz de <id>://ui/. Todo lo demás se ignora. */
+  /** El puente: solo las ventanas propias (la principal y las agregadas), su marco principal y la interfaz de <id>://ui/. Todo lo
+   *  demás se ignora. */
   async function alMensaje(e, msg) {
-    if (!ventana || ventana.isDestroyed() || !e || e.sender !== ventana.webContents) return;
+    if (!e || !e.sender) return;
+    const principal = !!ventana && !ventana.isDestroyed() && e.sender === ventana.webContents;
+    const otra = !principal && [...otras].some((w) => !w.isDestroyed() && w.webContents === e.sender);
+    if (!principal && !otra) return;
     if (!e.senderFrame || e.senderFrame !== e.sender.mainFrame || !String(e.senderFrame.url || "").startsWith(ORIGEN)) return;
     if (!E.esObjeto(msg) || typeof msg.accion !== "string" || !E.ACCION.test(msg.accion)) return;
-    try { await despachar(msg.accion, E.esObjeto(msg.datos) ? msg.datos : {}); } catch (err) { console.error(`${nombre}:`, msg.accion, err); }
+    try { await despachar(msg.accion, E.esObjeto(msg.datos) ? msg.datos : {}, { responderA: otra ? e.sender : null }); } catch (err) { console.error(`${nombre}:`, msg.accion, err); }
   }
 
   // ───────────── Lo que trae el host (capacidades comunes) ─────────────
@@ -151,7 +174,9 @@ function crearHost(op = {}) {
     let base = {};
     const script = op.estadoScript === undefined ? "estado.py" : op.estadoScript;
     if (script && fs.existsSync(path.join(RECURSOS, "bin", script))) {
-      base = await procesador.correrJSON(script, [], { limite: op.limiteEstado || 60 });
+      // op.estadoEnFila: dentro de la fila (nunca se lee a medio guardar una acción con "cola": "escritura").
+      const correr = () => procesador.correrJSON(script, [], { limite: op.limiteEstado || 60 });
+      base = await (op.estadoEnFila ? fila.agregar(correr) : correr());
       delete base.ok; delete base.error;
     }
     Object.assign(base, { version: app.getVersion(), idioma: idioma.codigo, plataforma: ES_WIN ? "windows" : "linux" });
@@ -161,7 +186,12 @@ function crearHost(op = {}) {
   }
   async function enviarEstado() { if (lista) llamar("estado", await estado()); }
 
-  internas.set("listo", async () => { lista = true; await enviarEstado(); });
+  internas.set("listo", async (_d, ctx = {}) => {
+    // Otra ventana agregada recibe su estado; la principal queda «lista» (antes, nada se le manda).
+    if (ctx.responderA) return llamar("estado", await estado(), ctx.responderA);
+    lista = true;
+    await enviarEstado();
+  });
   internas.set("config", async (d) => {
     const antes = config.leer();
     config.guardar(d);
@@ -172,7 +202,7 @@ function crearHost(op = {}) {
     if (idioma.elegido) iniciarTareas();
   });
   internas.set("abrirEnlace", (d) => { abrirEnlace(d.url); });
-  internas.set("copiar", (d) => llamar("copiado", { ok: copiar(d.texto) }));
+  internas.set("copiar", (d, ctx = {}) => llamar("copiado", { ok: copiar(d.texto) }, ctx.responderA || null));
   if (op.actualizaciones) {
     const act = op.actualizaciones;
     internas.set("buscarActualizacion", async () => llamar("actualizacionRevisada", await act.revisar().catch(() => ({ hay: false, sinConexion: true }))));
@@ -210,26 +240,38 @@ function crearHost(op = {}) {
       try { return fs.realpathSync(r.filePaths[0]); } catch { return null; }
     },
     /** Archivos (rutas reales) o []. `extensiones`: ["md", "txt"]. */
-    async archivos({ titulo, boton, extensiones, varios = false, nombreFiltro } = {}) {
+    async archivos({ titulo, mensaje, boton, extensiones, varios = false, nombreFiltro, desde } = {}) {
       const filters = Array.isArray(extensiones) && extensiones.length ? [{ name: nombreFiltro || extensiones.join(", "), extensions: extensiones }] : undefined;
-      const r = await dialog.showOpenDialog(ventana || undefined, { title: titulo, buttonLabel: boton, filters, properties: ["openFile", ...(varios ? ["multiSelections"] : [])] });
+      // `mensaje`: qué elegir (en Windows y Linux va como título si no hay `titulo`; en Mac, debajo).
+      const r = await dialog.showOpenDialog(ventana || undefined, { title: titulo || mensaje, message: mensaje, buttonLabel: boton, defaultPath: desde || undefined,
+        filters, properties: ["openFile", ...(varios ? ["multiSelections"] : [])] });
       if (r.canceled) return [];
       return r.filePaths.map((x) => { try { return fs.realpathSync(x); } catch { return null; } }).filter(Boolean);
     },
-    /** «Guardar como»: escribe `contenido` (Buffer o texto) de una vez donde la persona elija. Devuelve la ruta o null. */
-    async guardarComo({ nombre: sugerido = nombre, extension, contenido, desde, maximo = 50 * 1024 * 1024 } = {}) {
+    /** «Guardar como»: escribe `contenido` (Buffer o texto) de una vez donde la persona elija. Devuelve la ruta o null (cancelada
+     *  o no se pudo: para saber cuál, `guardarArchivo`). */
+    async guardarComo(o = {}) {
+      const r = await dialogos.guardarArchivo(o);
+      return r.ok ? r.ruta : null;
+    },
+    /** Lo mismo, diciendo cómo terminó: {ok: true, ruta} | {ok: false, codigo: "cancelado" | "vacio" | "tamano" | "extension" |
+     *  "escribir"}. `privado`: el archivo queda solo para la persona (0600); sin decirlo, lo de app.json → "privado". */
+    async guardarArchivo({ nombre: sugerido = nombre, extension, contenido, desde, maximo = 50 * 1024 * 1024, mensaje, privado } = {}) {
       const ext = String(extension || "").replace(/[^\w]/g, "").slice(0, 10);
       const datos = Buffer.isBuffer(contenido) ? contenido : typeof contenido === "string" ? Buffer.from(contenido, "utf8") : null;
-      if (!ext || !datos || !datos.length || datos.length > maximo) return null;
+      if (!ext) return { ok: false, codigo: "extension" };
+      if (!datos || !datos.length) return { ok: false, codigo: "vacio" };
+      if (datos.length > maximo) return { ok: false, codigo: "tamano" };
       const r = await dialog.showSaveDialog(ventana || undefined, {
-        defaultPath: path.join(desde || app.getPath("documents"), nombreArchivo(sugerido, ext)),
+        defaultPath: path.join(desde || app.getPath("documents"), nombreArchivo(sugerido, ext)), message: mensaje, title: mensaje,
         filters: [{ name: ext.toUpperCase(), extensions: [ext] }], properties: ["createDirectory", "showOverwriteConfirmation"],
       });
-      if (r.canceled || !r.filePath) return null;
+      if (r.canceled || !r.filePath) return { ok: false, codigo: "cancelado" };
       let destino = r.filePath;
       if (!destino.toLowerCase().endsWith("." + ext.toLowerCase())) destino += "." + ext;
-      E.escribirAtomico(destino, datos, 0o644);
-      return destino;
+      const soloPersona = privado === undefined ? a.privado === true : privado === true;
+      try { E.escribirAtomico(destino, datos, soloPersona ? 0o600 : 0o644); } catch { return { ok: false, codigo: "escribir" }; }
+      return { ok: true, ruta: destino };
     },
   };
   /** Muestra el archivo (o la carpeta) en el explorador del sistema. Solo rutas que la app ya revisó (host.dentro). */
@@ -342,7 +384,25 @@ function crearHost(op = {}) {
   }
 
   // ───────────── Ventana ─────────────
-  function crearVentana() {
+  /** Lo que lleva toda ventana con la interfaz (la principal y las que la app agrega con host.ventanas.agregar). */
+  function preferencias() {
+    return {
+      preload: op.preload || path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: true, nodeIntegration: false,
+      webviewTag: false, spellcheck: false, additionalArguments: [`--pieza-host=${id}`],
+    };
+  }
+  /** La ventana nunca navega fuera de ui/ ni abre otras ventanas: un enlace https va por `abrirEnlace` (el de la app si lo
+   *  registró: una app para niños solo abre su sitio). */
+  function guardarNavegacion(wc) {
+    // Solo https, igual que en Mac: file:, mailto:, javascript:… nunca llegan al abrirEnlace de la app.
+    const enlace = (url) => { if (/^https:\/\//i.test(String(url))) despachar("abrirEnlace", { url: String(url) }).catch(() => {}); };
+    wc.setWindowOpenHandler(({ url }) => { enlace(url); return { action: "deny" }; });
+    wc.on("will-navigate", (e, url) => { if (!String(url).startsWith(ORIGEN)) { e.preventDefault(); enlace(url); } });
+    wc.on("will-redirect", (e, url) => { if (!String(url).startsWith(ORIGEN)) e.preventDefault(); });
+    wc.on("will-attach-webview", (e) => e.preventDefault());
+  }
+
+  function crearVentana({ mostrarla = true } = {}) {
     let g = {};
     try { g = JSON.parse(fs.readFileSync(path.join(DATOS, "ventana.json"), "utf8")) || {}; } catch {}
     const num = (x) => (Number.isFinite(x) ? Math.round(x) : undefined);
@@ -351,13 +411,13 @@ function crearHost(op = {}) {
       width: num(g.width) || ventanaOp.ancho, height: num(g.height) || ventanaOp.alto, x: num(g.x), y: num(g.y),
       minWidth: ventanaOp.minAncho, minHeight: ventanaOp.minAlto, show: false, title: nombre,
       icon: ventanaOp.icono || undefined, backgroundColor: fondo(),
-      webPreferences: {
-        preload: op.preload || path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: true, nodeIntegration: false,
-        webviewTag: false, spellcheck: false, additionalArguments: [`--pieza-host=${id}`],
-      },
+      // ventana.frame: false — la app dibuja su barra y sus botones; la interfaz usa -webkit-app-region para moverla.
+      ...(ventanaOp.frame === false ? { frame: false } : {}),
+      webPreferences: preferencias(),
     });
     ventana.loadURL(ORIGEN + "index.html");
-    ventana.once("ready-to-show", () => ventana && ventana.show());
+    // Escondida al crearla (abrir al iniciar sesión con --oculta, o op.abrirAlArrancar() false): queda en la bandeja hasta mostrar().
+    if (mostrarla) ventana.once("ready-to-show", () => ventana && ventana.show());
     ventana.on("close", (e) => {
       try { preparar(); E.escribirAtomico(path.join(DATOS, "ventana.json"), JSON.stringify(ventana.getNormalBounds())); } catch {}
       if (saliendo) return;
@@ -366,16 +426,20 @@ function crearHost(op = {}) {
     });
     ventana.on("closed", () => { ventana = null; lista = false; });
     const wc = ventana.webContents;
-    // La ventana nunca navega fuera de ui/ ni abre otras ventanas: un enlace https se abre en el navegador.
-    wc.setWindowOpenHandler(({ url }) => { abrirEnlace(url); return { action: "deny" }; });
-    wc.on("will-navigate", (e, url) => { if (!String(url).startsWith(ORIGEN)) { e.preventDefault(); abrirEnlace(url); } });
-    wc.on("will-redirect", (e, url) => { if (!String(url).startsWith(ORIGEN)) e.preventDefault(); });
-    wc.on("will-attach-webview", (e) => e.preventDefault());
+    guardarNavegacion(wc);
     // Si el proceso de la página se cae, se vuelve a cargar la interfaz (lo guardado está en el disco).
     wc.on("render-process-gone", () => { lista = false; if (ventana && !ventana.isDestroyed()) ventana.loadURL(ORIGEN + "index.html"); });
     if (op.alCrearVentana) op.alCrearVentana(ventana, host);
     return ventana;
   }
+  /** ¿Abrir la ventana al arrancar? op.abrirAlArrancar() (p. ej. solo si falta algo); sin eso, salvo que se abrió con --oculta
+   *  (al iniciar sesión). */
+  function abrirAlArrancar() {
+    if (typeof op.abrirAlArrancar === "function") { try { return op.abrirAlArrancar(host) !== false; } catch { return true; } }
+    if (typeof op.abrirAlArrancar === "boolean") return op.abrirAlArrancar;
+    return !(process.argv || []).includes("--oculta");
+  }
+
   function mostrar() {
     if (!ventana || ventana.isDestroyed()) return crearVentana();
     if (ventana.isMinimized()) ventana.restore();
@@ -411,8 +475,12 @@ function crearHost(op = {}) {
     const ayuda = [];
     if (op.ayuda !== false && op.sitio) ayuda.push({ label: idioma.f("Sitio de {app}", { app: nombre }), click: () => abrirEnlace(op.sitio) });
     if (op.ayuda !== false && op.codigo) ayuda.push({ label: t("Código"), click: () => abrirEnlace(op.codigo) });
+    // op.tituloAjustes: otro título («Para adultos…»), o false sin ese ítem; op.menuApp({item, t, …}): ítems propios debajo.
+    const ajustes = op.tituloAjustes === false ? [] : [item(typeof op.tituloAjustes === "string" ? op.tituloAjustes : "Ajustes…", "ajustes", "CmdOrCtrl+,")];
+    const propios = op.menuApp ? op.menuApp({ t, f: idioma.f, item, abrirEnlace, host }) || [] : [];
+    const arriba = [...ajustes, ...propios];
     return [
-      { label: t("Archivo"), submenu: [item("Ajustes…", "ajustes", "CmdOrCtrl+,"), { type: "separator" },
+      { label: t("Archivo"), submenu: [...arriba, ...(arriba.length ? [{ type: "separator" }] : []),
         { label: idioma.f("Salir de {app}", { app: nombre }), accelerator: "CmdOrCtrl+Q", click: () => salir() }] },
       { label: t("Edición"), submenu: [{ label: t("Deshacer"), role: "undo" }, { label: t("Rehacer"), role: "redo" }, { type: "separator" },
         { label: t("Cortar"), role: "cut" }, { label: t("Copiar"), role: "copy" }, { label: t("Pegar"), role: "paste" }, { label: t("Seleccionar todo"), role: "selectAll" }] },
@@ -470,11 +538,15 @@ function crearHost(op = {}) {
     if (!op.variasInstancias && !app.requestSingleInstanceLock()) { app.quit(); return false; }
     if (ES_WIN && op.appUserModelId) app.setAppUserModelId(op.appUserModelId);
     app.setName(nombre);
-    // Lo que Chromium guarda (caché, preferencias del navegador) va en una subcarpeta de los datos, no junto a config.json.
-    app.setPath("userData", path.join(DATOS, "electron"));
+    // Lo que Chromium guarda (caché, preferencias del navegador) va en una subcarpeta de los datos, no junto a config.json. Una app
+    // que ya existía pasa userData: "sistema" y lo deja donde estaba (~/.config/<App>, %APPDATA%\<App>): ahí está también la llave
+    // de safeStorage en Windows (Local State), sin la que no se leen los secretos guardados antes.
+    if (op.userData !== "sistema") app.setPath("userData", path.join(DATOS, "electron"));
     ipcMain.on(id, alMensaje);
     app.on("second-instance", () => mostrar());
     app.on("window-all-closed", () => { if (ventanaOp.alCerrar !== "esconder") app.quit(); });
+    // Con la ventana que se esconde, app.quit() (apagar el equipo, cerrar sesión) igual guarda y sale: si no, el «close» lo frenaría.
+    if (ventanaOp.alCerrar === "esconder") app.on("before-quit", (e) => { if (!saliendo) { e.preventDefault(); salir(); } });
     app.on("web-contents-created", (_e, wc) => {
       wc.on("will-attach-webview", (e) => e.preventDefault());
       wc.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -486,7 +558,7 @@ function crearHost(op = {}) {
       aplicarTema();
       armarMenu();
       if (carpeta && vigilante) { const c = carpeta.actual(); if (c) vigilante.empezar(c); }
-      crearVentana();
+      crearVentana({ mostrarla: abrirAlArrancar() });
       if (idioma.elegido) iniciarTareas();
     });
     return true;
@@ -512,6 +584,21 @@ function crearHost(op = {}) {
       },
     },
     inyectores,
+    ventanas: {
+      /** Otra ventana con la misma interfaz (panel de la bandeja, barra flotante): créala con `webPreferences:
+       *  host.ventanas.preferencias()` y cárgala con `<id>://ui/…`. Habla con el puente con las mismas guardas y recibe la respuesta
+       *  a lo que pidió (también las declaradas). */
+      agregar(w) {
+        if (!w || !w.webContents || otras.has(w)) return w;
+        otras.add(w);
+        guardarNavegacion(w.webContents);
+        w.on("closed", () => otras.delete(w));
+        return w;
+      },
+      quitar(w) { otras.delete(w); },
+      preferencias,
+      todas: () => [ventana, ...otras].filter((w) => w && !w.isDestroyed()),
+    },
     llamar, despachar, alMensaje, enviarEstado, estado, mostrar, salir, iniciar, iniciarTareas, aplicarTema, armarMenu, abrirEnlace, copiar, papelera,
     mostrarEnCarpeta, carpeta, vigilante, secretos, notificaciones, esperarLibre,
     falta: (texto, valores) => new Falta(texto, valores),

@@ -1,5 +1,5 @@
 // El puente sobre la pieza «host-escritorio» (Linux, pantalla virtual): las acciones declaradas en acciones.json (preguntar,
-// gimnasio, probarIA) con sus datos validados y su eco, el panel de la bandeja con su propio puente, la grabadora oculta
+// gimnasio, probarIA) con sus datos validados y su eco, el panel de la bandeja agregado al puente del host, la grabadora oculta
 // (minuta://app/, con su AudioWorklet) y que lo que guarda Chromium siga en la carpeta de siempre (safeStorage).
 // Uso: HOME=$(mktemp -d) xvfb-run -a node pruebas/puente.mjs   (desde escritorio/, con Electron instalado)
 import { createRequire } from "module";
@@ -42,6 +42,12 @@ await panel.waitForTimeout(800);
 await panel.evaluate(() => window.minutaEscritorio.enviar({ accion: "copiar", datos: { texto: "hola desde el panel" } }));
 await esperar(500);
 revisar("panel: su puente llega a lo que trae el host (copiar)", (await app.evaluate(({ clipboard }) => clipboard.readText())) === "hola desde el panel");
+// Una declarada pedida desde el panel le responde al panel (host.ventanas.agregar), no al visor.
+await visor.evaluate(() => { window.__gymVisor = null; window.Minuta.gym = (r) => { window.__gymVisor = r; }; });
+await panel.evaluate(() => { window.__gym = null; window.Minuta.gym = (r) => { window.__gym = r; }; window.minutaEscritorio.enviar({ accion: "gimnasio", datos: { modo: "otro", entrada: {} } }); });
+let gp = null;
+for (let t = 0; t < 6000 && !gp; t += 250) { gp = await panel.evaluate(() => window.__gym); if (!gp) await esperar(250); }
+revisar("panel: una declarada le responde al panel, no al visor", gp?.codigo === "datos" && !(await visor.evaluate(() => window.__gymVisor)), gp);
 const datos = await app.evaluate(({ app }) => app.getPath("userData"));
 revisar("userData de siempre (~/.config/Minuta): safeStorage sigue leyendo lo cifrado antes", datos === path.join(process.env.HOME, ".config", "Minuta"), datos);
 

@@ -34,22 +34,11 @@ const ICONOS = path.join(__dirname, "..", "iconos");
 const icono = (n) => nativeImage.createFromPath(path.join(ICONOS, n));
 
 // ───────────────────────── El host (pieza «host-escritorio») ─────────────────────────
-// Lo que Chromium guarda (y la llave de safeStorage en Windows, en «Local State») sigue donde siempre: el host lo movería a
-// ~/minuta/electron y los tokens y el calendario cifrados de antes ya no se podrían leer. Se vuelve a poner justo después de iniciar.
-const USERDATA_DE_SIEMPRE = app.getPath("userData");
 // El tamaño y la posición de la ventana: el host los guarda en ~/minuta/ventana.json (antes, .ventana.json).
 try {
   const viejo = path.join(BASE, ".ventana.json"), nuevo = path.join(BASE, "ventana.json");
   if (fs.existsSync(viejo) && !fs.existsSync(nuevo)) fs.copyFileSync(viejo, nuevo);
 } catch {}
-/** La ventana del host es el visor de Minuta, sin marco: la interfaz dibuja su barra, sus botones y el borde de cada universo
- *  (clase «ventana escritorio» de app.js). El host no tiene esa opción todavía (pendiente para Pieza): se la da esta clase. */
-class VentanaSinMarco extends BrowserWindow {
-  constructor(o = {}) { super({ ...o, frame: false }); }
-}
-const electronDelHost = new Proxy(electron, { get: (e, k) => (k === "BrowserWindow" ? VentanaSinMarco : e[k]) });
-/** Abierta sola al iniciar sesión (--oculta), Minuta queda en la bandeja; la primera vez, siempre se abre la bienvenida. */
-let mostrarAlAbrir = Perfil.falta || !process.argv.includes("--oculta");
 /** Avisos del sistema: qué hacer cuando la persona toca uno (por id). */
 const alTocar = new Map();
 let avisosHechos = 0;
@@ -60,11 +49,22 @@ let avisosHechos = 0;
 const actualizaciones = crearActualizaciones({ app, net, repo: "minuta-app/minuta", nombre: "Minuta" });
 
 const host = crearHost({
-  electron: electronDelHost,
+  electron,
   // Minuta usa el código de ~/minuta si es un checkout de git (instalación de desarrollo); si no, el de adentro de la app.
   recursos: recursos(),
-  ventana: { ancho: 1120, alto: 760, minAncho: 980, minAlto: 640, alCerrar: "esconder", icono: path.join(ICONOS, "minuta-256.png"),
+  // El visor va sin marco: la interfaz dibuja su barra, sus botones y el borde de cada universo (clase «ventana escritorio» de
+  // app.js). Cerrarlo lo esconde (Minuta sigue en la bandeja); apagar o cerrar sesión igual pasa por antesDeSalir.
+  ventana: { ancho: 1120, alto: 760, minAncho: 980, minAlto: 640, alCerrar: "esconder", frame: false, icono: path.join(ICONOS, "minuta-256.png"),
     fondo: { claro: "#111111", oscuro: "#111111" } },
+  // Abierta sola al iniciar sesión (--oculta), Minuta queda en la bandeja; la primera vez, siempre se abre la bienvenida.
+  abrirAlArrancar: () => Perfil.falta || !process.argv.includes("--oculta"),
+  // Lo que Chromium guarda (y la llave de safeStorage en Windows, en «Local State») sigue donde siempre (~/.config/Minuta,
+  // %APPDATA%\Minuta): los tokens y el calendario cifrados de antes se siguen leyendo.
+  userData: "sistema",
+  // Todos los scripts de bin/ (también los declarados) encuentran whisper-cli, el separador de voces y la IA de la persona.
+  entorno: () => entornoScripts(),
+  // Salir con una reunión grabándose: primero se detiene y se guarda (también al apagar o cerrar sesión).
+  antesDeSalir: () => pararAlSalir(),
   appUserModelId: "app.minuta.escritorio",
   sitio: "https://minuta-app.github.io/minuta/", codigo: "https://github.com/minuta-app/minuta", ayuda: false,
   // Minuta guarda el idioma en perfil.json (no en config.json, que es el universo elegido).
@@ -84,7 +84,6 @@ const host = crearHost({
   ],
 });
 if (!host.iniciar()) process.exit(0);
-app.setPath("userData", USERDATA_DE_SIEMPRE);
 /** Los scripts de Minuta encuentran ahí whisper-cli, el separador de voces y la IA de la persona. */
 const entornoScripts = () => ({ MINUTA_HERRAMIENTAS: herramientas(), PATH: [herramientas(), IA.path()].join(path.delimiter) });
 
@@ -153,17 +152,10 @@ const t = (s) => Idioma.t(s);
 const f = (s, ...v) => Idioma.f(s, ...v);
 
 // ───────────────────────── Ventanas ─────────────────────────
-// El panel: sandbox y el preload de la pieza (la interfaz no tiene acceso a Node; solo habla con el proceso principal por el
-// puente, `window.minutaEscritorio.enviar`). Sabe que es el panel por #panel.
-const webPrefs = () => ({ preload: path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: true, nodeIntegration: false,
-  webviewTag: false, additionalArguments: [`--pieza-host=${host.id}`], spellcheck: false });
-
 /** La ventana del host (el visor) recién creada: lo que Minuta escucha de ella. El host ya se encarga de que no navegue fuera de
  *  minuta://ui/, de que un enlace https vaya al navegador y de guardar su tamaño. */
 function prepararVisor(w) {
   ventana = w;
-  w.removeAllListeners("ready-to-show");
-  w.once("ready-to-show", () => { if (mostrarAlAbrir && !w.isDestroyed()) w.show(); mostrarAlAbrir = true; });
   // La interfaz no manda «listo»: Minuta le pasa todo (cargar) apenas carga, y el host queda listo para responder.
   w.webContents.on("did-finish-load", () => { listo.add(w.webContents.id); host.despachar("listo", {}); enviarTodo(); });
   w.on("focus", () => { llamarFuncion(w, "ventana", { activa: true }); enviarTodo(); });
@@ -176,15 +168,9 @@ function prepararVisor(w) {
 function abrirVisor(ruta) {
   if (ruta) M.notaSeleccionada = ruta;
   const yaEstaba = !!ventana && !ventana.isDestroyed();
-  mostrarAlAbrir = true;
   const w = host.mostrar();
   if (yaEstaba && ruta) llamar(w, { seleccion: ruta });
   return w;
-}
-
-function abrirEnlacesFuera(w) {
-  w.webContents.setWindowOpenHandler(({ url }) => { if (/^https:\/\//.test(url)) shell.openExternal(url); return { action: "deny" }; });
-  w.webContents.on("will-navigate", (e, url) => { if (!url.startsWith("minuta://")) { e.preventDefault(); if (/^https:\/\//.test(url)) shell.openExternal(url); } });
 }
 
 /** Ejecuta JS en el visor cuando esté cargado (lo abre si hace falta). */
@@ -200,15 +186,18 @@ function enVisor(js, intentos = 25) {
 
 const PANEL_ANCHO = 386;
 let panelAlto = 560;
+/** El panel de la bandeja: otra ventana con la misma interfaz (sabe que es el panel por #panel), agregada al host: habla con el
+ *  mismo puente y las mismas guardas (sandbox, el preload de la pieza, solo su marco principal con minuta://ui/), no navega fuera
+ *  de ui/ y recibe la respuesta a lo que pidió (también las declaradas). */
 function crearPanel() {
   panel = new BrowserWindow({
     width: PANEL_ANCHO, height: panelAlto, show: false, frame: false, resizable: false, skipTaskbar: true, alwaysOnTop: true, transparent: false,
-    backgroundColor: "#111111", fullscreenable: false, minimizable: false, maximizable: false, webPreferences: webPrefs(),
+    backgroundColor: "#111111", fullscreenable: false, minimizable: false, maximizable: false, webPreferences: host.ventanas.preferencias(),
   });
+  host.ventanas.agregar(panel);
   panel.loadURL("minuta://ui/index.html#panel");
   panel.webContents.on("did-finish-load", () => { listo.add(panel.webContents.id); enviarTodoPanel(); enviarEstado(); });
   panel.on("blur", () => setTimeout(() => { if (panel && !panel.isDestroyed() && !panel.isFocused()) panel.hide(); }, 120));
-  abrirEnlacesFuera(panel);
 }
 
 function posicionarPanel() {
@@ -513,14 +502,14 @@ function ejecutar(script, args, log) {
 /** Un script de bin/ por el procesador del host: {datos, error}. `datos` es null si no respondió, se cortó por el límite o
  *  respondió {ok: false} (entonces `error` es lo que dijo). */
 async function correrScriptJSON(script, args, { limite = 330 } = {}) {
-  const r = await host.procesador.correrJSON(script, args, { limite, entorno: entornoScripts() });
+  const r = await host.procesador.correrJSON(script, args, { limite });
   return r && r.ok !== false ? { datos: r, error: "" } : { datos: null, error: (r && r.error) || "" };
 }
 
 /** `script <accion> <entrada.json> <salida.json>`: lo que manda la interfaz va en un archivo privado, nunca como argumento.
  *  Devuelve la respuesta tal cual (la pieza «catálogo» lee su `frase`). */
 function conEntrada(script, accion, datos) {
-  return host.procesador.conEntrada(script, [accion], datos || {}, { limite: 120, entorno: entornoScripts() });
+  return host.procesador.conEntrada(script, [accion], datos || {}, { limite: 120 });
 }
 
 /** Pieza «catálogo» (repo y tipos de app.json). Se crea al usarla: net.fetch necesita la app lista. */
@@ -623,7 +612,7 @@ async function terminarDictado(enviar) {
 /** Lo dicho, en texto: bin/dictado.py con la pieza «transcribir» (el mismo whisper, modelo, idioma y vocabulario que las notas,
  *  sin inventos sobre silencio). Antes llamaba a whisper-cli directo (pendiente #18 de Pieza). */
 async function transcribirCorto(wav) {
-  const r = await host.procesador.conEntrada("dictado.py", [], { wav }, { limite: 150, entorno: entornoScripts() });
+  const r = await host.procesador.conEntrada("dictado.py", [], { wav }, { limite: 150 });
   return r && r.ok && typeof r.texto === "string" ? r.texto.replace(/\s+/g, " ").trim() : "";
 }
 
@@ -902,19 +891,9 @@ const ACCIONES = {
   },
 };
 
-// El visor habla con el puente del host (registradas → las del host → las declaradas en acciones.json). El panel de la bandeja
-// es una ventana de Minuta: su puente es este, con las mismas guardas (solo su marco principal, con su página minuta://ui/).
-for (const [nombre, fn] of Object.entries(ACCIONES)) host.acciones.registrar(nombre, (d) => fn(d, ventana));
-ipcMain.on(host.id, async (e, msg) => {
-  if (!panel || panel.isDestroyed() || e.sender !== panel.webContents) return;
-  if (!e.senderFrame || e.senderFrame !== e.sender.mainFrame || !String(e.senderFrame.url || "").startsWith(host.ORIGEN)) return;
-  if (!msg || typeof msg.accion !== "string" || !/^[a-z][A-Za-z0-9]{0,40}$/.test(msg.accion)) return;
-  const datos = msg.datos && typeof msg.datos === "object" && !Array.isArray(msg.datos) ? msg.datos : {};
-  try {
-    if (Object.hasOwn(ACCIONES, msg.accion)) await ACCIONES[msg.accion](datos, panel);
-    else await host.despachar(msg.accion, datos);  // copiar, abrirEnlace… (lo que trae el host)
-  } catch (err) { console.error("Minuta:", msg.accion, err); }
-});
+// El visor y el panel de la bandeja hablan con el puente del host (registradas → las del host → las declaradas en acciones.json).
+// Cada acción de Minuta recibe la ventana que la pidió (el visor o el panel: `ctx.ventana`).
+for (const [nombre, fn] of Object.entries(ACCIONES)) host.acciones.registrar(nombre, (d, _host, ctx = {}) => fn(d, ctx.ventana || ventana));
 
 async function buscarActualizacion() {
   const r = Actualizaciones.esDesarrollo ? await Actualizaciones.revisar() : await actualizaciones.revisar().catch(() => ({ hay: false, sinConexion: true }));
@@ -923,18 +902,15 @@ async function buscarActualizacion() {
   enviarEstado();
 }
 
-/** Salir: si está grabando, primero se detiene (y se guarda la reunión); después el host espera lo que corre y lo corta. */
-let saliendo = false;
-function salir() {
-  if (saliendo) return;
-  saliendo = true;
-  const grabando = M.fase === "grabando";
-  if (grabando) detener();
-  setTimeout(() => host.salir(), grabando ? 900 : 50);
+/** Salir: el host guarda lo pendiente, espera lo que corre y lo corta. Lo mismo cuando el sistema cierra la app (apagar, cerrar
+ *  sesión, app.quit): con la ventana que se esconde al cerrarla, el host atiende «before-quit». */
+const salir = () => host.salir();
+/** Antes de salir (antesDeSalir del host): si está grabando, primero se detiene y se guarda la reunión. */
+async function pararAlSalir() {
+  if (M.fase !== "grabando") return;
+  detener();
+  await new Promise((r) => setTimeout(r, 900));
 }
-// Que el sistema cierre la app (apagar, cerrar sesión, app.quit) pasa por lo mismo: con la ventana que se esconde al cerrarla
-// (ventana.alCerrar: "esconder"), sin esto el cierre quedaría frenado.
-app.on("before-quit", (e) => { e.preventDefault(); salir(); });
 
 // ───────────────────────── Arranque ─────────────────────────
 // El host trae minuta://ui/… (la interfaz); minuta://app/… son las páginas propias de esta app (la grabadora oculta y la alerta).

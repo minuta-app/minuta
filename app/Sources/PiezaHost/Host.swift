@@ -39,14 +39,41 @@ public enum Host {
         /// Solo para desarrollo y pruebas: dónde están app.json, bin/ y ui/, y qué Python usar.
         public var recursos: URL?
         public var python: URL?
+        /// Segundos que puede tardar el script del estado (apps con mucho historial: más).
+        public var limiteEstado: Int
+        /// El estado se arma dentro de la fila (`Fila`): nunca se lee a medio guardar una acción con "cola": "escritura".
+        public var estadoEnFila: Bool
+        /// El título de «Ajustes…» en el menú de la app (se traduce como todo; una app para niños: «Para adultos…»). nil: sin ese ítem.
+        public var tituloAjustes: String?
+        /// App de barra de menú: sin Dock ni menús mientras la ventana está cerrada (.accessory) y con Dock y menús mientras está
+        /// abierta (también al reabrirla desde el Dock o con `p.mostrar()`).
+        public var barraDeMenu: Bool
+        /// ¿Abrir la ventana al arrancar? nil: siempre. P. ej. `{ faltaAlgo }` (si no falta nada, queda en la barra de menú).
+        public var abrirAlArrancar: (@MainActor () -> Bool)?
+        /// La interfaz llega hasta arriba: barra de título transparente, sin título, y una franja invisible de `altoFranja` puntos
+        /// que mueve la ventana (doble clic: zoom). WKWebView no entiende `-webkit-app-region`. La interfaz lo sabe por
+        /// `window.<ID>_BARRA === "transparente"` (y deja ese espacio libre: los botones de la ventana quedan encima).
+        public var barraTransparente: Bool
+        public var altoFranja: CGFloat
+        /// Vidrio: el fondo translúcido de macOS detrás de la interfaz (implica `barraTransparente`); `window.<ID>_VIDRIO = true`.
+        public var vidrio: Bool
+        /// El nombre con el que macOS recuerda el tamaño de la ventana. nil: el nombre de la app. Una app con tilde que ya existía
+        /// pasa el de antes (sin tilde) para que nadie pierda el tamaño de su ventana.
+        public var nombreVentana: String?
 
         public init(ancho: CGFloat = 1280, alto: CGFloat = 800, minAncho: CGFloat = 720, minAlto: CGFloat = 520, sitio: String? = nil,
                     codigo: String? = nil, menuAyuda: Bool = true, avisos: Bool = false, global: String? = nil, estadoScript: String? = "estado.py",
-                    cerrarSale: Bool = false, recursos: URL? = nil, python: URL? = nil) {
+                    cerrarSale: Bool = false, recursos: URL? = nil, python: URL? = nil, limiteEstado: Int = 60, estadoEnFila: Bool = false,
+                    tituloAjustes: String? = "Ajustes…", barraDeMenu: Bool = false, abrirAlArrancar: (@MainActor () -> Bool)? = nil,
+                    barraTransparente: Bool = false, altoFranja: CGFloat = 30, vidrio: Bool = false, nombreVentana: String? = nil) {
             self.ancho = ancho; self.alto = alto; self.minAncho = minAncho; self.minAlto = minAlto
             self.sitio = sitio; self.codigo = codigo; self.menuAyuda = menuAyuda; self.avisos = avisos
             self.global = global; self.estadoScript = estadoScript
             self.cerrarSale = cerrarSale; self.recursos = recursos; self.python = python
+            self.limiteEstado = min(max(limiteEstado, 1), 3600); self.estadoEnFila = estadoEnFila
+            self.tituloAjustes = tituloAjustes; self.barraDeMenu = barraDeMenu; self.abrirAlArrancar = abrirAlArrancar
+            self.barraTransparente = barraTransparente || vidrio; self.altoFranja = max(altoFranja, 0); self.vidrio = vidrio
+            self.nombreVentana = nombreVentana
         }
     }
 
@@ -58,6 +85,8 @@ public enum Host {
     public private(set) static var recursos = URL(fileURLWithPath: "/")
     public private(set) static var datos = URL(fileURLWithPath: "/")
     private static var datosPropios = false
+    /// Con "datos": "visible": ~/<Nombre> (la carpeta que ve la persona; los datos internos van en ~/<Nombre>/.<id>).
+    private static var carpetaVisible: URL?
 
     /// Lee app.json y deja todo listo. false si la app no trae un app.json que sirva (sin él no hay app).
     @discardableResult
@@ -101,14 +130,20 @@ public enum Host {
             return u
         }
         if app["datos"] as? String == "visible" {
+            carpetaVisible = casa.appendingPathComponent(nombre)
             return casa.appendingPathComponent(nombre).appendingPathComponent("." + id)
         }
         return casa.appendingPathComponent("Library/Application Support").appendingPathComponent(nombre)
     }
 
-    /// La carpeta de datos queda solo para la persona (0700). Una carpeta propia de app.json se usa tal cual.
+    /// La carpeta de datos queda solo para la persona (0700). Con "datos": "visible", ~/<Nombre> recién creada también (como
+    /// `nucleo.carpeta_datos()`; una que ya existía no se toca). Una carpeta propia de app.json se usa tal cual.
     public static func prepararDatos() {
         guard !datosPropios else { return }
+        if let v = carpetaVisible, !FileManager.default.fileExists(atPath: v.path) {
+            try? FileManager.default.createDirectory(at: v, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+            try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: v.path)
+        }
         try? FileManager.default.createDirectory(at: datos, withIntermediateDirectories: true)
         try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: datos.path)
     }
@@ -130,7 +165,8 @@ public enum Host {
         let app = NSApplication.shared
         Delegado.compartido = Delegado(preparar: preparar)
         app.delegate = Delegado.compartido
-        app.setActivationPolicy(.regular)
+        // Una app de barra de menú parte sin Dock: aparece en él solo mientras su ventana está abierta (Puente.mostrar).
+        app.setActivationPolicy(c.barraDeMenu ? .accessory : .regular)
         app.run()
     }
 }
@@ -152,11 +188,12 @@ public final class Delegado: NSObject, NSApplicationDelegate {
         p.instalarMenus()
         p.aplicarApariencia()
         if let c = p.carpeta, let v = p.vigilante, let u = c.actual() { v.empezar(u) }
-        p.mostrar()
+        if Host.opciones.abrirAlArrancar?() ?? true { p.mostrar() }
         // En el primer uso lo primero es elegir el idioma: lo que corre solo espera a que esté elegido.
         if Idioma.elegido { p.iniciarTareas() }
     }
 
+    /// Desde el Dock o abriendo la app otra vez: la ventana (con Dock y menús, también en una app de barra de menú).
     public func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
         Puente.shared.mostrar()
         return true

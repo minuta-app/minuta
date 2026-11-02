@@ -12,7 +12,7 @@ import Foundation
 /// Va en su propio target de SwiftPM (`PiezaCatalogo`): nada de la app adentro. Repo y tipos salen de app.json (sección
 /// «catalogo»); correr un script lo hace la app (su `Procesador.conEntrada`), que se pasa como `correr`.
 ///
-///     Catalogo.configurar(appJSON: Rutas.recursos.appendingPathComponent("app.json"), agente: "Ana/\(version)") { s, a, d, fin in
+///     Catalogo.configurar(appJSON: Host.recursos.appendingPathComponent("app.json"), agente: "Ana/\(version)") { s, a, d, fin in
 ///         Procesador.conEntrada(s, a, d, fin: fin) }
 ///     // case "catalogo":            Catalogo.listar(tipo) { self.llamar("catalogoListo", $0) }
 ///     // case "descargarDelCatalogo": Catalogo.descargar(tipo, id) { self.llamar("catalogoDescargado", $0) }
