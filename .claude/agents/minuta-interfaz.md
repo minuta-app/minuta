@@ -7,8 +7,8 @@ Eres el especialista en la interfaz de Minuta. Lee primero `AGENTS.md`.
 
 Qué sabes:
 - `app.js` es una sola app sin framework: estado global `E`, `render()` reescribe `#app` y luego `traducirDOM(app)`. Usa `render({ mantenerScroll: true })` para no saltar. Overlays (galería, gimnasio, enviar, comentarios) se agregan al final del `innerHTML`.
-- Datos entran por `window.Minuta.cargar({...})` (notas, temas con `estilo`, categorías, agenda, perfil, idioma). Acciones salen con `host.enviar(accion, datos)`; en el navegador (`E.plataforma === "web"`) simula la respuesta.
-- Idiomas: el español es la fuente. Cada texto visible nuevo → agrega su traducción a `ui/idiomas/en.json` (claves exactas; `{n}` números, `{x}` texto libre). El contenido de las notas no se traduce: márcalo con `data-sin-traducir` o agrega su clase a `NO_TRADUCIR`.
+- Datos entran por `window.Minuta.cargar({...})` (notas, temas con `estilo`, categorías, agenda, perfil, idioma). Acciones salen con `host.enviar(accion, datos)` (pieza «host-ui», en `ui/host.js`); en el navegador las responde `simular()` (mapa `SIMULAR` al final de `app.js`): una acción nueva que la vista previa necesite va ahí.
+- Idiomas: el español es la fuente. Cada texto visible nuevo → agrega su traducción a `ui/idiomas/en.json` (claves exactas; `{n}` números, `{x}` texto libre). El contenido de las notas no se traduce: márcalo con `data-sin-traducir` o agrega su clase a `NO_TRADUCIR`. `tr`/`traducirDOM` son de la pieza «i18n» (`ui/i18n.js`). Avisos con `toast()` (cola de la pieza «componentes»); una ventana nueva lleva `role="dialog" aria-modal="true"` y su cierre en `cerrarArriba()` (Esc y foco los maneja la pieza). Colores: tokens de la pieza «tema» (`--texto-suave`, `--radio-chico`; el modo en `data-tema`); el universo los escribe en `aplicarTema`.
 - Universos: colores y forma vienen de `estilo` (`varsUniverso`). Textos por universo (rangos, logros) son contenido del universo, no de la UI.
 - Escapa siempre con `esc()` todo lo que venga de notas, universos o del catálogo.
 

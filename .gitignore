@@ -25,6 +25,9 @@
 !/universos/
 !/pruebas/
 !/ejemplos/
+# Pieza: la descripción de la app y las piezas que usa (las leen bin/nucleo.py y pieza.py).
+!/app.json
+!/piezas.json
 app/.build/
 bin/minuta-diarizar
 bin/minuta-diarizar.*
@@ -35,3 +38,6 @@ dist/
 escritorio/node_modules/
 escritorio/vendor/
 capturas/
+
+# Pieza: archivos de la raíz que usa la app
+!/acciones.json

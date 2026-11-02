@@ -10,7 +10,26 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "Minuta",
+            dependencies: ["PiezaCatalogo", "PiezaHost", "PiezaActualizaciones"],
             path: "Sources/Minuta"
+        ),
+        // Pieza «host-mac» de Pieza (no se edita aquí). Minuta usa de ella lo que calza con una app de barra de menú con ventana
+        // propia: rutas y app.json (Host.configurar), el Procesador (límite de tiempo, entorno limpio, entrada por archivo), las
+        // reglas de las acciones declaradas en acciones.json (Enchufe) y los secretos del Llavero (Secretos). Ver AGENTS.md.
+        .target(
+            name: "PiezaHost",
+            path: "Sources/PiezaHost"
+        ),
+        // Pieza «actualizaciones» de Pieza (no se edita aquí): Releases con su .sha256 y la instalación de desarrollo (git pull +
+        // empaquetar.sh). Minuta la configura con su repo y su nombre en AppModel.init.
+        .target(
+            name: "PiezaActualizaciones",
+            path: "Sources/PiezaActualizaciones"
+        ),
+        // Pieza «catálogo» de Pieza (universos e idiomas de la comunidad, con huella SHA-256): su propio target, no se edita aquí.
+        .target(
+            name: "PiezaCatalogo",
+            path: "Sources/PiezaCatalogo"
         ),
         // whisper.cpp oficial (framework para Apple, usa Metal). Misma versión que se probó con whisper-cli.
         .binaryTarget(

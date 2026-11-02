@@ -1,0 +1,280 @@
+{
+ "formato": 1,
+ "piezas": {
+  "nucleo": {
+   "version": "0.7.0",
+   "archivos": {
+    "bin/nucleo.py": "071763cbcacedee9bb55db8704a6098b8f68346f549bbd7ce6befa86a295a3fb"
+   },
+   "ficha": {
+    "requiere": [],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "ia": {
+   "version": "0.6.3",
+   "archivos": {
+    "bin/ia.py": "36d6df8fb3097e149e15174406e7d8fd82a4a4c9cac4b2ba8b2505ecb4dcdfef"
+   },
+   "ficha": {
+    "requiere": [
+     "nucleo"
+    ],
+    "permisos": {},
+    "red": []
+   },
+   "acciones": {
+    "probarIA": {
+     "script": "ia.py",
+     "args": [
+      "probar"
+     ],
+     "entrada": "archivo",
+     "datos": {
+      "ia": {
+       "tipo": "enum",
+       "valores": [
+        "claude",
+        "codex",
+        "gemini"
+       ]
+      }
+     },
+     "responde": "iaProbada",
+     "limite": 150
+    },
+    "listaIA": {
+     "script": "ia.py",
+     "args": [
+      "lista"
+     ],
+     "entrada": null,
+     "datos": {},
+     "responde": "iaLista",
+     "limite": 30
+    }
+   }
+  },
+  "host-ui": {
+   "version": "0.2.0",
+   "archivos": {
+    "ui/host.js": "cdca43b52982db53c3c018b807a8df0bc9282c9ff61b4ecee8037ddc3e5521aa"
+   },
+   "ficha": {
+    "requiere": [],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "i18n": {
+   "version": "0.3.1",
+   "archivos": {
+    "ui/i18n.js": "3f4d071fd5b2b137cb0a6413e4d1e588ae79081a61f21e3f7d240cf3cf55bce9"
+   },
+   "ficha": {
+    "requiere": [],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "tema": {
+   "version": "0.2.1",
+   "archivos": {
+    "ui/tema.css": "1d43c1cf027fafcbd282bd90bc87ae3937059f247fb823cd1aab2a26f7c9363e",
+    "ui/tema.js": "b679ecb7bc80556b70e3f3fe768f0e3af0086bdf44c0d73ed0867da6a8f33f6e"
+   },
+   "sin_config": [
+    "tema"
+   ],
+   "ficha": {
+    "requiere": [],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "componentes": {
+   "version": "0.3.0",
+   "archivos": {
+    "ui/componentes.js": "310712e40f69b674f5d64fc723ccd2dbf2ad114f6ac68ee72a598cf4c36bb76a",
+    "ui/componentes.css": "101586f0fa7aa509f42b626de378c5ad32d176da5a4c0ad85b081a47908fe56f"
+   },
+   "ficha": {
+    "requiere": [
+     "i18n",
+     "tema"
+    ],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "transcribir": {
+   "version": "0.2.0",
+   "archivos": {
+    "bin/transcribir.py": "7f83840038e1cf4a40025c2597ffb508d16f202b4e29a86a9943248341c05028"
+   },
+   "ficha": {
+    "requiere": [
+     "nucleo"
+    ],
+    "permisos": {
+     "mac": [
+      {
+       "clave": "NSMicrophoneUsageDescription",
+       "por": "solo si la app graba la voz que transcribe (la pieza solo lee archivos de audio)"
+      }
+     ]
+    },
+    "red": [
+     "huggingface.co"
+    ]
+   },
+   "acciones": {
+    "modelosVoz": {
+     "script": "transcribir.py",
+     "args": [
+      "modelos"
+     ],
+     "entrada": null,
+     "datos": {},
+     "responde": "modelosVoz",
+     "limite": 30
+    }
+   }
+  },
+  "catalogo": {
+   "version": "0.2.0",
+   "archivos": {
+    "bin/catalogo.py": "f4e14039756ecb69c3d8f4737cfc1a479e5a61e5aa38bc64ee739d40af7b593b",
+    "app/Sources/PiezaCatalogo/Catalogo.swift": "d46098aa918179363492e76a5712ff17ff802e66dd5bc2c57bdbea8868878ba7",
+    "escritorio/src/catalogo.js": "c76eddcffec1f533cec82e1eebace3642955f1eea52eb4c33f80510fcc56dc96"
+   },
+   "ficha": {
+    "requiere": [
+     "nucleo"
+    ],
+    "permisos": {},
+    "red": [
+     "raw.githubusercontent.com"
+    ]
+   },
+   "acciones": {
+    "catalogoInstalados": {
+     "script": "catalogo.py",
+     "args": [
+      "listar"
+     ],
+     "entrada": "archivo",
+     "datos": {
+      "tipo": {
+       "tipo": "texto",
+       "max": 31
+      }
+     },
+     "responde": "catalogoInstalados",
+     "limite": 30
+    },
+    "catalogoQuitar": {
+     "script": "catalogo.py",
+     "args": [
+      "quitar"
+     ],
+     "entrada": "archivo",
+     "datos": {
+      "tipo": {
+       "tipo": "texto",
+       "max": 31
+      },
+      "id": {
+       "tipo": "texto",
+       "max": 60
+      }
+     },
+     "responde": "catalogoQuitado",
+     "cola": "escritura",
+     "limite": 30
+    },
+    "catalogoUltima": {
+     "script": "catalogo.py",
+     "args": [
+      "ultima"
+     ],
+     "entrada": "archivo",
+     "datos": {
+      "tipo": {
+       "tipo": "texto",
+       "max": 31
+      }
+     },
+     "responde": "catalogoUltima",
+     "limite": 30
+    }
+   }
+  },
+  "host-escritorio": {
+   "version": "0.2.0",
+   "archivos": {
+    "escritorio/src/host.js": "66672428706bcbc7561978642277ef0bdf76a10d9ca7e64d6ce6669a2d837c6d",
+    "escritorio/src/enchufe.js": "15b71d09e7cdab30420036e15e690f1021e010be3a4f0f895315a774067acec3",
+    "escritorio/src/procesador.js": "4a8fd61b1927f8ae9e9687a9db458bc8d3dbece7690f27e60e5043e20e668a79",
+    "escritorio/src/preload.js": "1fa4254de5ba4c5c8688515ed55f5c516177292020513920f399a76cd3e2c751",
+    "escritorio/src/vigilante.js": "db11b708c018d6a4ae3b3e7fa71c0eaed5ae10fd0a6e26ce861b35885f349dce"
+   },
+   "ficha": {
+    "requiere": [
+     "nucleo",
+     "host-ui"
+    ],
+    "permisos": {},
+    "red": []
+   }
+  },
+  "host-mac": {
+   "version": "0.2.0",
+   "archivos": {
+    "app/Sources/PiezaHost/Host.swift": "83e0a0092cd3996cfe35b8377b8c8c06975fb0feb9675c3196fcc44a63269e10",
+    "app/Sources/PiezaHost/Procesador.swift": "732f71a12976724889ba389bd3f34bc042ffc4f99a5c76b3fae8dbe9a1e04132",
+    "app/Sources/PiezaHost/Enchufe.swift": "7687d04c080e560be52d90b26d36e7cfad665f8792b2887b98f5214194038d4e",
+    "app/Sources/PiezaHost/Puente.swift": "84625abeaab9558d7c7ce15816653ad0ab438a9da40458ceee8ee2a57a1b6202",
+    "app/Sources/PiezaHost/Carpeta.swift": "60676fa9a24d09105577ae1ab06bad3f379805490334e6e47afedb114292aa22",
+    "app/Sources/PiezaHost/Sistema.swift": "ec7219eee6a8b7678ce795572cd9225b1407200aa042e686bb7c833849df1277"
+   },
+   "ficha": {
+    "requiere": [
+     "nucleo",
+     "host-ui"
+    ],
+    "permisos": {
+     "mac": [
+      {
+       "clave": "Notificaciones",
+       "por": "solo si la app usa Notificaciones: macOS pregunta cuando la app lo pide (pedirPermiso), nunca al abrir"
+      },
+      {
+       "clave": "Llavero",
+       "por": "solo si la app usa Secretos: los tokens quedan en el Llavero de la persona, solo en este Mac"
+      }
+     ]
+    },
+    "red": []
+   }
+  },
+  "actualizaciones": {
+   "version": "0.3.0",
+   "archivos": {
+    "app/Sources/PiezaActualizaciones/Actualizaciones.swift": "ab8c92a4ce314a388cbc0975f7b25d4fb4a8ad6fdbca6da60e3bcb0a4426e144",
+    "escritorio/src/actualizaciones.js": "be9616838586bf45cb52215a4978c568d1f8a472c396dbd19637941181c16dc0"
+   },
+   "ficha": {
+    "requiere": [],
+    "permisos": {},
+    "red": [
+     "api.github.com",
+     "github.com",
+     "objects.githubusercontent.com",
+     "release-assets.githubusercontent.com"
+    ]
+   }
+  }
+ }
+}

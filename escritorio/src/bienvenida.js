@@ -72,9 +72,9 @@ async function descargarVerificado(url, sha256, destino, progreso = () => {}) {
 // ───────────── IA del usuario (su propia cuenta) ─────────────
 const IA = {
   conocidas: [
-    { id: "claude", nombre: "Claude", comando: "claude", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#claude", args: ["-p", "--output-format", "text"] },
-    { id: "codex", nombre: "ChatGPT (Codex)", comando: "codex", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#codex", args: ["exec", "--skip-git-repo-check", "-s", "read-only", "-"] },
-    { id: "gemini", nombre: "Gemini", comando: ["agy", "gemini"], soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#gemini", args: ["-p", "Responde a las instrucciones de arriba.", "-o", "text"] },
+    { id: "claude", nombre: "Claude", comando: "claude", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#claude" },
+    { id: "codex", nombre: "ChatGPT (Codex)", comando: "codex", soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#codex" },
+    { id: "gemini", nombre: "Gemini", comando: ["agy", "gemini"], soportada: true, guia: "https://minuta-app.github.io/minuta/ia.html#gemini" },
   ],
   /** Carpetas donde suelen quedar estas herramientas (la app no siempre hereda el PATH de la terminal). */
   dirs() {
@@ -94,24 +94,7 @@ const IA = {
   paraJS() { return this.conocidas.map((x) => ({ id: x.id, nombre: x.nombre, ruta: this.buscar(x.comando), soportada: x.soportada, guia: x.guia })); },
   /** PATH completo para los procesos hijos (Python, la IA, git). */
   path() { return [...new Set(this.dirs())].join(path.delimiter); },
-  /** Prueba real: le pide una palabra. Así sabemos que está instalada y con la sesión iniciada. */
-  probar(id) {
-    return new Promise((fin) => {
-      const ia = this.conocidas.find((x) => x.id === id), ruta = ia && this.buscar(ia.comando);
-      if (!ruta) return fin({ ok: false, texto: "No está instalada." });
-      // Antigravity CLI (`agy`) recibe el prompt como argumento.
-      const agy = /^agy(\.exe|\.cmd)?$/i.test(path.basename(ruta));
-      const args = agy ? ["--output-format", "text", "--sandbox", "-p", "Responde solo con la palabra: listo"] : ia.args;
-      const p = lanzar(ruta, args, { env: { ...process.env, PATH: this.path() }, cwd: os.tmpdir() });
-      let out = "", err = "";
-      p.stdout.on("data", (d) => (out += d));
-      p.stderr.on("data", (d) => (err += d));
-      const reloj = setTimeout(() => p.kill(), 90000);
-      p.on("error", (e) => { clearTimeout(reloj); fin({ ok: false, texto: e.message }); });
-      p.on("close", (c) => { clearTimeout(reloj); fin(c === 0 && out.trim() ? { ok: true, texto: out.trim() } : { ok: false, texto: (err || out).slice(0, 300) }); });
-      p.stdin.end(agy ? "" : "Responde solo con la palabra: listo");
-    });
-  },
+  // La prueba real (pedirle una palabra) la hace la pieza «ia»: acción probarIA de main.js → bin/ia.py probar.
 };
 
 /** spawn que también sirve para los .cmd de npm en Windows (necesitan pasar por la consola). */
@@ -125,10 +108,17 @@ function lanzar(ruta, args, opciones = {}) {
 
 // ───────────── Notas: carpeta, importar desde git y respaldo en la cuenta del usuario ─────────────
 const Respaldo = {
-  // Los tokens se guardan cifrados con el llavero del sistema (DPAPI en Windows, libsecret/kwallet en Linux).
+  // Los tokens van cifrados por el sistema (host.secretos de la pieza «host-escritorio»: safeStorage, DPAPI en Windows,
+  // libsecret/kwallet en Linux) en el mismo archivo de siempre, ~/minuta/.tokens ({cuenta: base64}), con las mismas cuentas
+  // («github», «gitlab»): quien ya conectó su cuenta no la pierde. main.js lo conecta con usarSecretos al arrancar.
   archivo: path.join(BASE, ".tokens"),
+  _secretos: null,
+  usarSecretos(s) { this._secretos = s; },
   _todos() { return leerJSON(this.archivo, {}) || {}; },
   guardarToken(token, cuenta) {
+    if (this._secretos && this._secretos.guardar(cuenta, token)) return;
+    // Linux sin llavero (safeStorage «basic_text»): el host no guarda nada ahí. Se sigue como hasta ahora, para que el respaldo
+    // de quien ya lo usaba no se corte (pendiente para Pieza: decidir qué hacer en ese caso).
     if (!safeStorage.isEncryptionAvailable()) return;
     const t = this._todos();
     t[cuenta] = safeStorage.encryptString(token).toString("base64");
@@ -136,6 +126,9 @@ const Respaldo = {
     try { fs.chmodSync(this.archivo, 0o600); } catch {}
   },
   token(cuenta) {
+    const s = this._secretos && this._secretos.leer(cuenta);
+    if (s) return s;
+    // Lo guardado antes en Linux sin llavero: se sigue leyendo igual que siempre.
     const c = this._todos()[cuenta];
     if (!c || !safeStorage.isEncryptionAvailable()) return null;
     try { return safeStorage.decryptString(Buffer.from(c, "base64")); } catch { return null; }
@@ -222,95 +215,29 @@ const Respaldo = {
   },
 };
 
-// ───────────── Actualizaciones (sin perder nada: los datos viven fuera de la app) ─────────────
-// Windows: instalador; Linux: el AppImage si se abrió así, si no el .tar.gz que deja instalar.sh en ~/.local/share/Minuta.
-const ASSET = PLATAFORMA === "windows" ? "Minuta-Windows.exe" : process.env.APPIMAGE ? "Minuta-Linux.AppImage" : "Minuta-Linux.tar.gz";
+// ───────────── Actualizaciones de una instalación de desarrollo ─────────────
+// Las de siempre (Releases con su .sha256: Windows, AppImage o el tar.gz de instalar.sh) son de la pieza «actualizaciones»
+// (actualizaciones.js). Aquí queda lo propio de Minuta: si ~/minuta es un checkout de git, se actualiza con git.
 const Actualizaciones = {
-  repoPublico: "minuta-app/minuta",
-  get version() { return app.getVersion(); },
   get esDesarrollo() { return fs.existsSync(path.join(BASE, ".git")); },
-  _url: null, _huella: null,
-  /** Devuelve { hay, detalle }. */
+  /** {hay, detalle, error}: los commits nuevos de origin/main. */
   async revisar() {
-    if (this.esDesarrollo) {
-      const f = await Respaldo.git(["fetch", "--quiet", "origin", "main"], BASE);
-      if (!f.ok) return { hay: false, detalle: "", error: true };
-      const n = parseInt((await Respaldo.git(["rev-list", "--count", "HEAD..origin/main"], BASE)).texto.trim(), 10) || 0;
-      if (!n) return { hay: false, detalle: "" };
-      const log = (await Respaldo.git(["log", "--format=%s", "-n", "3", "HEAD..origin/main"], BASE)).texto;
-      return { hay: true, detalle: log.split("\n").filter(Boolean).map((l) => "• " + l).join("\n") };
-    }
-    try {
-      const r = await net.fetch(`https://api.github.com/repos/${this.repoPublico}/releases/latest`,
-        { headers: { Accept: "application/vnd.github+json", "User-Agent": `Minuta/${this.version}` } });
-      if (!r.ok) return { hay: false, detalle: "", error: true };
-      const o = await r.json();
-      const tag = String(o.tag_name || "").replace(/^v/, "");
-      const url = (n) => (o.assets || []).find((a) => a.name === n)?.browser_download_url;
-      if (!tag || compararVersiones(tag, this.version) <= 0 || !url(ASSET) || !url(ASSET + ".sha256")) return { hay: false, detalle: "" };
-      this._url = url(ASSET); this._huella = url(ASSET + ".sha256");
-      return { hay: true, detalle: `Versión ${tag}\n` + String(o.body || "").split("\n").slice(0, 4).join("\n") };
-    } catch { return { hay: false, detalle: "", error: true }; }
+    const f = await Respaldo.git(["fetch", "--quiet", "origin", "main"], BASE);
+    if (!f.ok) return { hay: false, detalle: "", error: true };
+    const n = parseInt((await Respaldo.git(["rev-list", "--count", "HEAD..origin/main"], BASE)).texto.trim(), 10) || 0;
+    if (!n) return { hay: false, detalle: "" };
+    const log = (await Respaldo.git(["log", "--format=%s", "-n", "3", "HEAD..origin/main"], BASE)).texto;
+    return { hay: true, detalle: log.split("\n").filter(Boolean).map((l) => "• " + l).join("\n"), desarrollo: true };
   },
-  /** Baja la versión nueva, verifica su huella y la instala. Notas, perfil, universos y modelos no se tocan (viven en ~/minuta). */
-  /** avance({ paso: "1"|"2"|"3", texto, total, pct }): la interfaz lo muestra en el mismo aviso de actualización. */
+  /** git pull y volver a abrir. avance({paso, codigo, texto, valores, total}): la misma forma que la pieza. */
   async instalar(avance = () => {}) {
-    const T = { bajar: Idioma.t("Descargando la versión nueva…"), preparar: Idioma.t("Preparando la versión nueva…"),
-      instalar: Idioma.t("Instalando: Minuta se cerrará y volverá a abrirse sola") };
-    const paso = (n, texto, pct) => avance({ paso: String(n), texto, total: 3, ...(pct != null ? { pct } : {}) });
-    if (this.esDesarrollo) {
-      paso(1, T.bajar);
-      const r = await Respaldo.git(["pull", "--ff-only"], BASE);
-      if (!r.ok) throw new Error(Idioma.t("No pude descargar la versión nueva. Revisa tu conexión e intenta de nuevo."));
-      paso(3, T.instalar);
-      setTimeout(() => { app.relaunch(); app.exit(0); }, 1500);
-      return;
-    }
-    if (!this._url || !this._huella) throw new Error(Idioma.t("No encontré la descarga de la versión nueva."));
-    const huella = (await (await net.fetch(this._huella)).text()).trim().split(/\s+/)[0].toLowerCase();
-    if (!/^[0-9a-f]{64}$/.test(huella)) throw new Error(Idioma.t("No pude descargar la versión nueva. Revisa tu conexión e intenta de nuevo."));
-    // Carpeta nueva y privada en cada intento (mkdtemp): nadie más puede dejar o cambiar archivos ahí antes de instalar.
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "minuta-actualizacion-"));
-    const nuevo = path.join(tmp, ASSET);
-    paso(1, T.bajar, 0);
-    const total = +((await net.fetch(this._url, { method: "HEAD" }).catch(() => null))?.headers.get("content-length") || 0);
-    try {
-      await descargarVerificado(this._url, huella, nuevo, (b) => total && paso(1, T.bajar, Math.min(99, Math.round((b / total) * 100))));
-    } catch { throw new Error(Idioma.t("No pude descargar la versión nueva. Revisa tu conexión e intenta de nuevo.")); }
-    paso(3, T.instalar);
-    await new Promise((ok) => setTimeout(ok, 1500));
-    if (PLATAFORMA === "windows") {
-      // Instalador silencioso: reemplaza la app y la vuelve a abrir (--force-run).
-      spawn(nuevo, ["/S", "--force-run"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
-      setTimeout(() => app.exit(0), 800);
-    } else if (process.env.APPIMAGE) {
-      const actual = process.env.APPIMAGE;
-      fs.chmodSync(nuevo, 0o755);
-      fs.copyFileSync(nuevo, actual + ".nueva");
-      fs.renameSync(actual + ".nueva", actual);
-      app.relaunch({ execPath: actual }); app.exit(0);
-    } else {
-      // Instalada con instalar.sh: se reemplaza la carpeta cuando Minuta se cierra (deja la anterior si algo falla).
-      const dir = path.dirname(process.execPath);
-      const lanzador = path.join(os.homedir(), ".local", "bin", "minuta");
-      const guion = path.join(tmp, "actualizar.sh");
-      fs.writeFileSync(guion, `#!/bin/bash
-while kill -0 ${process.pid} 2>/dev/null; do sleep 0.5; done
-rm -rf "${dir}.nueva" "${dir}.anterior"; mkdir -p "${dir}.nueva"
-tar -xzf "${nuevo}" -C "${dir}.nueva" --strip-components=1 || exit 1
-mv "${dir}" "${dir}.anterior" && mv "${dir}.nueva" "${dir}" && rm -rf "${dir}.anterior" || mv "${dir}.anterior" "${dir}"
-nohup "${fs.existsSync(lanzador) ? lanzador : path.join(dir, "minuta")}" >/dev/null 2>&1 &
-`);
-      spawn("bash", [guion], { detached: true, stdio: "ignore" }).unref();
-      setTimeout(() => app.exit(0), 500);
-    }
+    const paso = (n, codigo, texto) => avance({ paso: String(n), codigo, texto, valores: { app: "Minuta" }, total: 3 });
+    paso(1, "bajando", "Descargando la versión nueva…");
+    const r = await Respaldo.git(["pull", "--ff-only"], BASE);
+    if (!r.ok) throw new Error("No pude descargar la versión nueva. Revisa tu conexión e intenta de nuevo.");
+    paso(3, "instalando", "Instalando: {app} se cerrará y volverá a abrirse sola");
+    setTimeout(() => { app.relaunch(); app.exit(0); }, 1500);
   },
 };
-
-function compararVersiones(a, b) {
-  const pa = a.split(".").map((x) => parseInt(x, 10) || 0), pb = b.split(".").map((x) => parseInt(x, 10) || 0);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d; }
-  return 0;
-}
 
 module.exports = { Modelos, IA, Respaldo, Actualizaciones, lanzar, descargarVerificado, corta, expandir };

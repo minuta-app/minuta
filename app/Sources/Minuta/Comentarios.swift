@@ -6,7 +6,7 @@ import Foundation
 @MainActor
 enum Comentarios {
     /// Únicos repositorios donde la app publica: el de la app y el catálogo.
-    static let repos = ["app": "minuta-app/minuta", "catalogo": Catalogo.repo]
+    static let repos = ["app": "minuta-app/minuta", "catalogo": CatalogoPublico.repo]
     private static var usuario: String?
 
     private static func pedido(_ ruta: String, metodo: String = "GET", cuerpo: [String: Any]? = nil) -> URLRequest? {
@@ -51,7 +51,7 @@ enum Comentarios {
 
     /// Vota un universo con una reacción 👍/👎 en su issue de votos. `nuevo` es falso si ya había votado igual.
     static func votar(numero: Int, positivo: Bool, _ fin: @escaping @MainActor (Bool, Bool) -> Void) {
-        guard let p = pedido("repos/\(Catalogo.repo)/issues/\(numero)/reactions", metodo: "POST", cuerpo: ["content": positivo ? "+1" : "-1"]) else { fin(false, false); return }
+        guard let p = pedido("repos/\(CatalogoPublico.repo)/issues/\(numero)/reactions", metodo: "POST", cuerpo: ["content": positivo ? "+1" : "-1"]) else { fin(false, false); return }
         llamar(p) { codigo, _ in fin(codigo == 200 || codigo == 201, codigo == 201) }
     }
 }

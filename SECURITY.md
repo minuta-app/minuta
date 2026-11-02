@@ -35,10 +35,23 @@ Solo la última versión publicada en [Releases](https://github.com/minuta-app/m
   pull request con permisos de escritura ni con secretos.
 - Las actions de GitHub van fijadas por su commit (SHA) y con los permisos mínimos; Dependabot propone actualizaciones
   con unos días de espera.
-- Las descargas que hace la app (versiones nuevas, modelos, Python, herramientas) se verifican con su huella SHA-256 antes
+- Las descargas que hace la app (versiones nuevas, modelos, Python, herramientas, universos e idiomas del catálogo) se verifican con su huella SHA-256 antes
   de usarse.
 - Lo que viene de afuera (universos, idiomas, transcripciones, respuestas de la IA) es solo dato: se valida, se escapa
   antes de mostrarse y la interfaz tiene una política de contenido (CSP) que no deja ejecutar código que no sea el de la app.
+- La IA de cada persona corre sin herramientas, sin servidores MCP, sin su memoria y sin las variables de la app; si su
+  versión no permite quitarle las herramientas, no se usa. El pedido va por la entrada estándar o en un archivo, nunca como
+  argumento. El puente de la app solo atiende a su propia ventana: el marco principal con una página de la interfaz (`ui/`).
+- La parte nativa usa las piezas de [Pieza](https://github.com/pieza-app/pieza) (`host-escritorio` en Windows y Linux, lo que calza
+  de `host-mac` en Mac): cada acción que solo corre un script está declarada (`acciones.json`) y sus datos se validan antes de
+  correrla; esas acciones y los scripts que corre el procesador del host tienen un límite de tiempo (al cumplirse se corta
+  también lo que lanzaron), no heredan las variables `MINUTA_*` de afuera y al cerrar la app no queda ninguno corriendo. El
+  procesamiento de una reunión (`procesar.py`), el resumen semanal y el creador de universos todavía corren con el lanzador
+  propio de Minuta, sin ese límite (pasan al host en una versión siguiente). Los tokens del respaldo van al Llavero (Mac) o cifrados con
+  `safeStorage` (Windows y Linux). Las actualizaciones solo bajan de los Releases de este repo y se instalan si su SHA-256 coincide.
+- Lo que escribes (por ejemplo tu vocabulario de nombres y palabras propias) nunca va como argumento de un proceso, donde
+  otros programas lo verían en la lista de procesos: al transcriptor le llega en un archivo temporal privado (solo tú puedes
+  leerlo) que se borra al terminar.
 
 ---
 
@@ -49,3 +62,9 @@ Minuta runs on your computer and handles private data (meeting audio and transcr
 *Security* tab. Include what you found, how to reproduce it (steps, OS and Minuta version) and its impact. Please don't
 open a public issue or pull request with the details until it's fixed. We reply within a week, ship a fixed release (the
 apps update themselves) and publish an advisory, crediting you if you want. Only the latest release is supported.
+
+The native side uses [Pieza](https://github.com/pieza-app/pieza) pieces (`host-escritorio` on Windows and Linux, what fits from
+`host-mac` on Mac): actions that only run a script are declared (`acciones.json`) and their data is validated first; those actions and the scripts
+run by the host's processor have a time limit (anything they launched is stopped too) and nothing keeps running after you quit
+(processing a meeting, the weekly summary and the universe creator still use Minuta's own launcher, without that limit); backup tokens live in the Keychain (Mac)
+or encrypted with `safeStorage` (Windows and Linux); updates only come from this repo's Releases and install only if the SHA-256 matches.

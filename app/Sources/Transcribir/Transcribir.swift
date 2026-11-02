@@ -5,7 +5,7 @@ import whisper
 /// Acepta las mismas opciones que `whisper-cli` que usa bin/procesar.py, así en Windows y Linux se usa el whisper-cli
 /// oficial de cada sistema sin cambiar nada más:
 ///   minuta-transcribir -m <modelo> -l <idioma|auto> -t <hilos> -f <audio.wav> -oj -of <salida sin .json>
-///                      [-np] [-sns] [-mc <n>] [--prompt <texto>] [--vad -vm <modelo_vad>]
+///                      [-np] [-sns] [-mc <n>] [--prompt <texto> | --prompt-archivo <ruta>] [--vad -vm <modelo_vad>]
 /// Escribe <salida>.json con {"transcription": [{"offsets": {"from": ms, "to": ms}, "text": "..."}]}.
 @main
 struct Transcribir {
@@ -23,6 +23,10 @@ struct Transcribir {
             case "-of": salida = siguiente()
             case "-mc": maxContexto = Int32(siguiente()) ?? -1
             case "--prompt": prompt = siguiente()
+            // El vocabulario de la persona llega en un archivo (nunca su texto como argumento): bin/procesar.py lo escribe.
+            case "--prompt-archivo":
+                let ruta = siguiente()
+                if let texto = try? String(contentsOfFile: ruta, encoding: .utf8) { prompt = String(texto.prefix(1000)) }
             case "-vm": modeloVAD = siguiente()
             case "--vad": vad = true
             case "-sns": sinNoHabla = true

@@ -1,0 +1,156 @@
+# Pieza al día: una vez por semana revisa si las piezas de esta app tienen versión nueva.
+# - Arreglos y mejoras compatibles sobre archivos que la app no cambió → abre un PR con la actualización y el resultado de las
+#   pruebas de la app (un PR que abre este workflow no dispara los demás: por eso las pruebas corren aquí y el PR lo dice).
+# - Lo que rompe, lo que pide más (otra pieza, permisos o red) o archivos que la app cambió → un issue con los pasos.
+# Lo agregó `pieza.py iniciar`. Necesita «Allow GitHub Actions to create and approve pull requests» en Settings → Actions.
+#
+# Seguridad (cadena de suministro):
+# - La HERRAMIENTA (pieza.py) que se ejecuta está fijada a una versión de Pieza (PIEZA_HERRAMIENTA, abajo). Subirla es un cambio
+#   a mano en este archivo: nadie que comprometa Pieza ejecuta código aquí con tus permisos.
+# - Lo NUEVO de Pieza (las piezas) solo se LEE como datos, de la última versión publicada. Su código llega como PR para revisar.
+# - El trabajo (calcular, copiar, probar) corre en un job SIN permisos de escritura y sin credenciales. El job que escribe solo
+#   aplica el parche resultante, empuja la rama y abre el PR o el issue: nunca ejecuta nada de las piezas.
+# Actions fijadas por SHA con su versión en un comentario (Dependabot las sube en cada app). Las expresiones de GitHub nunca van
+# dentro de `run:`: pasan por `env:`.
+name: Pieza al día
+on:
+  schedule:
+    - cron: "17 13 * * 1"
+  workflow_dispatch:
+permissions: {}
+concurrency: pieza-al-dia
+env:
+  # Versión de pieza.py que se ejecuta. Para subirla, cambia este valor (lo dice el issue de Pieza al día cuando hay una nueva).
+  PIEZA_HERRAMIENTA: v0.7.0
+jobs:
+  calcular:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      hay: ${{ steps.calculo.outputs.hay }}
+      seguridad: ${{ steps.calculo.outputs.seguridad }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # La herramienta, en la versión fijada.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: pieza-app/pieza
+          ref: ${{ env.PIEZA_HERRAMIENTA }}
+          path: .pieza-herramienta
+          persist-credentials: false
+      # Las piezas nuevas, solo como datos (no se ejecuta nada de aquí).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: pieza-app/pieza
+          path: .pieza-catalogo
+          sparse-checkout: piezas
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Calcular la actualización y probarla
+        id: calculo
+        env:
+          PIEZA_CATALOGO: ${{ github.workspace }}/.pieza-catalogo/piezas
+        run: |
+          set -euo pipefail
+          P=".pieza-herramienta/herramientas/pieza.py"
+          python3 "$P" estado .
+          python3 "$P" actualizar . --automatico | tee "$RUNNER_TEMP/cambios.txt"
+          python3 "$P" aviso . > "$RUNNER_TEMP/aviso.md" || true
+          # ¿Hay una versión más nueva de la herramienta? Solo se avisa: subirla es un cambio a mano en este archivo.
+          ULTIMA=$(git ls-remote --tags --refs https://github.com/pieza-app/pieza 'v*' | sed 's|.*refs/tags/||' | sort -V | tail -n 1)
+          if [ -n "$ULTIMA" ] && [ "$ULTIMA" != "$PIEZA_HERRAMIENTA" ] && [ "$(printf '%s\n%s\n' "$PIEZA_HERRAMIENTA" "$ULTIMA" | sort -V | tail -n 1)" = "$ULTIMA" ]; then
+            printf '\n## La herramienta de Pieza tiene una versión nueva: %s\n\nEste workflow ejecuta `pieza.py` %s. Lee [qué cambió](https://github.com/pieza-app/pieza/blob/main/CHANGELOG.md) y, si estás de acuerdo, cambia `PIEZA_HERRAMIENTA` en `.github/workflows/pieza-al-dia.yml`.\n' "$ULTIMA" "$PIEZA_HERRAMIENTA" >> "$RUNNER_TEMP/aviso.md"
+          fi
+          rm -rf .pieza-herramienta .pieza-catalogo
+          git diff --binary > "$RUNNER_TEMP/actualizacion.patch"
+          git ls-files --others --exclude-standard -z | xargs -0 -r git add -N
+          git diff --binary > "$RUNNER_TEMP/actualizacion.patch"
+          if [ -s "$RUNNER_TEMP/actualizacion.patch" ]; then
+            echo "hay=1" >> "$GITHUB_OUTPUT"
+            if [ -f pruebas/correr.sh ]; then
+              if bash pruebas/correr.sh > "$RUNNER_TEMP/pruebas.txt" 2>&1; then echo "✅ Las pruebas de la app pasan con esta actualización." > "$RUNNER_TEMP/pruebas-resumen.txt"
+              else echo "❌ Las pruebas de la app FALLAN con esta actualización: revisa antes de juntar." > "$RUNNER_TEMP/pruebas-resumen.txt"; fi
+              tail -n 60 "$RUNNER_TEMP/pruebas.txt" >> "$RUNNER_TEMP/pruebas-resumen.txt"
+            else
+              echo "Esta app no tiene pruebas/correr.sh: pruébala a mano antes de juntar." > "$RUNNER_TEMP/pruebas-resumen.txt"
+            fi
+          else
+            echo "hay=" >> "$GITHUB_OUTPUT"
+            : > "$RUNNER_TEMP/pruebas-resumen.txt"
+          fi
+          if grep -q "(seguridad)" "$RUNNER_TEMP/cambios.txt"; then echo "seguridad=1" >> "$GITHUB_OUTPUT"; else echo "seguridad=" >> "$GITHUB_OUTPUT"; fi
+          mkdir -p "$RUNNER_TEMP/resultado"
+          cp "$RUNNER_TEMP/actualizacion.patch" "$RUNNER_TEMP/cambios.txt" "$RUNNER_TEMP/aviso.md" "$RUNNER_TEMP/pruebas-resumen.txt" "$RUNNER_TEMP/resultado/"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pieza-al-dia
+          path: ${{ runner.temp }}/resultado
+          retention-days: 7
+
+  publicar:
+    needs: calcular
+    runs-on: ubuntu-latest
+    # Lo justo: empujar la rama pieza/al-dia, abrir el PR y abrir o cerrar el issue. No ejecuta nada de las piezas.
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: pieza-al-dia
+          path: ${{ runner.temp }}/resultado
+      - name: Abrir o poner al día el PR
+        if: needs.calcular.outputs.hay == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SEGURIDAD: ${{ needs.calcular.outputs.seguridad }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          R="$RUNNER_TEMP/resultado"
+          RAMA="pieza/al-dia"
+          TITULO="Pieza al día: arreglos y mejoras de piezas"
+          [ -n "$SEGURIDAD" ] && TITULO="Pieza al día (seguridad): arreglos y mejoras de piezas"
+          # Si alguien ya empujó arreglos a la rama, no se pisan: se avisa en el PR.
+          if git ls-remote --exit-code --heads "https://github.com/$REPO" "$RAMA" >/dev/null 2>&1; then
+            git -c "http.extraheader=AUTHORIZATION: bearer $GH_TOKEN" fetch -q origin "$RAMA"
+            if git log --format=%ae "HEAD..FETCH_HEAD" | grep -qv "41898282+github-actions\[bot\]@users.noreply.github.com"; then
+              gh pr comment "$RAMA" --body "Hay una actualización nueva de Pieza, pero esta rama tiene cambios de una persona y no los piso. Junta o cierra este PR y la próxima semana llega la nueva." || true
+              exit 0
+            fi
+          fi
+          git apply --index "$R/actualizacion.patch"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$RAMA"
+          git commit -q -m "$TITULO" -m "$(cat "$R/cambios.txt")"
+          git -c "http.extraheader=AUTHORIZATION: bearer $GH_TOKEN" push -q -f origin "$RAMA"
+          printf 'Actualizaciones que se pueden aplicar solas (los archivos no los cambió esta app):\n\n```\n%s\n```\n\n### Pruebas\n\n```\n%s\n```\n\nUn PR abierto por un workflow no dispara las pruebas de GitHub: corrieron arriba, en un job sin permisos. Para que corran también aquí, cierra y vuelve a abrir el PR.\n' \
+            "$(cat "$R/cambios.txt")" "$(cat "$R/pruebas-resumen.txt")" > "$RUNNER_TEMP/cuerpo.md"
+          if gh pr view "$RAMA" --json state -q .state 2>/dev/null | grep -q OPEN; then
+            gh pr edit "$RAMA" --title "$TITULO" --body-file "$RUNNER_TEMP/cuerpo.md"
+          else
+            gh pr create --head "$RAMA" --title "$TITULO" --body-file "$RUNNER_TEMP/cuerpo.md"
+          fi
+      - name: Avisar lo que hay que hacer a mano
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          A="$RUNNER_TEMP/resultado/aviso.md"
+          TITULO="Pieza al día: actualizaciones que se hacen a mano"
+          NUM=$(gh issue list --state open --search "in:title \"$TITULO\"" --json number -q '.[0].number' || true)
+          if [ -n "$(tr -d "[:space:]" < "$A")" ]; then
+            if [ -n "$NUM" ]; then gh issue edit "$NUM" --body-file "$A"; else gh issue create --title "$TITULO" --body-file "$A"; fi
+          elif [ -n "$NUM" ]; then
+            gh issue close "$NUM" --comment "Todo al día."
+          fi

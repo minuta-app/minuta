@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Gimnasio de Minuta: ensayo de reuniones con Claude haciendo de contraparte, y evaluación final.
 
-Uso: gimnasio.py <turno|evaluar> <entrada.json> <salida.json>
-entrada: {escenario, dificultad, contexto, foco, historial: [{quien: "yo"|"otro", texto}]}
+Uso: gimnasio.py <turno|evaluar> <entrada.json> <salida.json>  (acción declarada «gimnasio» en app.json: la corre el host)
+entrada: {modo, entrada: {escenario, dificultad, contexto, foco, historial: [{quien: "yo"|"otro", texto}]}}  (lo que manda la
+         interfaz; también sirve el objeto de adentro solo)
+salida:  {"ok": true, "datos": …} o {"ok": false, "error": "…"}, con datos:
 turno   → {"nombre": "...", "texto": "..."}  (siguiente intervención de la contraparte)
 evaluar → {"veredicto", "puntajes": {claridad, escucha, preguntas, cierre}, "costo": [{cita, texto, prueba}], "bien": [{cita, texto}], "habito"}
 """
@@ -39,7 +41,13 @@ def historial_txt(h):
 
 def main():
     modo, entrada, salida = sys.argv[1], sys.argv[2], sys.argv[3]
+    if modo not in ("turno", "evaluar"):
+        raise SystemExit("modo desconocido")
     e = json.load(open(entrada, encoding="utf-8"))
+    if isinstance(e, dict) and isinstance(e.get("entrada"), dict):
+        e = e["entrada"]
+    if not isinstance(e, dict):
+        raise SystemExit("entrada rara")
     base = f"""ESCENARIO DEL ENSAYO: {e.get('escenario', '')}
 CONTEXTO REAL (de reuniones anteriores de {NOMBRE}, úsalo para ser creíble): {e.get('contexto') or '(sin contexto)'}
 """
@@ -73,13 +81,20 @@ Devuelve SOLO JSON:
 (costo: 1 a 3 elementos; bien: 1 o 2.)"""
     r = claude(prompt)
     with open(salida, "w", encoding="utf-8") as f:
-        json.dump(r, f, ensure_ascii=False)
+        json.dump({"ok": True, "datos": r}, f, ensure_ascii=False)
     if modo == "evaluar":
         reg = {"fecha": __import__("datetime").datetime.now().isoformat(timespec="seconds"), "escenario": e.get("escenario", ""),
-               "dificultad": e.get("dificultad", ""), "puntajes": r.get("puntajes", {}), "turnos": sum(1 for x in e.get("historial", []) if x["quien"] == "yo")}
+               "dificultad": e.get("dificultad", ""), "puntajes": r.get("puntajes", {}), "turnos": sum(1 for x in e.get("historial", []) if isinstance(x, dict) and x.get("quien") == "yo")}
         with open(os.path.join(HOME, "minuta", "practicas.jsonl"), "a", encoding="utf-8") as f:
             f.write(json.dumps(reg, ensure_ascii=False) + "\n")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except SystemExit as fallo:
+        # Un error que se puede contar (la IA no respondió, no devolvió JSON): va a la interfaz en vez de quedar en el registro.
+        if len(sys.argv) == 4 and isinstance(fallo.code, str):
+            with open(sys.argv[3], "w", encoding="utf-8") as f:
+                json.dump({"ok": False, "error": fallo.code}, f, ensure_ascii=False)
+        raise

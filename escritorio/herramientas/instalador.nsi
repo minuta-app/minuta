@@ -15,7 +15,7 @@ VIAddVersionKey /LANG=0 "ProductName" "Minuta"
 VIAddVersionKey /LANG=0 "FileDescription" "Instalador de Minuta"
 VIAddVersionKey /LANG=0 "FileVersion" "${VERSION}"
 VIAddVersionKey /LANG=0 "ProductVersion" "${VERSION}"
-VIAddVersionKey /LANG=0 "LegalCopyright" "MIT"
+VIAddVersionKey /LANG=0 "LegalCopyright" "AGPL-3.0"
 
 !define MUI_ICON "${ICONO}"
 !define MUI_UNICON "${ICONO}"

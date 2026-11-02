@@ -285,7 +285,12 @@ final class BarraMenu: NSObject, WKScriptMessageHandler, WKNavigationDelegate, N
     // MARK: JS → Mac
 
     func userContentController(_ c: WKUserContentController, didReceive mensaje: WKScriptMessage) {
-        guard let model, let datos = mensaje.body as? [String: Any], let accion = datos["accion"] as? String else { return }
+        // Solo la interfaz local (marco principal, archivo de ui/) le pide cosas a la app; un iframe o una página de afuera, nunca.
+        guard mensaje.frameInfo.isMainFrame, mensaje.frameInfo.securityOrigin.protocol == "file",
+              Temas.esDeLaInterfaz(mensaje.frameInfo.request.url) else { return }
+        // El mensaje es {accion, datos} (pieza «host-ui», igual en todas las apps de la familia).
+        guard let model, let cuerpo = mensaje.body as? [String: Any], let accion = cuerpo["accion"] as? String else { return }
+        let datos = cuerpo["datos"] as? [String: Any] ?? [:]
         switch accion {
         case "tema":
             if let id = datos["id"] as? String { ultimoTema = id; model.temaID = id }
@@ -343,7 +348,9 @@ final class BarraMenu: NSObject, WKScriptMessageHandler, WKNavigationDelegate, N
                 if panel.isVisible { posicionar() }
             }
             refrescarSombra()
-        default: break
+        default:
+            // Lo que solo corre un script está declarado en acciones.json (Pieza.swift).
+            Declaradas.correr(accion, datos) { [weak self] f, r in self?.llamar(f, r) }
         }
     }
 }
