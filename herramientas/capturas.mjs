@@ -37,8 +37,10 @@ async function pagina(consulta = "") {
 }
 const ir = async (p, cambio, espera = 900) => { await p.evaluate(cambio); await p.waitForTimeout(espera); };
 const jpg = (p, nombre) => p.screenshot({ path: path.join(IMG, nombre), type: "jpeg", quality: 86 });
-// La nota de ejemplo más completa (la primera de demo.json) y un universo por captura, para mostrar varios.
-const vista = (tema, cambios) => `window.Minuta._probar(E => { E.temaId = ${JSON.stringify(tema)}; E.sel = E.notas[0].ruta; E.galeria = false; ${cambios} })`;
+// Una nota de ejemplo elegida por su ruta (E.notas[0] es la más reciente después de ordenar, no la de mejor contenido): la de
+// ui/demo.json con un Contexto realista, sin el texto de relleno de las generadas. Y un universo por captura, para mostrar varios.
+const NOTA = "/demo/2026-10-13 1445 - Demo club Ciudad de los Valles.md";
+const vista = (tema, cambios) => `window.Minuta._probar(E => { if (!E.notas.some((n) => n.ruta === ${JSON.stringify(NOTA)})) throw new Error("no está la nota de las capturas en demo.json"); E.temaId = ${JSON.stringify(tema)}; E.sel = ${JSON.stringify(NOTA)}; E.galeria = false; ${cambios} })`;
 
 for (const [prefijo, consulta] of [["", ""], ["en-", "?idioma=en"]]) {
   const p = await pagina(consulta);
