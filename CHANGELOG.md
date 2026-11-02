@@ -5,6 +5,10 @@ Lo que cambia para quien usa Minuta, en palabras simples. Las versiones anterior
 *What changes for people using Minuta, in plain words. Earlier versions are listed in Releases.*
 
 ## Sin publicar · Unreleased
+- Con el panel de la barra de menú cerrado, Minuta ya no repinta el reloj cada segundo ni el panel cada minuto mientras graba:
+  menos trabajo de fondo en reuniones largas. Al abrirlo, todo aparece al día. · *With the menu bar panel closed, Minuta no longer
+  redraws the clock every second or the panel every minute while recording: less background work in long meetings. When you open
+  it, everything is up to date.*
 - Buscar y cambiar de reunión responde más rápido cuando tienes muchas reuniones: los logros ya no se recalculan en cada tecla.
   *Searching and switching meetings is snappier when you have many meetings: achievements are no longer recalculated on every keystroke.*
 - **Lo que le preguntas a tus reuniones (⌘K) ya no queda a la vista de otros programas:** antes la pregunta iba como argumento

@@ -158,6 +158,34 @@ for (const [idioma, consulta] of [["español", ""], ["inglés", "?idioma=en"]]) 
   console.log("  ✓ Panel sin errores y teclas 1–9");
 }
 
+// Panel cerrado (oculto pero vivo) mientras graba: no repinta ni mueve el reloj; al abrirlo se pone al día.
+{
+  const p = await navegador.newPage({ viewport: { width: 372, height: 800 }, reducedMotion: "reduce" });
+  p.on("pageerror", (e) => falla(`error de JavaScript (panel oculto): ${e.message}`));
+  await p.clock.install();
+  await p.addInitScript(() => {
+    window._oculto = false;
+    Object.defineProperty(document, "hidden", { get: () => window._oculto });
+    Object.defineProperty(document, "visibilityState", { get: () => (window._oculto ? "hidden" : "visible") });
+  });
+  await p.goto(BASE + "#panel");
+  await p.clock.runFor(1500);
+  await p.waitForFunction(() => window.Minuta && window.Minuta._probar);
+  await p.evaluate(() => window.Minuta._probar((E) => { E.pan.fase = "grabando"; E.pan.desde = Date.now(); }));
+  await p.evaluate(() => {
+    window._cambios = 0;
+    new MutationObserver((l) => { window._cambios += l.length; }).observe(document.body, { subtree: true, childList: true, characterData: true });
+    window._oculto = true; document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await p.clock.runFor(125000);
+  const oculto = await p.evaluate(() => window._cambios);
+  if (oculto) falla(`Panel oculto: no debería tocar la pantalla y hubo ${oculto} cambios en 2 minutos`);
+  const alVolver = await p.evaluate(() => { window._oculto = false; document.dispatchEvent(new Event("visibilitychange")); return document.querySelector(".pn-reloj")?.textContent; });
+  if (!/02:0[5-7]$/.test(alVolver || "")) falla(`Panel: al volver el reloj debería marcar ~2:06 y marca ${alVolver}`);
+  await p.close();
+  console.log("  ✓ Panel oculto: no repinta; al volver, el reloj al día");
+}
+
 // Nombres: mismos resultados que Python
 {
   const p = await pagina();
