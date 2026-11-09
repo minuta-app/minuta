@@ -4,6 +4,9 @@ Lo que cambia para quien usa Minuta, en palabras simples. Las versiones anterior
 [Releases](https://github.com/minuta-app/minuta/releases).
 *What changes for people using Minuta, in plain words. Earlier versions are listed in Releases.*
 
+## Sin publicar · Unreleased
+- Los botones y diálogos tienen la forma nueva de la familia. Cada universo sigue con sus colores. · *Buttons and dialogs have the family's new shape. Each universe keeps its own colors.*
+
 ## 0.4.0 · 2026-11-02
 - Con el panel de la barra de menú cerrado, Minuta ya no repinta el reloj cada segundo ni el panel cada minuto mientras graba:
   menos trabajo de fondo en reuniones largas. Al abrirlo, todo aparece al día. · *With the menu bar panel closed, Minuta no longer

@@ -409,8 +409,22 @@
     }
     /** `actualizacionProgreso {paso: "1"|"2"|"3"|"error", codigo, texto, valores, total, pct?}`. */
     function actualizacionProgreso(a = {}) {
+      const antes = act.estado;
       act.estado = { paso: String(a.paso || ""), texto: String(a.texto || ""), valores: a.valores || {}, total: Number(a.total) || 3, pct: a.pct };
-      if (act.estado.paso === "error") aviso(act.estado.texto || "No se pudo actualizar", { valores: act.estado.valores, error: true });
+      if (act.estado.paso === "error") { aviso(act.estado.texto || "No se pudo actualizar", { valores: act.estado.valores, error: true }); pintar(); return; }
+      // Mismo paso, solo cambia el avance: se cambia la fila, no la ventana entera (repintarla cada medio segundo parpadea).
+      const filas = typeof document !== "undefined" ? document.querySelectorAll(".pz-act") : [];
+      if (antes && typeof antes === "object" && antes.paso === act.estado.paso && filas.length) {
+        const v = act.estado, n = Math.max(1, Math.min(v.total, parseInt(v.paso, 10) || 1));
+        const pct = typeof v.pct === "number" && Number.isFinite(v.pct) ? Math.max(0, Math.min(100, Math.round(v.pct))) : null;
+        const texto = (v.texto ? Tp(v.texto, v.valores) : "") + (pct !== null ? ` · ${pct}%` : "");
+        for (const f of filas) {
+          const b = f.querySelector("b"), barra = f.querySelector("progress");
+          if (b) b.textContent = texto;
+          if (barra) barra.value = (n - 1) * 100 + (pct ?? 0);
+        }
+        return;
+      }
       pintar();
     }
     function filaActualizacion() {
