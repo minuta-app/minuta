@@ -964,7 +964,8 @@
   "Versión {v}": "Version {v}",
   "Instalando: {app} se cerrará y volverá a abrirse sola": "Installing: {app} will close and reopen on its own",
   "No pude preparar la versión nueva. {app} sigue igual que antes; intenta de nuevo más tarde.": "I couldn't get the new version ready. {app} is just as it was; try again later.",
-  "No encontré la descarga de la versión nueva.": "I couldn't find the download for the new version."
+  "No encontré la descarga de la versión nueva.": "I couldn't find the download for the new version.",
+  "Vidrio": "Glass"
  },
  "palabras": {
   "lunes": "Monday",

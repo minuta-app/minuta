@@ -8,13 +8,13 @@
    cargando su CSS DESPUÉS de este. Nada de la app adentro. Los tokens y su significado: README.md de la pieza. */
 :root {
   /* Pares de color (neutros con contraste AA entre sí: lo revisa pruebas/interfaz.mjs). */
-  --fondo-claro: #f6f7f9;         --fondo-oscuro: #10141b;
-  --panel-claro: #ffffff;         --panel-oscuro: #161b24;
-  --panel-2-claro: #eef1f5;       --panel-2-oscuro: #1d2430;
-  --linea-claro: #dde2ea;         --linea-oscuro: #2b3446;
-  --texto-claro: #1b2230;         --texto-oscuro: #e8ecf3;
-  --texto-suave-claro: #556075;   --texto-suave-oscuro: #9ba6b9;
-  --tenue-claro: #b4bccb;         --tenue-oscuro: #4a5468;
+  --fondo-claro: #f6f5f2;         --fondo-oscuro: #0f1115;
+  --panel-claro: #ffffff;         --panel-oscuro: #171a20;
+  --panel-2-claro: #f0eee9;       --panel-2-oscuro: #1f232b;
+  --linea-claro: #e5e2db;         --linea-oscuro: #2a2f39;
+  --texto-claro: #17181c;         --texto-oscuro: #ecedf0;
+  --texto-suave-claro: #5c5e66;   --texto-suave-oscuro: #a0a4ae;
+  --tenue-claro: #bdbab3;         --tenue-oscuro: #464b57;
   --acento-claro: #2f5fd0;        --acento-oscuro: #7fa2ff;
   --sobre-acento-claro: #ffffff;  --sobre-acento-oscuro: #0c1120;
   --rojo-claro: #b42727;          --rojo-oscuro: #ff8a8a;
@@ -22,8 +22,15 @@
   /* Texto sólido sobre un fondo de color (aviso, botón de peligro): nunca --fondo/--panel, que una app puede hacer transparentes. */
   --sobre-rojo-claro: #ffffff;    --sobre-rojo-oscuro: #1a0b0b;
   --sobre-texto-claro: #ffffff;   --sobre-texto-oscuro: #10141b;
-  --sombra-claro: 0 8px 28px rgba(20, 30, 50, .14);
+  --sombra-claro: 0 8px 28px rgba(23, 24, 28, .12);
   --sombra-oscuro: 0 10px 30px rgba(0, 0, 0, .5);
+
+  /* La barra lateral (pieza «componentes»: .pz-lateral) es oscura en los dos modos: sus colores no cambian con el modo. Su acento
+     es el acento del modo oscuro de la app (se lee sobre fondo oscuro). */
+  --barra-lateral: #15171c;             --barra-lateral-2: #23262e;
+  --barra-lateral-texto: #ecedf0;       --barra-lateral-suave: #a2a5ae;
+  --barra-lateral-acento: var(--acento-oscuro);
+  --sobre-barra-lateral-acento: var(--sobre-acento-oscuro);
 
   /* Los tokens que usa la interfaz (y las piezas). */
   color-scheme: light dark;
@@ -49,8 +56,9 @@
   --velo: color-mix(in srgb, #0f141e 42%, transparent);
   --foco: var(--acento);
   /* Forma y letra. */
-  --radio: 12px;
+  --radio: 14px;
   --radio-chico: 8px;
+  --radio-grande: 18px;
   --fuente: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   /* La bienvenida (pieza «bienvenida») usa sus propias variables: aquí quedan conectadas a los tokens. */
@@ -90,7 +98,9 @@
 
 /* Lo mínimo que todo documento necesita del tema. */
 html, body { background: var(--fondo); color: var(--texto); }
-body { font-family: var(--fuente); }
+body { font-family: var(--fuente); -webkit-font-smoothing: antialiased; }
+/* Títulos firmes y apretados (con :where: cualquier regla de la app les gana). */
+:where(h1, h2) { font-weight: 700; letter-spacing: -0.015em; }
 :focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
 /* Un diálogo recibe el foco cuando lo que lo abrió ya no está: sin anillo alrededor de toda la caja (sí en sus controles). Su título
    también recibe el foco al abrir (para el lector de pantalla; tabindex="-1", no es un control): sin anillo, en cualquier ventana
@@ -98,3 +108,45 @@ body { font-family: var(--fuente); }
 :where([role="dialog"], [role="alertdialog"])[aria-modal="true"]:focus-visible,
 :where([role="dialog"], [role="alertdialog"])[aria-modal="true"] :where(h1, h2, h3)[tabindex="-1"]:focus { outline: none; }
 ::selection { background: color-mix(in srgb, var(--acento) 30%, transparent); }
+
+/* «Vidrio»: sigue al sistema (claro u oscuro), con luces de color detrás y paneles translúcidos y esmerilados. Las piezas y la app
+   usan --panel y --panel-2 como siempre; lo que flota (diálogos, barras, tarjetas) se esmerila con :where() (no pisa a la app) o con
+   la clase .pz-vidrio. Con «reducir transparencia» del sistema, los paneles vuelven a ser sólidos. */
+:root[data-pz-estilo="vidrio"] {
+  --vidrio-luz-1-claro: rgba(132, 94, 247, .16);  --vidrio-luz-1-oscuro: rgba(132, 94, 247, .22);
+  --vidrio-luz-2-claro: rgba(56, 152, 236, .14);  --vidrio-luz-2-oscuro: rgba(56, 152, 236, .14);
+  --vidrio-luz-3-claro: rgba(255, 176, 32, .12);  --vidrio-luz-3-oscuro: rgba(255, 176, 32, .10);
+  --panel: color-mix(in srgb, light-dark(var(--panel-claro), var(--panel-oscuro)) 66%, transparent);
+  --panel-2: color-mix(in srgb, light-dark(var(--panel-2-claro), var(--panel-2-oscuro)) 58%, transparent);
+  --linea: color-mix(in srgb, light-dark(var(--linea-claro), var(--linea-oscuro)) 75%, transparent);
+  --vidrio-borde: light-dark(rgba(255, 255, 255, .7), rgba(255, 255, 255, .10));
+  --vidrio-filtro: blur(18px) saturate(160%);
+  --hover: color-mix(in srgb, var(--texto) 8%, transparent);
+}
+:root[data-pz-estilo="vidrio"] body {
+  background:
+    radial-gradient(60vmax 40vmax at 10% 10%, light-dark(var(--vidrio-luz-1-claro), var(--vidrio-luz-1-oscuro)), transparent 60%),
+    radial-gradient(50vmax 36vmax at 95% 40%, light-dark(var(--vidrio-luz-2-claro), var(--vidrio-luz-2-oscuro)), transparent 60%),
+    radial-gradient(60vmax 40vmax at 40% 100%, light-dark(var(--vidrio-luz-3-claro), var(--vidrio-luz-3-oscuro)), transparent 60%),
+    var(--fondo);
+  background-attachment: fixed;
+}
+:root[data-pz-estilo="vidrio"] :where(.pz-vidrio, .pz-dialogo, .pz-toast, [role="dialog"], header, nav, aside, fieldset) {
+  -webkit-backdrop-filter: var(--vidrio-filtro);
+  backdrop-filter: var(--vidrio-filtro);
+}
+:root[data-pz-estilo="vidrio"] :where(.pz-vidrio, .pz-dialogo) {
+  border-color: var(--vidrio-borde);
+  box-shadow: var(--sombra), inset 0 1px 0 light-dark(rgba(255, 255, 255, .8), rgba(255, 255, 255, .06));
+}
+@supports not (color: light-dark(#000, #fff)) {
+  :root[data-pz-estilo="vidrio"] { --panel: color-mix(in srgb, var(--panel-claro) 66%, transparent); }
+  @media (prefers-color-scheme: dark) { :root[data-pz-estilo="vidrio"] { --panel: color-mix(in srgb, var(--panel-oscuro) 66%, transparent); } }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-pz-estilo="vidrio"] {
+    --panel: light-dark(var(--panel-claro), var(--panel-oscuro));
+    --panel-2: light-dark(var(--panel-2-claro), var(--panel-2-oscuro));
+    --vidrio-filtro: none;
+  }
+}

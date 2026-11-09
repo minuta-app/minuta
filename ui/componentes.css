@@ -14,7 +14,7 @@
 /* Botones (el texto largo se parte en dos líneas antes de salirse a 390 px) */
 .pz-boton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--pz-boton-alto); padding: 6px 14px;
   border: 1px solid var(--linea); border-radius: var(--radio-chico); background: var(--panel); color: var(--texto); font: inherit;
-  line-height: 1.25; text-align: center; cursor: pointer; max-width: 100%; }
+  font-weight: 500; line-height: 1.25; text-align: center; cursor: pointer; max-width: 100%; transition: background-color .12s, border-color .12s; }
 .pz-boton:hover { background: var(--hover); }
 .pz-boton.pz-principal { background: var(--acento); border-color: var(--acento); color: var(--sobre-acento); font-weight: 600; }
 .pz-boton.pz-principal:hover { background: color-mix(in srgb, var(--acento) 90%, var(--texto)); }
@@ -88,6 +88,74 @@
 /* Esperando */
 .pz-giro { width: 18px; height: 18px; flex: none; border: 2px solid var(--linea); border-top-color: var(--acento); border-radius: 50%; animation: pz-giro .8s linear infinite; }
 @keyframes pz-giro { to { transform: rotate(360deg); } }
+
+/* El marco de la app: barra lateral oscura + contenido. En el celular la barra queda arriba, en una fila: lo que no cabe ahí va con
+   .pz-solo-ancho (se oculta a 760 px o menos). Una app con barra inferior en el celular usa .pz-lateral solo en escritorio.
+   <div class="pz-marco"><nav class="pz-lateral">
+     <button class="pz-marca">logo + nombre</button> <button class="pz-boton pz-principal">Acción</button>
+     <p class="pz-lateral-titulo">Grupo</p> <button class="pz-lateral-enlace" aria-current="page">Sección</button>
+     <div class="pz-lateral-pie">…</div></nav>
+   <main class="pz-contenido">…</main></div> */
+.pz-marco { display: flex; min-height: 100vh; min-height: 100dvh; }
+/* Una zona oscura en los dos modos (la barra lateral, el panel oscuro, o la barra propia de una app con .pz-zona-oscura): con
+   color-scheme: dark, todos los tokens de «tema» de adentro se resuelven en oscuro (texto, líneas, acento, campos, botones), y
+   fondo y paneles pasan a los de la barra lateral. Lo de la app que va adentro se ve bien sin reglas propias. */
+.pz-lateral, .pz-oscuro, .pz-zona-oscura { color-scheme: dark; --fondo: var(--barra-lateral); --panel: var(--barra-lateral-2);
+  --panel-2: var(--barra-lateral); --texto: var(--barra-lateral-texto); --texto-suave: var(--barra-lateral-suave);
+  --hover: color-mix(in srgb, var(--barra-lateral-texto) 9%, transparent); background: var(--barra-lateral); color: var(--texto); }
+.pz-lateral { flex: none; width: var(--pz-lateral-ancho, 240px); display: flex; flex-direction: column; gap: 4px; padding: 18px 12px; overflow-y: auto; }
+.pz-lateral :focus-visible { outline-color: var(--barra-lateral-acento); }
+.pz-lateral .pz-boton:not(.pz-principal) { background: var(--barra-lateral-2); border-color: transparent; color: var(--barra-lateral-texto); }
+.pz-lateral .pz-boton.pz-principal { background: var(--barra-lateral-acento); border-color: var(--barra-lateral-acento); color: var(--sobre-barra-lateral-acento); }
+.pz-lateral > .pz-boton { margin: 8px 0 10px; }
+.pz-marca { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 8px; border: 0; background: none; color: inherit;
+  font: inherit; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; text-align: left; cursor: pointer; }
+.pz-marca img, .pz-marca svg { width: 28px; height: 28px; border-radius: 7px; flex: none; }
+.pz-lateral-titulo { margin: 14px 8px 4px; font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--barra-lateral-suave); }
+.pz-lateral-enlace { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 8px 10px; border: 0; border-radius: var(--radio-chico);
+  background: none; color: var(--barra-lateral-texto); font: inherit; font-size: 14px; text-align: left; text-decoration: none; cursor: pointer; }
+.pz-lateral-enlace:hover, .pz-lateral-enlace[aria-current]:not([aria-current="false"]) { background: var(--barra-lateral-2); }
+.pz-lateral-enlace[aria-current]:not([aria-current="false"]) { font-weight: 600; box-shadow: inset 3px 0 0 var(--barra-lateral-acento); }
+.pz-lateral-enlace small { margin-left: auto; color: var(--barra-lateral-suave); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pz-lateral-pie { margin-top: auto; padding-top: 12px; display: grid; gap: 2px; }
+.pz-contenido { flex: 1; min-width: 0; padding: 36px 40px 64px; }
+:where(.pz-contenido) h1 { font-size: 30px; line-height: 1.15; margin: 0 0 6px; }
+@media (max-width: 760px) {
+  .pz-marco { flex-direction: column; }
+  .pz-lateral { width: auto; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 8px; padding: 8px 12px; padding-top: calc(8px + env(safe-area-inset-top, 0px)); overflow: visible; }
+  .pz-lateral > .pz-boton { margin: 0; }
+  .pz-lateral-pie { margin: 0 0 0 auto; padding: 0; display: flex; }
+  .pz-solo-ancho, .pz-lateral-titulo { display: none !important; }
+  .pz-contenido { padding: 20px 16px 48px; }
+  :where(.pz-contenido) h1 { font-size: 26px; }
+}
+
+/* Superficies: tarjeta, cifras (una cifra grande con su etiqueta), panel oscuro (lo que pasa en vivo, lo que ahorras) */
+.pz-tarjeta { padding: 16px; background: var(--panel); border: 1px solid var(--linea); border-radius: var(--radio); }
+.pz-tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 12px; padding: 0; margin: 12px 0; list-style: none; }
+.pz-cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 12px; margin: 16px 0; }
+.pz-cifra { display: grid; gap: 2px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--linea); border-radius: var(--radio); }
+.pz-cifra b { font-size: 26px; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.pz-cifra small { color: var(--texto-suave); font-size: 13px; }
+.pz-oscuro { padding: 16px 18px; border-radius: var(--radio-grande); }
+.pz-oscuro small, .pz-oscuro .pz-ayuda { color: var(--barra-lateral-suave); }
+.pz-oscuro b { color: var(--barra-lateral-acento); }
+
+/* Etapas: dónde va la persona en un proceso de varios pasos. <ol class="pz-etapas"><li class="pz-hecha"><span>1</span>Idea</li>
+   <li class="pz-actual" aria-current="step"><span>2</span>Plan</li><li><span>3</span>Listo</li></ol> */
+.pz-etapas { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 18px; padding: 0; list-style: none; }
+.pz-etapas li { display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; font-size: 13px; color: var(--texto-suave); }
+.pz-etapas li > span { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--panel-2); font-size: 12px; font-weight: 600; }
+.pz-etapas .pz-hecha { color: var(--verde); }
+.pz-etapas .pz-hecha > span { background: var(--verde-suave); }
+.pz-etapas .pz-actual { background: var(--texto); color: var(--sobre-texto); font-weight: 600; }
+.pz-etapas .pz-actual > span { background: var(--acento); color: var(--sobre-acento); }
+
+/* Dos columnas: lo principal y un panel al lado (abajo cuando no cabe) */
+.pz-dos-columnas { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px; }
+.pz-dos-columnas > :first-child { flex: 999 1 460px; min-width: 0; }
+.pz-columna-lado { flex: 1 1 280px; max-width: 400px; display: grid; gap: 12px; }
+@media (max-width: 760px) { .pz-columna-lado { max-width: none; } }
 
 /* Avisos (toast): uno a la vez, abajo al centro. --pz-toast-abajo para dejar espacio a una barra inferior. Colores sólidos
    (--texto/--sobre-texto, --rojo/--sobre-rojo): se leen aunque la app tenga --fondo o --panel transparentes. */

@@ -79,10 +79,10 @@
    }
   },
   "tema": {
-   "version": "0.2.1",
+   "version": "0.4.0",
    "archivos": {
-    "ui/tema.css": "1d43c1cf027fafcbd282bd90bc87ae3937059f247fb823cd1aab2a26f7c9363e",
-    "ui/tema.js": "b679ecb7bc80556b70e3f3fe768f0e3af0086bdf44c0d73ed0867da6a8f33f6e"
+    "ui/tema.css": "0f92833b29256c23f533da70292b53c493eae2da2690b5324f71429ab0ce1c74",
+    "ui/tema.js": "d476607ea31535a91fd2a81e7eef81558bfbbfc03dd772b447d7b359f9913dd4"
    },
    "sin_config": [
     "tema"
@@ -94,10 +94,10 @@
    }
   },
   "componentes": {
-   "version": "0.3.0",
+   "version": "0.4.0",
    "archivos": {
-    "ui/componentes.js": "310712e40f69b674f5d64fc723ccd2dbf2ad114f6ac68ee72a598cf4c36bb76a",
-    "ui/componentes.css": "101586f0fa7aa509f42b626de378c5ad32d176da5a4c0ad85b081a47908fe56f"
+    "ui/componentes.js": "fd5eafba3affb59be9506c57f38eff7a712297371621fe070b2b6d0ce3dfdf80",
+    "ui/componentes.css": "7ed1292d7ecb9fb6674a70808d5caca7611fa5be79578464b86ae32b4fff196a"
    },
    "ficha": {
     "requiere": [
