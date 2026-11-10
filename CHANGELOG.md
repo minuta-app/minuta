@@ -5,6 +5,8 @@ Lo que cambia para quien usa Minuta, en palabras simples. Las versiones anterior
 *What changes for people using Minuta, in plain words. Earlier versions are listed in Releases.*
 
 ## Sin publicar · Unreleased
+
+## 0.5.0 · 2026-11-09
 - Los botones y diálogos tienen la forma nueva de la familia. Cada universo sigue con sus colores. · *Buttons and dialogs have the family's new shape. Each universe keeps its own colors.*
 
 ## 0.4.0 · 2026-11-02
