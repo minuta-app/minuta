@@ -118,11 +118,14 @@ jobs:
           set -euo pipefail
           R="$RUNNER_TEMP/resultado"
           RAMA="pieza/al-dia"
+          # git por https no acepta «bearer»: va como actions/checkout, basic con x-access-token.
+          AUTH="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::${AUTH#AUTHORIZATION: basic }"
           TITULO="Pieza al día: arreglos y mejoras de piezas"
           [ -n "$SEGURIDAD" ] && TITULO="Pieza al día (seguridad): arreglos y mejoras de piezas"
           # Si alguien ya empujó arreglos a la rama, no se pisan: se avisa en el PR.
           if git ls-remote --exit-code --heads "https://github.com/$REPO" "$RAMA" >/dev/null 2>&1; then
-            git -c "http.extraheader=AUTHORIZATION: bearer $GH_TOKEN" fetch -q origin "$RAMA"
+            git -c "http.extraheader=$AUTH" fetch -q origin "$RAMA"
             if git log --format=%ae "HEAD..FETCH_HEAD" | grep -qv "41898282+github-actions\[bot\]@users.noreply.github.com"; then
               gh pr comment "$RAMA" --body "Hay una actualización nueva de Pieza, pero esta rama tiene cambios de una persona y no los piso. Junta o cierra este PR y la próxima semana llega la nueva." || true
               exit 0
@@ -133,7 +136,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -C "$RAMA"
           git commit -q -m "$TITULO" -m "$(cat "$R/cambios.txt")"
-          git -c "http.extraheader=AUTHORIZATION: bearer $GH_TOKEN" push -q -f origin "$RAMA"
+          git -c "http.extraheader=$AUTH" push -q -f origin "$RAMA"
           printf 'Actualizaciones que se pueden aplicar solas (los archivos no los cambió esta app):\n\n```\n%s\n```\n\n### Pruebas\n\n```\n%s\n```\n\nUn PR abierto por un workflow no dispara las pruebas de GitHub: corrieron arriba, en un job sin permisos. Para que corran también aquí, cierra y vuelve a abrir el PR.\n' \
             "$(cat "$R/cambios.txt")" "$(cat "$R/pruebas-resumen.txt")" > "$RUNNER_TEMP/cuerpo.md"
           if gh pr view "$RAMA" --json state -q .state 2>/dev/null | grep -q OPEN; then
